@@ -75,7 +75,7 @@ body{padding-block:10px 12px}
 .set input[type=number]{width:3.6em}
 .set input[type=range]{width:80px}
 #micBtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
-#fileBtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.sbtn,#fileBtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
 #micBtn.on{background:var(--hit);border-color:var(--hit);color:var(--bg)}
 .meter{width:56px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
 .meter i{display:block;height:100%;width:0;background:var(--hit)}
@@ -112,6 +112,7 @@ body{margin:0}
     <label for="resSel">Delitev <select id="resSel"><option value="4">1/4</option><option value="8">1/8</option><option value="16" selected>1/16</option><option value="32">1/32</option><option value="64">1/64</option><option value="128">1/128</option></select></label>
     <label for="clk"><input id="clk" type="checkbox"> Klik</label>
     <button id="micBtn" type="button">Mikrofon</button>
+    <button id="calBtn" type="button" class="sbtn">Kalib.</button>
     <button id="fileBtn" type="button">Posnetek</button>
     <input id="fileIn" type="file" accept="audio/*" capture hidden>
     <span class="meter" title="Nivo; 50 % = prag"><i id="lvl"></i></span>
@@ -139,7 +140,8 @@ body{margin:0}
       <li><b>Mreža</b>: klik na celico doda ali odstrani noto. Obrobljena celica je enka takta. Nov tap znova izračuna ritem iz tapov.</li>
       <li><b>Play</b> ponavlja ritem v BPM; okvir kaže trenutno celico. <b>Klik</b> je metronom na vsako celico (enka višja) – sam ali skupaj s Play, npr. za tapkanje ali igranje zraven.</li>
       <li><b>Statistika</b> (ko se ritem ponavlja): zadnje 3 ponovitve – tempo, odstopanje not v % dobe (RMS, največje) in število not nad pragom zaznave (~2,5 % intervala, najmanj 6 ms). Zeleno ≤ 2,5 %, oranžno &gt; 5 %.</li>
-      <li><b>Posnetek</b>: posnemi igranje (npr. bas) z diktafonom telefona ali neposredno iz gumba in ga naloži – udarci postanejo tapi. Drsnik občutljivosti velja tudi tu. <b>Mikrofon</b> v živo namesto tapov posluša napade not. Nastavi drsnik, da udarci presežejo polovico merilnika, tišina pa ne. Deluje le, če je stran odprta samostojno prek https ali localhost, ne v predogledu. Med poslušanjem predvajanje ni mogoče; uporabi slušalke.</li>
+      <li><b>Posnetek</b>: posnemi igranje (npr. bas) z diktafonom telefona ali neposredno iz gumba in ga naloži – udarci postanejo tapi. Drsnik občutljivosti velja tudi tu. <b>Mikrofon</b> v živo namesto tapov posluša napade not. Drsnik je prag glasnosti (levo = samo močni udarci); udarci morajo preseči polovico merilnika, tišina in šum ne. Deluje le, če je stran odprta samostojno prek https ali localhost, ne v predogledu. Med poslušanjem predvajanje ni mogoče; uporabi slušalke.</li>
+      <li><b>Trening</b>: vklopi Mikrofon in Play, igraj zraven (s slušalkami). Tabela kaže za zadnje 3 ponovitve povprečni zamik (+ = prepozno), raztros (SD), največje odstopanje ter zgrešene/odvečne note. Enkrat izvedi <b>Kalib.</b> prek zvočnika (tiho okolje): izmeri zamik telefona, da je povprečje pravilno. Bluetooth slušalke dodajo svoj, neizmerjen zamik.</li>
       <li><b>Reset</b> pobriše vse, <b>Copy</b> kopira rezultat.</li>
     </ol>
   </details>
@@ -246,7 +248,8 @@ function lsFit(pts){ // pts: [{e,t}] → {a,u}
   const u=num/den; return {a:mt-u*me,u};
 }
 function stats(){
-  const tb=$('stats'); if(!r||!r.loop){tb.hidden=true;return;}
+  const tb=$('stats'); if(playing&&micOn){renderTrain();return;}
+  tb.tHead.innerHTML='<tr><th>#</th><th>BPM</th><th>RMS</th><th>Max</th><th>Nad pragom</th></tr>'; if(!r||!r.loop){tb.hidden=true;return;}
   const N=r.N, full=Math.floor((taps.length-1)/N); if(full<1){tb.hidden=true;return;}
   const k=r.hits.concat([r.cells]), c0=Math.max(0,full-3), pts=[];
   for(let c=c0;c<full;c++) for(let j=0;j<N;j++) pts.push({c,j,e:(c-c0)*r.cells+k[j],t:taps[c*N+j]});
@@ -310,7 +313,8 @@ function ensureEngine(){
     while(nextT<ac.currentTime+.15){
       const i=ci%m.cells;
       if($('clk').checked) tone(nextT,i===0?1600:1000,i===0?.25:.06,.03,'sine');
-      if(playing&&m.hits.has(i)) tone(nextT,i===0?150:220,i===0?.8:.45,.16,'triangle');
+      if(i===0) cyc++;
+      if(playing&&m.hits.has(i)){ tone(nextT,i===0?150:220,i===0?.8:.45,.16,'triangle'); noteLog.push({t:nextT,cyc,i,dev:null}); if(noteLog.length>400) noteLog.shift(); }
       marks.push({t:nextT,i}); if(marks.length>64) marks.shift();
       nextT+=cellSec(); ci=i+1;
     }
@@ -321,7 +325,7 @@ function stopEngineIfIdle(){
   if(playing||$('clk').checked) return;
   clearInterval(timer); engineOn=false; document.querySelectorAll('.cell.now').forEach(c=>c.classList.remove('now'));
 }
-function play(){ playing=true; $('play').textContent='■ Stop'; if(engineOn) ci=0; ensureEngine(); }   // rhythm starts on cell 0
+function play(){ noteLog=[]; extras=[]; cyc=engineOn?-1:-1; playing=true; $('play').textContent='■ Stop'; if(engineOn) ci=0; ensureEngine(); }   // rhythm starts on cell 0
 function stop(){ playing=false; $('play').textContent='▶ Play'; stopEngineIfIdle(); }
 function head(){
   document.querySelectorAll('.cell.now').forEach(c=>c.classList.remove('now'));
@@ -331,7 +335,7 @@ function head(){
   requestAnimationFrame(head);
 }
 $('clk').addEventListener('change',e=>{ e.target.checked?ensureEngine():stopEngineIfIdle(); });
-$('play').onclick=()=>{ if(micOn){render('Med snemanjem z mikrofonom je predvajanje izklopljeno (mikrofon bi ga ujel).');return;} playing?stop():play(); };
+$('play').onclick=()=>{ playing?stop():play(); if(playing&&micOn) render('Trening: igraj zraven predvajanja. Slušalke – sicer mikrofon ujame predvajanje.'); };
 
 /* ---------- microphone onsets ----------
    Per sample: peak-follower envelope (100 ms release). Onset = envelope above gate × noise floor AND
@@ -342,8 +346,8 @@ $('play').onclick=()=>{ if(micOn){render('Med snemanjem z mikrofonom je predvaja
 let micOn=false, micStream=null, micNode=null;
 const WORKLET=`class O extends AudioWorkletProcessor{
   constructor(){super();this.D=Math.round(.03*sampleRate);this.buf=new Float32Array(this.D);this.bi=0;this.env=0;this.fl=1e-6;
-    this.rel=Math.exp(-1/(.1*sampleRate));this.last=-1;this.G=8;this.warm=Math.round(.2*sampleRate);this.pk=0;this.n=0;
-    this.port.onmessage=e=>this.G=e.data;}
+    this.rel=Math.exp(-1/(.1*sampleRate));this.last=-1;this.G=6;this.abs=.04;this.warm=Math.round(.2*sampleRate);this.pk=0;this.n=0;
+    this.port.onmessage=e=>{this.G=e.data.G;this.abs=e.data.abs;};}
   process(inp){const x=inp[0]&&inp[0][0]; if(!x) return true;
     for(let i=0;i<x.length;i++){
       const a=Math.abs(x[i]); this.env = a>this.env ? a : this.env*this.rel;   // peak follower, 100 ms release
@@ -351,13 +355,15 @@ const WORKLET=`class O extends AudioWorkletProcessor{
       if(this.warm>0){this.warm--; this.fl=Math.max(this.fl*.999+this.env*.001,1e-6); continue;}
       if(this.env<3*this.fl) this.fl=this.fl*.9995+this.env*.0005;         // noise floor, tracked only when quiet
       const t=currentTime+i/sampleRate;
-      if(this.env>this.G*this.fl && this.env>1.6*ref && t-this.last>.05){this.last=t; this.port.postMessage({on:t});}
+      const gate=Math.max(this.G*this.fl,this.abs);   // above the noise floor AND above an absolute level
+      if(this.env>gate && this.env>1.8*ref && t-this.last>.05){this.last=t; this.port.postMessage({on:t});}
       if(this.env>this.pk) this.pk=this.env;
     }
-    if(++this.n>=16){this.port.postMessage({lvl:this.pk/(this.G*this.fl)});this.pk=0;this.n=0;}
+    if(++this.n>=16){this.port.postMessage({lvl:this.pk/Math.max(this.G*this.fl,this.abs)});this.pk=0;this.n=0;}
     return true;}}
 registerProcessor('onset',O);`;
-const sensTh=()=>[0,40,28,20,14,10,7,5,3.5,2.5,2][+$('sens').value];   // gate above noise floor; higher sensitivity → lower gate
+/* Slider = absolute trigger level: 1 → −8 dBFS (only loud attacks) … 10 → −53 dBFS (very sensitive). */
+const sensTh=()=>({G:6,abs:Math.pow(10,(-8-(+$('sens').value-1)*5)/20)});
 async function micStart(){
   try{
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) throw new Error('ni podpore');
@@ -367,14 +373,13 @@ async function micStart(){
     await ac.audioWorklet.addModule(url);
     micNode=new AudioWorkletNode(ac,'onset'); micNode.port.postMessage(sensTh());
     micNode.port.onmessage=e=>{
-      if(e.data.on!==undefined) tap(e.data.on*1000,true);
+      if(e.data.on!==undefined){ const t=e.data.on; if(calMode) calOns.push(t); else if(playing) trainOnset(t); else tap(t*1000,true); }
       else $('lvl').style.width=Math.min(100,50*e.data.lvl)+'%';   // 50 % = trigger level
     };
     const src=ac.createMediaStreamSource(micStream), sink=ac.createGain(); sink.gain.value=0;
     src.connect(micNode).connect(sink).connect(ac.destination);   // keep the node running, silent
-    if(playing) stop();
     micOn=true; taps=[]; r=null; $('micBtn').classList.add('on'); $('micBtn').textContent='Mikrofon: vklop'; $('pad').textContent='POSLUŠAM';
-    render('Igraj. Za točnost: slušalke, brez glasbe v ozadju.');
+    render('Brez Play: igraj, udarci postanejo tapi. S Play: igraj zraven, meri se točnost glede na predvajanje (slušalke!).');
   }catch(err){
     micStop();
     render('Mikrofon v živo tu ni dovoljen'+(err.name==='NotAllowedError'?'':' ('+err.message+')')+'. Uporabi Posnetek: posnemi igranje in ga naloži.');
@@ -387,7 +392,8 @@ function micStop(){
   taps=[]; r=null;
 }
 /* ---------- recorded audio: same onset detector, run offline on an uploaded / recorded file ---------- */
-function detectOnsets(x,sr,G){
+function detectOnsets(x,sr,P){
+  const G=P.G, abs=P.abs;
   const D=Math.round(.03*sr), buf=new Float32Array(D), rel=Math.exp(-1/(.1*sr)), warm=Math.round(.2*sr), out=[];
   let bi=0, env=0, fl=1e-6, last=-1;
   for(let n=0;n<x.length;n++){
@@ -396,7 +402,7 @@ function detectOnsets(x,sr,G){
     if(n<warm){fl=Math.max(fl*.999+env*.001,1e-6); continue;}
     if(env<3*fl) fl=fl*.9995+env*.0005;
     const t=n/sr;
-    if(env>G*fl&&env>1.6*ref&&t-last>.05){last=t; out.push(t);}
+    if(env>Math.max(G*fl,abs)&&env>1.8*ref&&t-last>.05){last=t; out.push(t);}
   }
   return out;
 }
@@ -417,6 +423,63 @@ $('fileIn').addEventListener('change',async e=>{
     render(`Posnetek ${ab.duration.toFixed(1)} s: ${on.length} udarcev`+(on.length<4?' – premalo; povečaj občutljivost':'')+'.');
   }catch(err){ render('Posnetka ni bilo mogoče prebrati ('+(err.message||err.name)+').'); }
 });
+
+/* ---------- training: play along with Play, mic measures your timing against the played notes ----------
+   Each mic onset (minus calibrated latency) is matched to the nearest scheduled note within ± min(150 ms,
+   45 % of the shortest gap). Deviation > 0 = late. Unmatched onsets = extra, unmatched notes = missed.
+   Latency: output + input delay of the phone, measured by Kalib. (speaker → mic loopback). Without
+   calibration the average offset contains this unknown constant delay; the spread (SD) does not. */
+let noteLog=[], extras=[], cyc=-1, calLat=0, calMode=false, calOns=[];
+try{calLat=+localStorage.getItem('rt-lat')||0;}catch(e){}
+function matchWin(){
+  const h=[...m.hits].sort((a,b)=>a-b); if(h.length<2) return .15;
+  let g=Infinity; h.forEach((v,i)=>{const d=(i+1<h.length?h[i+1]:h[0]+m.cells)-v; if(d<g) g=d;});
+  return Math.min(.15,.45*g*cellSec());
+}
+function trainOnset(t){
+  const tt=t-calLat, w=matchWin(); let best=null;
+  for(const n of noteLog) if(n.dev===null&&Math.abs(tt-n.t)<w&&(!best||Math.abs(tt-n.t)<Math.abs(tt-best.t))) best=n;
+  if(best){best.dev=tt-best.t; lastDev=best.dev;}
+  else{ const near=noteLog.reduce((a,n)=>!a||Math.abs(n.t-tt)<Math.abs(a.t-tt)?n:a,null); extras.push({t:tt,cyc:near?near.cyc:cyc}); }
+  renderTrain();
+}
+let lastDev=null;
+function renderTrain(){
+  const tb=$('stats');
+  if(!(playing&&micOn)) return;
+  const now=ac.currentTime-calLat, w=matchWin(), beat=60/m.bpm;
+  const done=[...new Set(noteLog.filter(n=>n.t+w<now).map(n=>n.cyc))].filter(c=>noteLog.filter(n=>n.cyc===c).every(n=>n.t+w<now));
+  const last=done.slice(-3), ms=x=>Math.round(x*1000), all=[];
+  tb.tHead.innerHTML='<tr><th>#</th><th>Povp.</th><th>SD</th><th>Max</th><th>Zgr./odveč</th></tr>';
+  tb.tBodies[0].innerHTML=last.map(c=>{
+    const ns=noteLog.filter(n=>n.cyc===c), d=ns.filter(n=>n.dev!==null).map(n=>n.dev); all.push(...d);
+    const mean=d.length?d.reduce((a,b)=>a+b,0)/d.length:0, sd=d.length>1?Math.sqrt(d.reduce((a,b)=>a+(b-mean)**2,0)/(d.length-1)):0, mx=d.length?Math.max(...d.map(Math.abs)):0;
+    const cls=v=>Math.abs(v)/beat<=.025?'good':Math.abs(v)/beat>.05?'bad':'';
+    return `<tr><td>#${c+1}</td><td class="${cls(mean)}">${mean>=0?'+':''}${ms(mean)} ms</td><td class="${cls(sd)}">${ms(sd)} ms</td><td class="${cls(mx)}">${ms(mx)} ms</td><td>${ns.length-d.length}/${extras.filter(x=>x.cyc===c).length}</td></tr>`;
+  }).join('');
+  const mean=all.length?all.reduce((a,b)=>a+b,0)/all.length:0, sd=all.length>1?Math.sqrt(all.reduce((a,b)=>a+(b-mean)**2,0)/(all.length-1)):0;
+  tb.tFoot.rows[0].cells[0].innerHTML=(all.length?`zadnje 3: ${mean>=0?'+':''}${ms(mean)} ms (${(100*mean/beat).toFixed(1)} % dobe) ± ${ms(sd)} ms (${(100*sd/beat).toFixed(1)} %) · `:'')
+    +'+ = prepozno · '+(calLat?`latenca ${ms(calLat)} ms odšteta`:'<span class="warn">latenca ni kalibrirana – povprečje vsebuje zamik telefona</span>');
+  tb.hidden=!last.length&&lastDev===null;
+  if(lastDev!==null) $('note').innerHTML=`zadnja nota: <b>${lastDev>=0?'+':''}${ms(lastDev)} ms</b> ${Math.abs(lastDev)<.006?'točno':lastDev>0?'prepozno':'prezgodaj'}`;
+}
+setInterval(()=>{ if(playing&&micOn) renderTrain(); },400);
+
+/* Kalib.: through the SPEAKER (not headphones), 8 loud clicks; latency = median(detected − scheduled). */
+$('calBtn').onclick=()=>{
+  if(!micOn){render('Za kalibracijo najprej vklopi Mikrofon (zvok prek zvočnika, ne slušalk).');return;}
+  if(playing) stop();
+  calMode=true; calOns=[]; const t0=ac.currentTime+.4, ts=[];
+  for(let k=0;k<8;k++){const t=t0+k*.6; ts.push(t); tone(t,1000,.9,.03,'square');}
+  render('Kalibracija … tiho, 5 s.');
+  setTimeout(()=>{
+    calMode=false;
+    const d=ts.map(t=>{const o=calOns.find(x=>x>=t&&x<t+.4); return o===undefined?null:o-t;}).filter(x=>x!==null).sort((a,b)=>a-b);
+    if(d.length<5){render(`Kalibracija ni uspela (${d.length}/8 klikov zaznanih). Glasneje, občutljivost višje, zvočnik ne slušalke.`);return;}
+    calLat=d[Math.floor(d.length/2)]; try{localStorage.setItem('rt-lat',calLat);}catch(e){}
+    render(`Latenca ${Math.round(calLat*1000)} ms (${d.length}/8, raztros ${Math.round((d[d.length-1]-d[0])*1000)} ms). Shranjeno.`);
+  },t0-ac.currentTime+8*.6+.5);
+};
 $('micBtn').onclick=()=>{ if(micOn){micStop();render();} else micStart(); };
 $('sens').addEventListener('input',()=>{ if(micNode) micNode.port.postMessage(sensTh()); });
 
