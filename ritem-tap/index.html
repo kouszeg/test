@@ -75,7 +75,7 @@ body{padding-block:10px 12px}
 .set input[type=number]{width:3.6em}
 .set input[type=range]{width:80px}
 #micBtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
-.sbtn,#fileBtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.sbtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
 #micBtn.on{background:var(--hit);border-color:var(--hit);color:var(--bg)}
 .meter{width:56px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
 .meter i{display:block;height:100%;width:0;background:var(--hit)}
@@ -113,10 +113,8 @@ body{margin:0}
     <label for="clk"><input id="clk" type="checkbox"> Klik</label>
     <button id="micBtn" type="button">Mikrofon</button>
     <button id="calBtn" type="button" class="sbtn">Kalib.</button>
-    <button id="fileBtn" type="button">Posnetek</button>
-    <input id="fileIn" type="file" accept="audio/*" capture hidden>
     <span class="meter" title="Nivo; 50 % = prag"><i id="lvl"></i></span>
-    <input id="sens" type="range" min="1" max="10" value="5" aria-label="Občutljivost mikrofona">
+    <input id="sens" type="range" min="1" max="10" value="4" aria-label="Občutljivost mikrofona">
   </div>
   <div id="out" class="empty">tapkaj ritem</div>
   <div id="note"></div>
@@ -140,7 +138,7 @@ body{margin:0}
       <li><b>Mreža</b>: klik na celico doda ali odstrani noto. Obrobljena celica je enka takta. Nov tap znova izračuna ritem iz tapov.</li>
       <li><b>Play</b> ponavlja ritem v BPM; okvir kaže trenutno celico. <b>Klik</b> je metronom na vsako celico (enka višja) – sam ali skupaj s Play, npr. za tapkanje ali igranje zraven.</li>
       <li><b>Statistika</b> (ko se ritem ponavlja): zadnje 3 ponovitve – tempo, odstopanje not v % dobe (RMS, največje) in število not nad pragom zaznave (~2,5 % intervala, najmanj 6 ms). Zeleno ≤ 2,5 %, oranžno &gt; 5 %.</li>
-      <li><b>Posnetek</b>: posnemi igranje (npr. bas) z diktafonom telefona ali neposredno iz gumba in ga naloži – udarci postanejo tapi. Drsnik občutljivosti velja tudi tu. <b>Mikrofon</b> v živo namesto tapov posluša napade not. Drsnik je prag glasnosti (levo = samo močni udarci); udarci morajo preseči polovico merilnika, tišina in šum ne. Deluje le, če je stran odprta samostojno prek https ali localhost, ne v predogledu. Med poslušanjem predvajanje ni mogoče; uporabi slušalke.</li>
+      <li><b>Mikrofon</b> v živo namesto tapov posluša napade not. Drsnik je prag glasnosti (levo = samo močni udarci); udarci morajo preseči polovico merilnika, tišina in šum ne. Deluje le, če je stran odprta samostojno prek https ali localhost, ne v predogledu. Med poslušanjem predvajanje ni mogoče; uporabi slušalke.</li>
       <li><b>Trening</b>: vklopi Mikrofon in Play, igraj zraven (s slušalkami). Tabela kaže za zadnje 3 ponovitve povprečni zamik (+ = prepozno), raztros (SD), največje odstopanje ter zgrešene/odvečne note. Enkrat izvedi <b>Kalib.</b> prek zvočnika (tiho okolje): izmeri zamik telefona, da je povprečje pravilno. Bluetooth slušalke dodajo svoj, neizmerjen zamik.</li>
       <li><b>Reset</b> pobriše vse, <b>Copy</b> kopira rezultat.</li>
     </ol>
@@ -343,11 +341,11 @@ $('play').onclick=()=>{ playing?stop():play(); if(playing&&micOn) render('Trenin
    Onset time = that sample, in the audio clock (ms). Offline test on synthetic bass plucks (41–220 Hz):
    timing error ~1–3 ms, occasionally ~10 ms on low notes; a re-attack < ~60 ms after a loud note can be missed.
    Constant input latency shifts all onsets equally, so it does not affect pattern, tempo or deviation. */
-let micOn=false, micStream=null, micNode=null;
+let micInfo='', micOn=false, micStream=null, micNode=null;
 const WORKLET=`class O extends AudioWorkletProcessor{
   constructor(){super();this.D=Math.round(.03*sampleRate);this.buf=new Float32Array(this.D);this.bi=0;this.env=0;this.fl=1e-6;
-    this.rel=Math.exp(-1/(.1*sampleRate));this.last=-1;this.G=6;this.abs=.04;this.warm=Math.round(.2*sampleRate);this.pk=0;this.n=0;
-    this.port.onmessage=e=>{this.G=e.data.G;this.abs=e.data.abs;};}
+    this.rel=Math.exp(-1/(.1*sampleRate));this.last=-1;this.G=6;this.abs=.04;this.K=.35;this.rise=2.4;this.pks=0;this.pdec=Math.exp(-1/(2*sampleRate));this.warm=Math.round(.2*sampleRate);this.pk=0;this.n=0;
+    this.port.onmessage=e=>{Object.assign(this,e.data);};}
   process(inp){const x=inp[0]&&inp[0][0]; if(!x) return true;
     for(let i=0;i<x.length;i++){
       const a=Math.abs(x[i]); this.env = a>this.env ? a : this.env*this.rel;   // peak follower, 100 ms release
@@ -355,15 +353,17 @@ const WORKLET=`class O extends AudioWorkletProcessor{
       if(this.warm>0){this.warm--; this.fl=Math.max(this.fl*.999+this.env*.001,1e-6); continue;}
       if(this.env<3*this.fl) this.fl=this.fl*.9995+this.env*.0005;         // noise floor, tracked only when quiet
       const t=currentTime+i/sampleRate;
-      const gate=Math.max(this.G*this.fl,this.abs);   // above the noise floor AND above an absolute level
-      if(this.env>gate && this.env>1.8*ref && t-this.last>.05){this.last=t; this.port.postMessage({on:t});}
+      this.pks=Math.max(this.env,this.pks*this.pdec);                    // recent peak (2 s decay) – robust to phone auto-gain
+      const gate=Math.max(this.G*this.fl,this.abs,this.K*this.pks);       // above noise floor, absolute level AND a share of recent peaks
+      if(this.env>gate && this.env>this.rise*ref && t-this.last>.05){this.last=t; this.port.postMessage({on:t});}
       if(this.env>this.pk) this.pk=this.env;
     }
-    if(++this.n>=16){this.port.postMessage({lvl:this.pk/Math.max(this.G*this.fl,this.abs)});this.pk=0;this.n=0;}
+    if(++this.n>=16){this.port.postMessage({lvl:this.pk/Math.max(this.G*this.fl,this.abs,this.K*this.pks)});this.pk=0;this.n=0;}
     return true;}}
 registerProcessor('onset',O);`;
-/* Slider = absolute trigger level: 1 → −8 dBFS (only loud attacks) … 10 → −53 dBFS (very sensitive). */
-const sensTh=()=>({G:6,abs:Math.pow(10,(-8-(+$('sens').value-1)*5)/20)});
+/* Slider 1 (strict) … 10 (sensitive): absolute level −6 … −42 dBFS, share of recent peak 60 … 10 %,
+   required rise vs 30 ms earlier 3.0× … 1.8×. The peak share keeps it usable when the phone applies auto-gain. */
+const sensTh=()=>{const k=+$('sens').value-1; return {G:6,abs:Math.pow(10,(-6-k*4)/20),K:.6-k*.055,rise:3-k*.133};};
 async function micStart(){
   try{
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) throw new Error('ni podpore');
@@ -378,11 +378,13 @@ async function micStart(){
     };
     const src=ac.createMediaStreamSource(micStream), sink=ac.createGain(); sink.gain.value=0;
     src.connect(micNode).connect(sink).connect(ac.destination);   // keep the node running, silent
+    const st=micStream.getAudioTracks()[0].getSettings?micStream.getAudioTracks()[0].getSettings():{};
+    micInfo=st.autoGainControl?' · telefon vseeno uporablja samodejno ojačanje (AGC)':'';
     micOn=true; taps=[]; r=null; $('micBtn').classList.add('on'); $('micBtn').textContent='Mikrofon: vklop'; $('pad').textContent='POSLUŠAM';
-    render('Brez Play: igraj, udarci postanejo tapi. S Play: igraj zraven, meri se točnost glede na predvajanje (slušalke!).');
+    render('Brez Play: igraj, udarci postanejo tapi. S Play: igraj zraven, meri se točnost (slušalke!).'+micInfo);
   }catch(err){
     micStop();
-    render('Mikrofon v živo tu ni dovoljen'+(err.name==='NotAllowedError'?'':' ('+err.message+')')+'. Uporabi Posnetek: posnemi igranje in ga naloži.');
+    render('Mikrofon v živo tu ni dovoljen'+(err.name==='NotAllowedError'?'':' ('+err.message+')')+'. Uporabi aplikacijo na https://kouszeg.github.io/test/ritem-tap/');
   }
 }
 function micStop(){
@@ -391,38 +393,7 @@ function micStop(){
   micOn=false; $('micBtn').classList.remove('on'); $('micBtn').textContent='Mikrofon'; $('pad').textContent='TAP'; $('lvl').style.width='0';
   taps=[]; r=null;
 }
-/* ---------- recorded audio: same onset detector, run offline on an uploaded / recorded file ---------- */
-function detectOnsets(x,sr,P){
-  const G=P.G, abs=P.abs;
-  const D=Math.round(.03*sr), buf=new Float32Array(D), rel=Math.exp(-1/(.1*sr)), warm=Math.round(.2*sr), out=[];
-  let bi=0, env=0, fl=1e-6, last=-1;
-  for(let n=0;n<x.length;n++){
-    const a=Math.abs(x[n]); env=a>env?a:env*rel;
-    const ref=buf[bi]; buf[bi]=env; bi=(bi+1)%D;
-    if(n<warm){fl=Math.max(fl*.999+env*.001,1e-6); continue;}
-    if(env<3*fl) fl=fl*.9995+env*.0005;
-    const t=n/sr;
-    if(env>Math.max(G*fl,abs)&&env>1.8*ref&&t-last>.05){last=t; out.push(t);}
-  }
-  return out;
-}
-$('fileBtn').onclick=()=>$('fileIn').click();
-$('fileIn').addEventListener('change',async e=>{
-  const f=e.target.files[0]; e.target.value=''; if(!f) return;
-  try{
-    if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)();
-    const ab=await ac.decodeAudioData(await f.arrayBuffer());
-    const n=ab.length, x=new Float32Array(n);
-    for(let c=0;c<ab.numberOfChannels;c++){const d=ab.getChannelData(c); for(let i=0;i<n;i++) x[i]+=d[i]/ab.numberOfChannels;}
-    const on=detectOnsets(x,ab.sampleRate,sensTh());
-    if(micOn) micStop(); if(playing) stop();
-    // same rule as live tapping: a pause > 3 s starts a new rhythm, so the last phrase is analysed
-    taps=[]; r=null;
-    for(const t of on){const ms=t*1000; if(taps.length&&ms-taps[taps.length-1]>3000) taps=[]; taps.push(ms);}
-    fromTaps();
-    render(`Posnetek ${ab.duration.toFixed(1)} s: ${on.length} udarcev`+(on.length<4?' – premalo; povečaj občutljivost':'')+'.');
-  }catch(err){ render('Posnetka ni bilo mogoče prebrati ('+(err.message||err.name)+').'); }
-});
+
 
 /* ---------- training: play along with Play, mic measures your timing against the played notes ----------
    Each mic onset (minus calibrated latency) is matched to the nearest scheduled note within ± min(150 ms,
