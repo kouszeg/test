@@ -325,7 +325,7 @@ function stopEngineIfIdle(){
   if(playing||$('clk').checked) return;
   clearInterval(timer); engineOn=false; document.querySelectorAll('.cell.now').forEach(c=>c.classList.remove('now'));
 }
-function play(){ noteLog=[]; extras=[]; cyc=engineOn?-1:-1; playing=true; $('play').textContent='■ Stop'; if(engineOn) ci=0; ensureEngine(); }   // rhythm starts on cell 0
+function play(){ noteLog=[]; extras=[]; micHits=0; lastDev=null; cyc=engineOn?-1:-1; playing=true; $('play').textContent='■ Stop'; if(engineOn) ci=0; ensureEngine(); }   // rhythm starts on cell 0
 function stop(){ playing=false; $('play').textContent='▶ Play'; stopEngineIfIdle(); }
 function head(){
   document.querySelectorAll('.cell.now').forEach(c=>c.classList.remove('now'));
@@ -437,13 +437,14 @@ function matchWin(){
   return Math.min(.15,.45*g*cellSec());
 }
 function trainOnset(t){
+  micHits++;
   const tt=t-calLat, w=matchWin(); let best=null;
   for(const n of noteLog) if(n.dev===null&&Math.abs(tt-n.t)<w&&(!best||Math.abs(tt-n.t)<Math.abs(tt-best.t))) best=n;
   if(best){best.dev=tt-best.t; lastDev=best.dev;}
   else{ const near=noteLog.reduce((a,n)=>!a||Math.abs(n.t-tt)<Math.abs(a.t-tt)?n:a,null); extras.push({t:tt,cyc:near?near.cyc:cyc}); }
   renderTrain();
 }
-let lastDev=null;
+let lastDev=null, micHits=0;
 function renderTrain(){
   const tb=$('stats');
   if(!(playing&&micOn)) return;
@@ -455,10 +456,11 @@ function renderTrain(){
     const ns=noteLog.filter(n=>n.cyc===c), d=ns.filter(n=>n.dev!==null).map(n=>n.dev); all.push(...d);
     const mean=d.length?d.reduce((a,b)=>a+b,0)/d.length:0, sd=d.length>1?Math.sqrt(d.reduce((a,b)=>a+(b-mean)**2,0)/(d.length-1)):0, mx=d.length?Math.max(...d.map(Math.abs)):0;
     const cls=v=>Math.abs(v)/beat<=.025?'good':Math.abs(v)/beat>.05?'bad':'';
-    return `<tr><td>#${c+1}</td><td class="${cls(mean)}">${mean>=0?'+':''}${ms(mean)} ms</td><td class="${cls(sd)}">${ms(sd)} ms</td><td class="${cls(mx)}">${ms(mx)} ms</td><td>${ns.length-d.length}/${extras.filter(x=>x.cyc===c).length}</td></tr>`;
+    const v=(x,f)=>d.length>(f||0)?f===1?`<td class="${cls(x)}">${ms(x)} ms</td>`:`<td class="${cls(x)}">${x>=0&&f===undefined?'+':''}${ms(x)} ms</td>`:'<td>—</td>';
+    return `<tr><td>#${c+1}</td>${v(mean)}${v(sd,1)}${v(mx,0)}<td>${ns.length-d.length}/${extras.filter(x=>x.cyc===c).length}</td></tr>`;
   }).join('');
   const mean=all.length?all.reduce((a,b)=>a+b,0)/all.length:0, sd=all.length>1?Math.sqrt(all.reduce((a,b)=>a+(b-mean)**2,0)/(all.length-1)):0;
-  tb.tFoot.rows[0].cells[0].innerHTML=(all.length?`zadnje 3: ${mean>=0?'+':''}${ms(mean)} ms (${(100*mean/beat).toFixed(1)} % dobe) ± ${ms(sd)} ms (${(100*sd/beat).toFixed(1)} %) · `:'')
+  tb.tFoot.rows[0].cells[0].innerHTML=`mikrofon zaznal ${micHits} udarcev`+(micHits===0?' – <span class="warn">nič: poglej merilnik, drsnik bolj desno</span>':'')+' · '+(all.length?`zadnje 3: ${mean>=0?'+':''}${ms(mean)} ms (${(100*mean/beat).toFixed(1)} % dobe) ± ${ms(sd)} ms (${(100*sd/beat).toFixed(1)} %) · `:'')
     +'+ = prepozno · '+(calLat?`latenca ${ms(calLat)} ms odšteta`:'<span class="warn">latenca ni kalibrirana – povprečje vsebuje zamik telefona</span>');
   tb.hidden=!last.length&&lastDev===null;
   if(lastDev!==null) $('note').innerHTML=`zadnja nota: <b>${lastDev>=0?'+':''}${ms(lastDev)} ms</b> ${Math.abs(lastDev)<.006?'točno':lastDev>0?'prepozno':'prezgodaj'}`;
