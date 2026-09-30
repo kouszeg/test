@@ -145,7 +145,7 @@ body{margin:0}
       <li><b>Play</b> ponavlja ritem v BPM; okvir kaže trenutno celico. <b>Klik</b> je metronom na vsako celico (enka višja) – sam ali skupaj s Play, npr. za tapkanje ali igranje zraven.</li>
       <li><b>Statistika</b> (ko se ritem ponavlja): zadnje 3 ponovitve – tempo, odstopanje not v % dobe (RMS, največje) in število not nad pragom zaznave (~2,5 % intervala, najmanj 6 ms). Zeleno ≤ 2,5 %, rumeno do 5 %, rdeče &gt; 5 %.</li>
       <li><b>Mikrofon</b> posluša samo med Play (trening); ritma ne spreminja. Drsnik je prag glasnosti (levo = samo močni udarci); merilnik kaže glasnost, oranžna črta prag – udarci morajo čez črto, tišina in šum ne. Deluje le, če je stran odprta samostojno prek https ali localhost, ne v predogledu. Uporabi slušalke.</li>
-      <li><b>Trening</b>: vklopi Mikrofon in Play, igraj zraven (s slušalkami). Tabela kaže za zadnje 3 ponovitve povprečni zamik (+ = prepozno), raztros (SD), največje odstopanje (v % dobe in ms) ter zgrešene/odvečne note. Zeleno ≤ 2,5 % dobe (≈ prag zaznave), rumeno 2,5–5 %, rdeče &gt; 5 %. Privzeta latenca je 150 ms (izmerjena na tvojem telefonu); na drugi napravi izvedi <b>Kalib.</b> prek zvočnika (tiho okolje). Vrednost je pod gumbom. Bluetooth slušalke dodajo svoj, neizmerjen zamik.</li>
+      <li><b>Trening</b>: vklopi Mikrofon in Play, igraj zraven (s slušalkami). Napaka se meri glede na tvoj drseči utrip (mediana zadnjih 16 not), zato lezenje latence in počasno spreminjanje tempa ne štejeta – šteje samo napaka znotraj beata. Tabela kaže za zadnje 3 ponovitve povprečje (+ = prepozno), raztros (SD), največje odstopanje (v % dobe in ms) ter zgrešene/odvečne note. Zeleno ≤ 2,5 % dobe (≈ prag zaznave), rumeno 2,5–5 %, rdeče &gt; 5 %. Privzeta latenca je 150 ms (izmerjena na tvojem telefonu); na drugi napravi izvedi <b>Kalib.</b> prek zvočnika (tiho okolje). Vrednost je pod gumbom. Bluetooth slušalke dodajo svoj, neizmerjen zamik.</li>
       <li><b>Reset</b> pobriše vse, <b>Copy</b> kopira rezultat.</li>
     </ol>
   </details>
@@ -314,12 +314,16 @@ function ensureEngine(){
   if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); ac.resume();
   engineOn=true; nextT=ac.currentTime+.08; ci=0; marks=[];
   timer=setInterval(()=>{
-    while(nextT<ac.currentTime+.15){
-      const i=ci%m.cells;
-      if($('clk').checked) tone(nextT,i===0?1600:1000,i===0?.25:.06,.03,'sine');
+    // 300 ms look-ahead absorbs UI hiccups. If the page stalled longer, cells whose time has already
+    // passed are skipped silently (not played late, not logged), so timing never shifts after a glitch.
+    while(nextT<ac.currentTime+.3){
+      const i=ci%m.cells, late=nextT<ac.currentTime+.005;
       if(i===0) cyc++;
-      if(playing&&m.hits.has(i)){ tone(nextT,i===0?150:220,i===0?.8:.45,.16,'triangle'); noteLog.push({t:nextT,cyc,i,dev:null}); if(noteLog.length>400) noteLog.shift(); }
-      marks.push({t:nextT,i}); if(marks.length>64) marks.shift();
+      if(!late){
+        if($('clk').checked) tone(nextT,i===0?1600:1000,i===0?.25:.06,.03,'sine');
+        if(playing&&m.hits.has(i)){ tone(nextT,i===0?150:220,i===0?.8:.45,.16,'triangle'); noteLog.push({t:nextT,cyc,i,dev:null,rel:null}); if(noteLog.length>400) noteLog.shift(); }
+        marks.push({t:nextT,i}); if(marks.length>64) marks.shift();
+      }
       nextT+=cellSec(); ci=i+1;
     }
   },25);
@@ -421,11 +425,16 @@ function matchWin(){
   let g=Infinity; h.forEach((v,i)=>{const d=(i+1<h.length?h[i+1]:h[0]+m.cells)-v; if(d<g) g=d;});
   return Math.min(.15,.45*g*cellSec());
 }
+/* Drift-free scoring: baseline = median of your last 16 raw deviations (latency + its drift + your
+   average lean). Each note is scored against it, so only the error within the beat remains; slow drift
+   does not count. Matching also follows the baseline, so drift cannot push notes out of the window. */
+const med=a=>{const b=[...a].sort((x,y)=>x-y), k=b.length>>1; return b.length%2?b[k]:(b[k-1]+b[k])/2;};
+function baseline(){ const r=noteLog.filter(n=>n.dev!==null).slice(-16).map(n=>n.dev); return r.length>=4?med(r):0; }
 function trainOnset(t){
   micHits++;
-  const tt=t-calLat, w=matchWin(); let best=null;
-  for(const n of noteLog) if(n.dev===null&&Math.abs(tt-n.t)<w&&(!best||Math.abs(tt-n.t)<Math.abs(tt-best.t))) best=n;
-  if(best){best.dev=tt-best.t; lastDev=best.dev;}
+  const base=baseline(), tt=t-calLat, w=matchWin(); let best=null;
+  for(const n of noteLog){ const d=tt-base-n.t; if(n.dev===null&&Math.abs(d)<w&&(!best||Math.abs(d)<Math.abs(tt-base-best.t))) best=n; }
+  if(best){best.dev=tt-best.t; best.rel=best.dev-base; lastDev=best.rel;}
   else{ const near=noteLog.reduce((a,n)=>!a||Math.abs(n.t-tt)<Math.abs(a.t-tt)?n:a,null); extras.push({t:tt,cyc:near?near.cyc:cyc}); }
   renderTrain();
 }
@@ -438,7 +447,7 @@ function renderTrain(){
   const last=done.slice(-3), ms=x=>Math.round(x*1000), all=[];
   tb.tHead.innerHTML='<tr><th>#</th><th>Povp.</th><th>SD</th><th>Max</th><th>Zgr./odveč</th></tr>';
   tb.tBodies[0].innerHTML=last.map(c=>{
-    const ns=noteLog.filter(n=>n.cyc===c), d=ns.filter(n=>n.dev!==null).map(n=>n.dev); all.push(...d);
+    const ns=noteLog.filter(n=>n.cyc===c), d=ns.filter(n=>n.rel!==null).map(n=>n.rel); all.push(...d);
     const mean=d.length?d.reduce((a,b)=>a+b,0)/d.length:0, sd=d.length>1?Math.sqrt(d.reduce((a,b)=>a+(b-mean)**2,0)/(d.length-1)):0, mx=d.length?Math.max(...d.map(Math.abs)):0;
     const cls=v=>Math.abs(v)/beat<=.025?'good':Math.abs(v)/beat>.05?'bad':'mid';
     const pc=x=>(100*x/beat).toFixed(1).replace('.',',');
@@ -454,7 +463,7 @@ function renderTrain(){
     const sl=nu/de*60000; trend=` · trend ${sl>=0?'+':''}${sl.toFixed(1)} ms/min`+(Math.abs(sl)>5?' <span class="warn">(lezenje)</span>':'');
   }
   tb.tFoot.rows[0].cells[0].innerHTML=`mikrofon zaznal ${micHits} udarcev`+trend+(micHits===0?' – <span class="warn">nič: poglej merilnik, drsnik bolj desno</span>':'')+' · '+(all.length?`zadnje 3: ${mean>=0?'+':''}${ms(mean)} ms (${(100*mean/beat).toFixed(1)} % dobe) ± ${ms(sd)} ms (${(100*sd/beat).toFixed(1)} %) · `:'')
-    +'+ = prepozno · '+`latenca ${ms(calLat)} ms odšteta`+(calMeasured?'':' (privzeta – za drug telefon izvedi Kalib.)');
+    +'+ = prepozno glede na tvoj drseči utrip · '+`osnova ${ms(calLat+baseline())} ms (latenca+drift, ne šteje v napako)`;
   tb.hidden=!last.length&&lastDev===null;
   if(lastDev!==null){ const p=Math.abs(lastDev)/beat, g=p<=.025?'g-ok':p>.05?'g-bad':'g-mid';
     $('note').innerHTML=`zadnja nota: <b class="${g}">${lastDev>=0?'+':''}${(100*lastDev/beat).toFixed(1).replace('.',',')} % (${lastDev>=0?'+':''}${ms(lastDev)} ms)</b> ${p<=.025?'točno':lastDev>0?'prepozno':'prezgodaj'}`; }
