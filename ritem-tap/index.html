@@ -58,7 +58,7 @@ button:focus-visible{outline:3px solid var(--fg);outline-offset:3px}
 .mic button{font:700 1rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
 .mic button.on{background:var(--hit);border-color:var(--hit);color:var(--bg)}
 .meter{width:90px;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
-.meter i{display:block;height:100%;width:0;background:var(--hit)}
+.meter i{display:block;height:100%;width:0;background:var(--hit);transition:width .12s linear}
 .mic input[type=range]{width:110px}
 .btns{display:flex;gap:10px}
 .btns button{flex:1;font:700 1.2rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
@@ -78,7 +78,7 @@ body{padding-block:10px 12px}
 .sbtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
 #micBtn.on{background:var(--hit);border-color:var(--hit);color:var(--bg)}
 .meter{width:56px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
-.meter i{display:block;height:100%;width:0;background:var(--hit)}
+.meter i{display:block;height:100%;width:0;background:var(--hit);transition:width .12s linear}
 #out{font-size:1.7rem;line-height:1.15}
 #out .mt{font-size:.9rem;color:var(--muted);margin-left:.6em;font-weight:400;white-space:nowrap}
 #out.empty{font-size:.95rem}
@@ -341,7 +341,7 @@ $('play').onclick=()=>{ playing?stop():play(); if(playing&&micOn) render('Trenin
    Onset time = that sample, in the audio clock (ms). Offline test on synthetic bass plucks (41–220 Hz):
    timing error ~1–3 ms, occasionally ~10 ms on low notes; a re-attack < ~60 ms after a loud note can be missed.
    Constant input latency shifts all onsets equally, so it does not affect pattern, tempo or deviation. */
-let micInfo='', micOn=false, micStream=null, micNode=null;
+let lvlDisp=0, micInfo='', micOn=false, micStream=null, micNode=null;
 const WORKLET=`class O extends AudioWorkletProcessor{
   constructor(){super();this.D=Math.round(.03*sampleRate);this.buf=new Float32Array(this.D);this.bi=0;this.env=0;this.fl=1e-6;
     this.rel=Math.exp(-1/(.1*sampleRate));this.last=-1;this.G=6;this.abs=.04;this.K=.35;this.rise=2.4;this.pks=0;this.pdec=Math.exp(-1/(2*sampleRate));this.warm=Math.round(.2*sampleRate);this.pk=0;this.n=0;
@@ -374,7 +374,7 @@ async function micStart(){
     micNode=new AudioWorkletNode(ac,'onset'); micNode.port.postMessage(sensTh());
     micNode.port.onmessage=e=>{
       if(e.data.on!==undefined){ const t=e.data.on; if(calMode) calOns.push(t); else if(playing) trainOnset(t); else tap(t*1000,true); }
-      else $('lvl').style.width=Math.min(100,50*e.data.lvl)+'%';   // 50 % = trigger level
+      else { lvlDisp=Math.max(Math.min(1,e.data.lvl/2),lvlDisp*.85); $('lvl').style.width=(100*lvlDisp).toFixed(0)+'%'; }   // peak-hold with slow fall; 50 % = trigger
     };
     const src=ac.createMediaStreamSource(micStream), sink=ac.createGain(); sink.gain.value=0;
     src.connect(micNode).connect(sink).connect(ac.destination);   // keep the node running, silent
@@ -451,7 +451,7 @@ $('calBtn').onclick=()=>{
     if(d.length<5){render(`Kalibracija ni uspela (${d.length}/8 klikov zaznanih). Glasneje, občutljivost višje, zvočnik ne slušalke.`);return;}
     calLat=d[Math.floor(d.length/2)]; try{localStorage.setItem('rt-lat',calLat);}catch(e){}
     render(`Latenca ${Math.round(calLat*1000)} ms (${d.length}/8, raztros ${Math.round((d[d.length-1]-d[0])*1000)} ms). Shranjeno.`);
-  },t0-ac.currentTime+8*.6+.5);
+  },(t0-ac.currentTime+8*.6+.5)*1000);   // ms (was seconds → the check ran after ~5 ms and always failed)
 };
 $('micBtn').onclick=()=>{ if(micOn){micStop();render();} else micStart(); };
 $('sens').addEventListener('input',()=>{ if(micNode) micNode.port.postMessage(sensTh()); });
