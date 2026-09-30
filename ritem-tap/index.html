@@ -329,7 +329,8 @@ function stopEngineIfIdle(){
   if(playing||$('clk').checked) return;
   clearInterval(timer); engineOn=false; document.querySelectorAll('.cell.now').forEach(c=>c.classList.remove('now'));
 }
-function play(){ noteLog=[]; extras=[]; micHits=0; lastDev=null; cyc=engineOn?-1:-1; playing=true; $('play').textContent='■ Stop'; if(engineOn) ci=0; ensureEngine(); }   // rhythm starts on cell 0
+function play(){ if(micOn){ micStop(); micStart(true); }   // fresh input stream each Play: resets any input buffering that built up
+  noteLog=[]; extras=[]; micHits=0; lastDev=null; cyc=engineOn?-1:-1; playing=true; $('play').textContent='■ Stop'; if(engineOn) ci=0; ensureEngine(); }   // rhythm starts on cell 0
 function stop(){ playing=false; $('play').textContent='▶ Play'; stopEngineIfIdle(); }
 function head(){
   document.querySelectorAll('.cell.now').forEach(c=>c.classList.remove('now'));
@@ -370,13 +371,14 @@ registerProcessor('onset',O);`;
 /* Slider 1 (strict) … 10 (sensitive): absolute level −6 … −42 dBFS, share of recent peak 60 … 10 %,
    required rise vs 30 ms earlier 3.0× … 1.8×. The peak share keeps it usable when the phone applies auto-gain. */
 const sensTh=()=>{const k=+$('sens').value-1; return {G:6,abs:Math.pow(10,(-6-k*4)/20),K:.6-k*.055,rise:3-k*.133};};
-async function micStart(){
+let workletLoaded=false;
+async function micStart(quiet=false){
   try{
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) throw new Error('ni podpore');
     if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); await ac.resume();
     micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
     const url=URL.createObjectURL(new Blob([WORKLET],{type:'application/javascript'}));
-    await ac.audioWorklet.addModule(url);
+    if(!workletLoaded){ await ac.audioWorklet.addModule(url); workletLoaded=true; }   // registering the processor twice would throw
     micNode=new AudioWorkletNode(ac,'onset'); micNode.port.postMessage(sensTh());
     micNode.port.onmessage=e=>{
       if(e.data.on!==undefined){ const t=e.data.on; if(calMode) calOns.push(t); else if(playing) trainOnset(t); }   // outside Play mic onsets are ignored, so the rhythm is never overwritten
@@ -388,7 +390,7 @@ async function micStart(){
     const st=micStream.getAudioTracks()[0].getSettings?micStream.getAudioTracks()[0].getSettings():{};
     micInfo=st.autoGainControl?' · telefon vseeno uporablja samodejno ojačanje (AGC)':'';
     micOn=true; $('micBtn').classList.add('on'); $('micBtn').textContent='Mikrofon: vklop'; 
-    render('Mikrofon posluša med Play: igraj zraven, meri se točnost (slušalke!).'+micInfo);
+    if(!quiet) render('Mikrofon posluša med Play: igraj zraven, meri se točnost (slušalke!).'+micInfo);
   }catch(err){
     micStop();
     render('Mikrofon v živo tu ni dovoljen'+(err.name==='NotAllowedError'?'':' ('+err.message+')')+'. Uporabi aplikacijo na https://kouszeg.github.io/test/ritem-tap/');
@@ -444,7 +446,14 @@ function renderTrain(){
     return `<tr><td>#${c+1}</td>${v(mean)}${v(sd,1)}${v(mx,0)}<td>${ns.length-d.length}/${extras.filter(x=>x.cyc===c).length}</td></tr>`;
   }).join('');
   const mean=all.length?all.reduce((a,b)=>a+b,0)/all.length:0, sd=all.length>1?Math.sqrt(all.reduce((a,b)=>a+(b-mean)**2,0)/(all.length-1)):0;
-  tb.tFoot.rows[0].cells[0].innerHTML=`mikrofon zaznal ${micHits} udarcev`+(micHits===0?' – <span class="warn">nič: poglej merilnik, drsnik bolj desno</span>':'')+' · '+(all.length?`zadnje 3: ${mean>=0?'+':''}${ms(mean)} ms (${(100*mean/beat).toFixed(1)} % dobe) ± ${ms(sd)} ms (${(100*sd/beat).toFixed(1)} %) · `:'')
+  // trend of all matched deviations since Play: a steady slope = latency drift (or you speeding up / slowing down)
+  const md=noteLog.filter(n=>n.dev!==null); let trend='';
+  if(md.length>=10&&md[md.length-1].t-md[0].t>=20){
+    const mt=md.reduce((a,n)=>a+n.t,0)/md.length, mv=md.reduce((a,n)=>a+n.dev,0)/md.length;
+    let nu=0,de=0; md.forEach(n=>{nu+=(n.t-mt)*(n.dev-mv); de+=(n.t-mt)**2;});
+    const sl=nu/de*60000; trend=` · trend ${sl>=0?'+':''}${sl.toFixed(1)} ms/min`+(Math.abs(sl)>5?' <span class="warn">(lezenje)</span>':'');
+  }
+  tb.tFoot.rows[0].cells[0].innerHTML=`mikrofon zaznal ${micHits} udarcev`+trend+(micHits===0?' – <span class="warn">nič: poglej merilnik, drsnik bolj desno</span>':'')+' · '+(all.length?`zadnje 3: ${mean>=0?'+':''}${ms(mean)} ms (${(100*mean/beat).toFixed(1)} % dobe) ± ${ms(sd)} ms (${(100*sd/beat).toFixed(1)} %) · `:'')
     +'+ = prepozno · '+`latenca ${ms(calLat)} ms odšteta`+(calMeasured?'':' (privzeta – za drug telefon izvedi Kalib.)');
   tb.hidden=!last.length&&lastDev===null;
   if(lastDev!==null){ const p=Math.abs(lastDev)/beat, g=p<=.025?'g-ok':p>.05?'g-bad':'g-mid';
