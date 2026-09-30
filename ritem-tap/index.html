@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#141715">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Ritem Tap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: big TAP pad, big result, info line, cell grid, three buttons */
+:root{
+  --bg:#eef0ee; --panel:#ffffff; --fg:#1b1f1d; --muted:#5e6862; --line:#d3d9d5;
+  --accent:#d94f1e; --accent-fg:#ffffff; --hit:#1f6f5c; --warn:#a4560b;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141715; --panel:#1d211f; --fg:#e7ebe8; --muted:#95a19a; --line:#313733; --accent:#ff6a35; --accent-fg:#1a0d06; --hit:#4fc7a6; --warn:#f0a35b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141715; --panel:#1d211f; --fg:#e7ebe8; --muted:#95a19a; --line:#313733; --accent:#ff6a35; --accent-fg:#1a0d06; --hit:#4fc7a6; --warn:#f0a35b; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-mono);padding-inline:16px;padding-block:16px 24px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font:700 1.9rem/1 var(--f-display);margin:0;text-transform:uppercase}
+h1 span{color:var(--accent)}
+#pad{appearance:none;border:0;border-radius:18px;background:var(--accent);color:var(--accent-fg);font:700 3.6rem/1 var(--f-display);letter-spacing:.08em;
+  height:min(40vh,280px);min-height:160px;width:100%;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;transition:transform .05s,filter .05s}
+#pad.on{transform:scale(.985);filter:brightness(1.12)}
+button:focus-visible{outline:3px solid var(--fg);outline-offset:3px}
+#out{font:600 2.2rem/1.2 var(--f-mono);text-align:center;word-break:break-word;min-height:1.2em;font-variant-numeric:tabular-nums}
+#out.empty{color:var(--muted);font-size:1.1rem;font-weight:400}
+#note{text-align:center;color:var(--muted);font-size:.8rem;min-height:1.2em}
+.warn{color:var(--warn)}
+.grid-wrap{overflow-x:auto}
+#grid{display:grid;gap:3px}
+.cell{height:28px;border-radius:3px;background:var(--panel);border:1px solid var(--line);min-width:10px}
+.cell.one{border:2px solid var(--accent)}
+.cell.hit{background:var(--hit);border-color:var(--hit)}
+.cell.one.hit{border-color:var(--accent)}
+.cell.now{box-shadow:0 0 0 2px var(--fg);position:relative;z-index:1}
+.ctl{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;font-size:.8rem;color:var(--muted)}
+.ctl label{display:flex;align-items:center;gap:6px;font-weight:600;letter-spacing:.06em}
+.ctl input,.ctl select{font:600 1rem var(--f-mono);background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+.ctl input{width:4.2em}
+.cell{cursor:pointer}
+#stats{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
+#stats th,#stats td{padding:4px 6px;text-align:right;border-bottom:1px solid var(--line)}
+#stats th{font-weight:600;color:var(--muted);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase}
+#stats th:first-child,#stats td:first-child{text-align:left}
+#stats tfoot td{color:var(--muted);border-bottom:0;text-align:left;font-size:.75rem}
+#stats td.good{color:var(--hit)}
+#stats td.bad{color:var(--warn)}
+.mic{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;font-size:.8rem;color:var(--muted)}
+.mic button{font:700 1rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.mic button.on{background:var(--hit);border-color:var(--hit);color:var(--bg)}
+.meter{width:90px;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--hit)}
+.mic input[type=range]{width:110px}
+.btns{display:flex;gap:10px}
+.btns button{flex:1;font:700 1.2rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.btns .pri{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btns button:disabled{opacity:.4;cursor:default}
+@media (prefers-reduced-motion:reduce){#pad{transition:none}}
+
+/* ---- compact phone layout: everything on one screen; TAP first so it never moves when results appear ---- */
+body{padding-block:10px 12px}
+.wrap{gap:8px;max-width:520px}
+.set{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;justify-content:space-between;font-size:.72rem;color:var(--muted)}
+.set label{display:flex;align-items:center;gap:5px;font-weight:600;letter-spacing:.05em}
+.set input[type=number],.set select{font:600 .95rem var(--f-mono);background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:3px 5px}
+.set input[type=number]{width:3.6em}
+.set input[type=range]{width:80px}
+#micBtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+#fileBtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+#micBtn.on{background:var(--hit);border-color:var(--hit);color:var(--bg)}
+.meter{width:56px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--hit)}
+#out{font-size:1.7rem;line-height:1.15}
+#out .mt{font-size:.9rem;color:var(--muted);margin-left:.6em;font-weight:400;white-space:nowrap}
+#out.empty{font-size:.95rem}
+#note{font-size:.7rem;min-height:1em;line-height:1.3}
+.cell{height:22px}
+#stats{font-size:.75rem}
+#stats th,#stats td{padding:2px 4px}
+#stats tfoot td{font-size:.65rem}
+.btns button{padding:8px;font-size:1.05rem}
+#pad{height:clamp(110px,24vh,190px);min-height:0;font-size:2.8rem;border-radius:14px}
+.help{font-size:.78rem;color:var(--muted)}
+.help summary{cursor:pointer;font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:.72rem;padding:4px 0}
+.help ol{margin:6px 0 0;padding-left:1.3em;display:flex;flex-direction:column;gap:5px}
+.help b{color:var(--fg)}
+.help code{font-family:var(--f-mono);color:var(--fg)}
+</style>
+
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:light}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <button id="pad" type="button">TAP</button>
+  <div class="set">
+    <label for="bpm">BPM <input id="bpm" type="number" min="30" max="300" value="100"></label>
+    <label for="resSel">Delitev <select id="resSel"><option value="4">1/4</option><option value="8">1/8</option><option value="16" selected>1/16</option><option value="32">1/32</option><option value="64">1/64</option><option value="128">1/128</option></select></label>
+    <label for="clk"><input id="clk" type="checkbox"> Klik</label>
+    <button id="micBtn" type="button">Mikrofon</button>
+    <button id="fileBtn" type="button">Posnetek</button>
+    <input id="fileIn" type="file" accept="audio/*" capture hidden>
+    <span class="meter" title="Nivo; 50 % = prag"><i id="lvl"></i></span>
+    <input id="sens" type="range" min="1" max="10" value="5" aria-label="Občutljivost mikrofona">
+  </div>
+  <div id="out" class="empty">tapkaj ritem</div>
+  <div id="note"></div>
+  <div class="grid-wrap"><div id="grid"></div></div>
+  <table id="stats" hidden>
+    <thead><tr><th>#</th><th>BPM</th><th>RMS</th><th>Max</th><th>Nad pragom</th></tr></thead>
+    <tbody></tbody><tfoot><tr><td colspan="5"></td></tr></tfoot>
+  </table>
+  <div class="btns">
+    <button id="play" type="button">▶ Play</button>
+    <button id="reset" type="button">Reset</button>
+    <button id="copy" type="button" class="pri">Copy</button>
+  </div>
+  <details class="help">
+    <summary>Navodila</summary>
+    <ol>
+      <li><b>Tapkaj</b> ritem na TAP (ali preslednica). Ponovi ga vsaj 2–3× in tapni še prvo noto naslednje ponovitve; ponovitve se povprečijo. Pavza &gt; 3 s začne nov ritem.</li>
+      <li><b>Rezultat</b> so razmiki med notami v celicah, npr. <code>3-3-3-2-2</code>. Številka v oklepaju na začetku je pavza pred prvo noto.</li>
+      <li><b>BPM</b> se izračuna sam iz tapov. Popraviš ga ročno; vpliva samo na predvajanje.</li>
+      <li><b>Delitev</b> pred tapkanjem pove, kaj je ena enota: z 1/8 je <code>2-2-3</code> takt 7/8, s privzeto 1/16 pa 7/16 (iz tapov se to ne da ločiti). Kasneje finejša delitev doda celice za risanje, ritem pa ostane zapisan na prvotnem nivoju (<code>2-2-1½-1½</code>); pod njim je zapis v trenutni delitvi. Grobejša delitev nivo zniža (note se lahko zlijejo). Reset začne na trenutni delitvi.</li>
+      <li><b>Mreža</b>: klik na celico doda ali odstrani noto. Obrobljena celica je enka takta. Nov tap znova izračuna ritem iz tapov.</li>
+      <li><b>Play</b> ponavlja ritem v BPM; okvir kaže trenutno celico. <b>Klik</b> je metronom na vsako celico (enka višja) – sam ali skupaj s Play, npr. za tapkanje ali igranje zraven.</li>
+      <li><b>Statistika</b> (ko se ritem ponavlja): zadnje 3 ponovitve – tempo, odstopanje not v % dobe (RMS, največje) in število not nad pragom zaznave (~2,5 % intervala, najmanj 6 ms). Zeleno ≤ 2,5 %, oranžno &gt; 5 %.</li>
+      <li><b>Posnetek</b>: posnemi igranje (npr. bas) z diktafonom telefona ali neposredno iz gumba in ga naloži – udarci postanejo tapi. Drsnik občutljivosti velja tudi tu. <b>Mikrofon</b> v živo namesto tapov posluša napade not. Nastavi drsnik, da udarci presežejo polovico merilnika, tišina pa ne. Deluje le, če je stran odprta samostojno prek https ali localhost, ne v predogledu. Med poslušanjem predvajanje ni mogoče; uporabi slušalke.</li>
+      <li><b>Reset</b> pobriše vse, <b>Copy</b> kopira rezultat.</li>
+    </ol>
+  </details>
+</div>
+
+<script>
+/* Tapping → analysis (below) → pattern model m. The model is what is shown, painted and played.
+   1) Repeats (≥2×) are averaged into one cycle.
+   2) Unit = coarsest time u at which all note positions are ~whole multiples of u (approx. GCD).
+   3) BPM (quarter notes) from u, assuming u is 1/32…1/4 — the one closest to 110 BPM in 60–180. A guess.
+   Model: res = cells per whole note (16 → 1/16), cells = cycle length, hits = painted cells, bpm. */
+const $=id=>document.getElementById(id);
+let taps=[], r=null;
+let m={res:16,cells:16,hits:new Set(),bpm:100,base:16};   // base = level the rhythm is written in
+
+function period(iv){
+  for(let n=1;2*n<=iv.length;n++){
+    let miss=0, cmp=iv.length-n;
+    for(let j=0;j<cmp;j++){const a=iv[j],b=iv[j+n]; if(Math.abs(a-b)>.2*Math.max(a,b)) miss++;}
+    if(miss<=Math.floor(.1*cmp)) return n;
+  }
+  return 0;
+}
+function unitFit(pos,minGap){
+  // Scan u from 1.3× the smallest gap downwards (0.5 % steps); take the first (= coarsest) u
+  // at which positions are on average (RMS) within 0.08 of whole multiples and no two notes merge.
+  const T=.08, errOf=u=>Math.sqrt(pos.reduce((a,x)=>a+(x/u-Math.round(x/u))**2,0)/pos.length); // RMS, in units
+  let best=null;
+  for(let u=minGap*1.3;u>=35;u*=.995){
+    const k=pos.map(x=>Math.round(x/u));
+    if(!k.every((v,i)=>!i||v>k[i-1])) continue;
+    let e=errOf(u);
+    if(!best||e<best.err) best={u,err:e,k,loose:true};
+    if(e<=T){ // least-squares polish at the same multiples
+      const s=k.reduce((a,b,i)=>a+b*pos[i],0), q=k.reduce((a,b)=>a+b*b,0), u2=s/q;
+      return {u:u2,err:errOf(u2),k};
+    }
+  }
+  return best;
+}
+function analyze(){
+  const iv=taps.slice(1).map((t,i)=>t-taps[i]);
+  if(iv.length<2) return null;
+  const N=period(iv);
+  let seq=iv, reps=0;
+  if(N){ reps=Math.floor(iv.length/N);
+    seq=Array.from({length:N},(_,i)=>{let s=0;for(let c=0;c<reps;c++) s+=iv[i+c*N];return s/reps;}); }
+  const pos=[0]; seq.forEach(d=>pos.push(pos[pos.length-1]+d));
+  const f=unitFit(pos,Math.min(...seq)); if(!f) return null;
+  const gaps=f.k.slice(1).map((v,i)=>v-f.k[i]);
+  // BPM guess
+  let bpm=0,val=16,bestD=1e9;
+  for(const v of [32,16,8,4]){const b=60000/(f.u*v/4); if(b>=60&&b<180){const d=Math.abs(Math.log(b/110)); if(d<bestD){bestD=d;bpm=b;val=v;}}}
+  if(!bpm) bpm=60000/(f.u*val/4);
+  return {gaps,hits:f.k.slice(0,-1),cells:f.k[f.k.length-1],u:f.u,loop:!!N,N,reps,bpm,val,loose:!!f.loose};
+}
+
+
+/* ---------- model ---------- */
+function setRes(nr){
+  const f=nr/m.res, nc=m.cells*f;
+  if(!Number.isInteger(nc)) return `Cikel (${m.cells} × 1/${m.res}) se ne izide v 1/${nr}.`;
+  const nh=new Set([...m.hits].map(h=>Math.round(h*f)%nc));
+  const lost=m.hits.size-nh.size;
+  m={...m,res:nr,cells:nc,hits:nh,base:m.hits.size?Math.min(m.base,nr):nr};   // empty grid: delitev sets the level; else finer keeps it, coarser lowers it   // finer delitev keeps the base; coarser lowers it
+  return lost>0?`${lost} not se je zlilo (pregroba delitev).`:'';
+}
+/* Which note value one recognized unit is cannot be known from taps (7 units = 7/16 at 110 BPM
+   = 7/8 at 220 BPM). Rule: the unit is named by the current base level, i.e. the Delitev chosen before
+   tapping (default 1/16). BPM follows from that. A finer Delitev chosen earlier is kept for the grid. */
+function fromTaps(){
+  const prevRes=m.res, b=m.base;
+  r=analyze(); if(!r) return;
+  r={...r,val:b,bpm:60000/(r.u*b/4)};
+  m={res:b,cells:r.cells,hits:new Set(r.hits),bpm:Math.round(r.bpm),base:b};
+  if(prevRes>b) setRes(prevRes);
+}
+/* Gaps written in units of 1/unit. Finer notes than the unit become fractions: 1½, ¾, ⅛ … */
+const FR={0:'',.125:'⅛',.25:'¼',.375:'⅜',.5:'½',.625:'⅝',.75:'¾',.875:'⅞'};
+function num(v){const w=Math.floor(v+1e-9), f=Math.round((v-w)*1000)/1000; return f in FR?((w||!FR[f]?w:'')+FR[f]):v.toFixed(2);}
+function gapsText(unit=m.res){
+  const h=[...m.hits].sort((a,b)=>a-b); if(!h.length) return '';
+  const k=unit/m.res, g=h.map((v,i)=>i+1<h.length?h[i+1]-v:m.cells-v+h[0]);
+  return (h[0]?`(${num(h[0]*k)}) `:'')+g.map(x=>num(x*k)).join('-');
+}
+/* Cycle length as a meter in the base unit, reduced to the smallest denominator ≥ 4
+   (14/16 → 7/8, 16/16 → 4/4). Note: this also turns 6/8 into 3/4 and 12/8 into 6/4. */
+function meter(){
+  let n=m.cells*m.base/m.res, d=m.base; if(!Number.isInteger(n)) return '';
+  while(d>4&&n%2===0){n/=2;d/=2;} return n+'/'+d;
+}
+
+/* ---------- training stats: last 3 complete repetitions of your taps ----------
+   All taps of those repetitions (+ the first note of the next one) are fitted together to ONE steady
+   tempo by least squares: t = a + e·u, e = grid position in cells. Deviation of every note (incl. the
+   first of each repetition) = its residual, in % of a beat. Per-repetition tempo = the same fit done on
+   that repetition's own N+1 taps (not just its first-to-first duration, which is noisy for short loops).
+   "Nad pragom": |deviation| > perceptual JND ≈ 6 ms for gaps < 240 ms, ≈ 2.5 % of the gap for 240–1000 ms
+   (Friberg & Sundberg 1995, isochronous sequences — an approximation for patterns). */
+const jnd=g=>g<240?6:.025*Math.min(g,1000);
+function lsFit(pts){ // pts: [{e,t}] → {a,u}
+  const n=pts.length, me=pts.reduce((s,p)=>s+p.e,0)/n, mt=pts.reduce((s,p)=>s+p.t,0)/n;
+  let num=0,den=0; pts.forEach(p=>{num+=(p.e-me)*(p.t-mt); den+=(p.e-me)**2;});
+  const u=num/den; return {a:mt-u*me,u};
+}
+function stats(){
+  const tb=$('stats'); if(!r||!r.loop){tb.hidden=true;return;}
+  const N=r.N, full=Math.floor((taps.length-1)/N); if(full<1){tb.hidden=true;return;}
+  const k=r.hits.concat([r.cells]), c0=Math.max(0,full-3), pts=[];
+  for(let c=c0;c<full;c++) for(let j=0;j<N;j++) pts.push({c,j,e:(c-c0)*r.cells+k[j],t:taps[c*N+j]});
+  pts.push({c:full,j:0,e:(full-c0)*r.cells,t:taps[full*N]});
+  const g=lsFit(pts), beat=g.u*r.val/4, bpmOf=u=>60000/(u*r.val/4);
+  const gapBefore=j=>(j?k[j]-k[j-1]:r.cells-k[N-1])*g.u;
+  const rows=[];
+  for(let c=c0;c<full;c++){
+    const own=pts.filter(p=>p.c===c||(p.c===c+1&&p.j===0)), fc=lsFit(own);
+    const res=pts.filter(p=>p.c===c).map(p=>({d:p.t-(g.a+p.e*g.u),j:p.j}));
+    const rms=Math.sqrt(res.reduce((s,x)=>s+x.d*x.d,0)/res.length), mx=Math.max(...res.map(x=>Math.abs(x.d)));
+    rows.push({n:c+1,bpm:bpmOf(fc.u),rms:100*rms/beat,mx:100*mx/beat,over:res.filter(x=>Math.abs(x.d)>jnd(gapBefore(x.j))).length,cnt:res.length});
+  }
+  const cls=v=>v<=2.5?'good':v>5?'bad':'';
+  tb.tBodies[0].innerHTML=rows.map(x=>`<tr><td>#${x.n}</td><td>${x.bpm.toFixed(1)}</td><td class="${cls(x.rms)}">${x.rms.toFixed(1)} %</td><td class="${cls(x.mx)}">${x.mx.toFixed(1)} %</td><td>${x.over}/${x.cnt}</td></tr>`).join('');
+  const b=rows.map(x=>x.bpm), mean=b.reduce((s,x)=>s+x,0)/b.length, sd=Math.sqrt(b.reduce((s,x)=>s+(x-mean)**2,0)/b.length), dr=100*(b[b.length-1]-b[0])/b[0];
+  tb.tFoot.rows[0].cells[0].innerHTML=`tempo ${bpmOf(g.u).toFixed(1)} BPM`+(rows.length>1?` · raztros ±${(100*sd/mean).toFixed(1)} % · pomik ${dr>=0?'+':''}${dr.toFixed(1)} %`:'')
+    +' · odstopanje od enakomernega tempa v % dobe · prag zaznave ≈ 2,5 % intervala (≥ 6 ms)';
+  tb.hidden=false;
+}
+
+/* ---------- render ---------- */
+function render(msg){
+  const o=$('out'), txt=gapsText(m.base), mt=meter();
+  o.className=txt?'':'empty';
+  o.innerHTML=txt?`${txt}<span class="mt">${mt}${m.base!==m.res?' · v 1/'+m.base:''}</span>`:(taps.length?'…':'tapkaj ritem ali klikaj celice');
+  let n=txt&&m.base!==m.res?`1/${m.res}: ${gapsText(m.res)} · `:'';
+  if(r) n+=(r.loop?`ponavlja se · povprečje ${r.reps}× · `:'')+`tempo iz tapov ≈ ${Math.round(r.bpm)} BPM`+(r.loose?' · <span class="warn">nenatančno</span>':'');
+  if(msg) n=(n?n+' · ':'')+`<span class="warn">${msg}</span>`;
+  $('note').innerHTML=n;
+  $('bpm').value=m.bpm; $('resSel').value=m.res;
+  drawGrid(); stats();
+}
+function drawGrid(){
+  const g=$('grid'), row=Math.min(m.res,32,m.cells);   // wrap at one 4/4 bar (max 32 cells per row); last row may be partial
+  g.style.gridTemplateColumns=`repeat(${row},minmax(${m.res>=32?8:10}px,1fr))`;
+  g.innerHTML='';
+  for(let i=0;i<m.cells;i++){const c=document.createElement('div');c.dataset.n=i;c.className='cell'+(i%m.res===0?' one':'')   // "1" = start of each 4/4 bar
+    +(m.hits.has(i)?' hit':'');g.appendChild(c);}
+}
+$('grid').addEventListener('click',e=>{
+  const c=e.target.closest('.cell'); if(!c) return;
+  const i=+c.dataset.n; m.hits.has(i)?m.hits.delete(i):m.hits.add(i); render();
+});
+$('resSel').addEventListener('change',e=>{ const nr=+e.target.value; e.target.dataset.user=nr; render(setRes(nr)); });
+$('bpm').addEventListener('change',e=>{ m.bpm=Math.min(300,Math.max(30,+e.target.value||m.bpm)); render(); });
+
+/* ---------- playback: reads the model every cell, so painting / BPM / delitev apply live ---------- */
+let ac=null, playing=false, timer=null, nextT=0, ci=0, marks=[];
+const cellSec=()=>60/m.bpm*4/m.res;
+function tone(t,f,v,d,type){const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+d+.02);}
+/* One engine runs while Play and/or Klik is on: Klik = tick every cell ("1" higher), Play = the rhythm.
+   Klik alone works as a metronome to tap or play along with. */
+let engineOn=false;
+function ensureEngine(){
+  if(engineOn) return;
+  if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); ac.resume();
+  engineOn=true; nextT=ac.currentTime+.08; ci=0; marks=[];
+  timer=setInterval(()=>{
+    while(nextT<ac.currentTime+.15){
+      const i=ci%m.cells;
+      if($('clk').checked) tone(nextT,i===0?1600:1000,i===0?.25:.06,.03,'sine');
+      if(playing&&m.hits.has(i)) tone(nextT,i===0?150:220,i===0?.8:.45,.16,'triangle');
+      marks.push({t:nextT,i}); if(marks.length>64) marks.shift();
+      nextT+=cellSec(); ci=i+1;
+    }
+  },25);
+  requestAnimationFrame(head);
+}
+function stopEngineIfIdle(){
+  if(playing||$('clk').checked) return;
+  clearInterval(timer); engineOn=false; document.querySelectorAll('.cell.now').forEach(c=>c.classList.remove('now'));
+}
+function play(){ playing=true; $('play').textContent='■ Stop'; if(engineOn) ci=0; ensureEngine(); }   // rhythm starts on cell 0
+function stop(){ playing=false; $('play').textContent='▶ Play'; stopEngineIfIdle(); }
+function head(){
+  document.querySelectorAll('.cell.now').forEach(c=>c.classList.remove('now'));
+  if(!engineOn) return;
+  const now=ac.currentTime-(ac.outputLatency||ac.baseLatency||0), mk=marks.filter(x=>x.t<=now).pop();
+  if(mk){const el=$('grid').querySelector(`.cell[data-n="${mk.i}"]`); if(el) el.classList.add('now');}
+  requestAnimationFrame(head);
+}
+$('clk').addEventListener('change',e=>{ e.target.checked?ensureEngine():stopEngineIfIdle(); });
+$('play').onclick=()=>{ if(micOn){render('Med snemanjem z mikrofonom je predvajanje izklopljeno (mikrofon bi ga ujel).');return;} playing?stop():play(); };
+
+/* ---------- microphone onsets ----------
+   Per sample: peak-follower envelope (100 ms release). Onset = envelope above gate × noise floor AND
+   ≥ 1.6× the envelope 30 ms earlier (a real attack, not a ringing note), 50 ms dead time.
+   Onset time = that sample, in the audio clock (ms). Offline test on synthetic bass plucks (41–220 Hz):
+   timing error ~1–3 ms, occasionally ~10 ms on low notes; a re-attack < ~60 ms after a loud note can be missed.
+   Constant input latency shifts all onsets equally, so it does not affect pattern, tempo or deviation. */
+let micOn=false, micStream=null, micNode=null;
+const WORKLET=`class O extends AudioWorkletProcessor{
+  constructor(){super();this.D=Math.round(.03*sampleRate);this.buf=new Float32Array(this.D);this.bi=0;this.env=0;this.fl=1e-6;
+    this.rel=Math.exp(-1/(.1*sampleRate));this.last=-1;this.G=8;this.warm=Math.round(.2*sampleRate);this.pk=0;this.n=0;
+    this.port.onmessage=e=>this.G=e.data;}
+  process(inp){const x=inp[0]&&inp[0][0]; if(!x) return true;
+    for(let i=0;i<x.length;i++){
+      const a=Math.abs(x[i]); this.env = a>this.env ? a : this.env*this.rel;   // peak follower, 100 ms release
+      const ref=this.buf[this.bi]; this.buf[this.bi]=this.env; this.bi=(this.bi+1)%this.D;  // envelope 30 ms ago
+      if(this.warm>0){this.warm--; this.fl=Math.max(this.fl*.999+this.env*.001,1e-6); continue;}
+      if(this.env<3*this.fl) this.fl=this.fl*.9995+this.env*.0005;         // noise floor, tracked only when quiet
+      const t=currentTime+i/sampleRate;
+      if(this.env>this.G*this.fl && this.env>1.6*ref && t-this.last>.05){this.last=t; this.port.postMessage({on:t});}
+      if(this.env>this.pk) this.pk=this.env;
+    }
+    if(++this.n>=16){this.port.postMessage({lvl:this.pk/(this.G*this.fl)});this.pk=0;this.n=0;}
+    return true;}}
+registerProcessor('onset',O);`;
+const sensTh=()=>[0,40,28,20,14,10,7,5,3.5,2.5,2][+$('sens').value];   // gate above noise floor; higher sensitivity → lower gate
+async function micStart(){
+  try{
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) throw new Error('ni podpore');
+    if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); await ac.resume();
+    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    const url=URL.createObjectURL(new Blob([WORKLET],{type:'application/javascript'}));
+    await ac.audioWorklet.addModule(url);
+    micNode=new AudioWorkletNode(ac,'onset'); micNode.port.postMessage(sensTh());
+    micNode.port.onmessage=e=>{
+      if(e.data.on!==undefined) tap(e.data.on*1000,true);
+      else $('lvl').style.width=Math.min(100,50*e.data.lvl)+'%';   // 50 % = trigger level
+    };
+    const src=ac.createMediaStreamSource(micStream), sink=ac.createGain(); sink.gain.value=0;
+    src.connect(micNode).connect(sink).connect(ac.destination);   // keep the node running, silent
+    if(playing) stop();
+    micOn=true; taps=[]; r=null; $('micBtn').classList.add('on'); $('micBtn').textContent='Mikrofon: vklop'; $('pad').textContent='POSLUŠAM';
+    render('Igraj. Za točnost: slušalke, brez glasbe v ozadju.');
+  }catch(err){
+    micStop();
+    render('Mikrofon v živo tu ni dovoljen'+(err.name==='NotAllowedError'?'':' ('+err.message+')')+'. Uporabi Posnetek: posnemi igranje in ga naloži.');
+  }
+}
+function micStop(){
+  if(micStream) micStream.getTracks().forEach(t=>t.stop()); micStream=null;
+  if(micNode){micNode.disconnect(); micNode=null;}
+  micOn=false; $('micBtn').classList.remove('on'); $('micBtn').textContent='Mikrofon'; $('pad').textContent='TAP'; $('lvl').style.width='0';
+  taps=[]; r=null;
+}
+/* ---------- recorded audio: same onset detector, run offline on an uploaded / recorded file ---------- */
+function detectOnsets(x,sr,G){
+  const D=Math.round(.03*sr), buf=new Float32Array(D), rel=Math.exp(-1/(.1*sr)), warm=Math.round(.2*sr), out=[];
+  let bi=0, env=0, fl=1e-6, last=-1;
+  for(let n=0;n<x.length;n++){
+    const a=Math.abs(x[n]); env=a>env?a:env*rel;
+    const ref=buf[bi]; buf[bi]=env; bi=(bi+1)%D;
+    if(n<warm){fl=Math.max(fl*.999+env*.001,1e-6); continue;}
+    if(env<3*fl) fl=fl*.9995+env*.0005;
+    const t=n/sr;
+    if(env>G*fl&&env>1.6*ref&&t-last>.05){last=t; out.push(t);}
+  }
+  return out;
+}
+$('fileBtn').onclick=()=>$('fileIn').click();
+$('fileIn').addEventListener('change',async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{
+    if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)();
+    const ab=await ac.decodeAudioData(await f.arrayBuffer());
+    const n=ab.length, x=new Float32Array(n);
+    for(let c=0;c<ab.numberOfChannels;c++){const d=ab.getChannelData(c); for(let i=0;i<n;i++) x[i]+=d[i]/ab.numberOfChannels;}
+    const on=detectOnsets(x,ab.sampleRate,sensTh());
+    if(micOn) micStop(); if(playing) stop();
+    // same rule as live tapping: a pause > 3 s starts a new rhythm, so the last phrase is analysed
+    taps=[]; r=null;
+    for(const t of on){const ms=t*1000; if(taps.length&&ms-taps[taps.length-1]>3000) taps=[]; taps.push(ms);}
+    fromTaps();
+    render(`Posnetek ${ab.duration.toFixed(1)} s: ${on.length} udarcev`+(on.length<4?' – premalo; povečaj občutljivost':'')+'.');
+  }catch(err){ render('Posnetka ni bilo mogoče prebrati ('+(err.message||err.name)+').'); }
+});
+$('micBtn').onclick=()=>{ if(micOn){micStop();render();} else micStart(); };
+$('sens').addEventListener('input',()=>{ if(micNode) micNode.port.postMessage(sensTh()); });
+
+/* ---------- input ---------- */
+function tap(t,fromMic=false){
+  if(micOn&&!fromMic) return;   // screen taps and mic onsets use different clocks
+  $('pad').classList.add('on'); setTimeout(()=>$('pad').classList.remove('on'),70);
+  if(playing) stop();
+  if(taps.length&&t-taps[taps.length-1]<25) return;
+  if(taps.length&&t-taps[taps.length-1]>3000){taps=[];r=null;}
+  taps.push(t); fromTaps(); render();
+}
+$('pad').addEventListener('pointerdown',e=>{e.preventDefault();tap(e.timeStamp||performance.now());});
+document.addEventListener('keydown',e=>{ if(e.code!=='Space'||e.repeat||/INPUT|SELECT/.test(e.target.tagName)) return; e.preventDefault(); tap(e.timeStamp||performance.now()); });
+$('reset').onclick=()=>{stop();taps=[];r=null;m={res:m.res,cells:m.res,hits:new Set(),bpm:m.bpm,base:m.res};render();};
+$('copy').onclick=async()=>{
+  const txt=gapsText(m.base)+(meter()?' ('+meter()+')':''); if(!gapsText()) return;
+  try{await navigator.clipboard.writeText(txt);$('note').textContent='kopirano';}
+  catch{const rg=document.createRange();rg.selectNodeContents($('out'));const s=getSelection();s.removeAllRanges();s.addRange(rg);$('note').textContent='označeno – kopiraj ročno';}
+};
+render();
+</script>
+<script>
+if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
