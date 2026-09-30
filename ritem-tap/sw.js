@@ -1,5 +1,5 @@
 // Network-first: always tries the latest version from GitHub Pages; the cache is only an offline fallback.
-const C='ritem-tap-v9', FILES=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png'];
+const C='ritem-tap-v10', FILES=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(FILES)));self.skipWaiting();});
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch',e=>{
