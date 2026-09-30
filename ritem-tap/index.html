@@ -14,14 +14,14 @@
 /* Layout: big TAP pad, big result, info line, cell grid, three buttons */
 :root{
   --bg:#eef0ee; --panel:#ffffff; --fg:#1b1f1d; --muted:#5e6862; --line:#d3d9d5;
-  --accent:#d94f1e; --accent-fg:#ffffff; --hit:#1f6f5c; --warn:#a4560b;
+  --accent:#d94f1e; --accent-fg:#ffffff; --hit:#1f6f5c; --warn:#a4560b; --ok:#1d8a4a; --mid:#a07800; --bad:#c62828;
   --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#141715; --panel:#1d211f; --fg:#e7ebe8; --muted:#95a19a; --line:#313733; --accent:#ff6a35; --accent-fg:#1a0d06; --hit:#4fc7a6; --warn:#f0a35b; color-scheme:dark}}
+  --bg:#141715; --panel:#1d211f; --fg:#e7ebe8; --muted:#95a19a; --line:#313733; --accent:#ff6a35; --accent-fg:#1a0d06; --hit:#4fc7a6; --warn:#f0a35b; --ok:#4fd07f; --mid:#f2c94c; --bad:#ff5a52; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#141715; --panel:#1d211f; --fg:#e7ebe8; --muted:#95a19a; --line:#313733; --accent:#ff6a35; --accent-fg:#1a0d06; --hit:#4fc7a6; --warn:#f0a35b; color-scheme:dark}
+  --bg:#141715; --panel:#1d211f; --fg:#e7ebe8; --muted:#95a19a; --line:#313733; --accent:#ff6a35; --accent-fg:#1a0d06; --hit:#4fc7a6; --warn:#f0a35b; --ok:#4fd07f; --mid:#f2c94c; --bad:#ff5a52; color-scheme:dark}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-mono);padding-inline:16px;padding-block:16px 24px}
 .wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
@@ -52,8 +52,11 @@ button:focus-visible{outline:3px solid var(--fg);outline-offset:3px}
 #stats th{font-weight:600;color:var(--muted);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase}
 #stats th:first-child,#stats td:first-child{text-align:left}
 #stats tfoot td{color:var(--muted);border-bottom:0;text-align:left;font-size:.75rem}
-#stats td.good{color:var(--hit)}
-#stats td.bad{color:var(--warn)}
+/* timing grades: ≤ 2.5 % of a beat = ok (≈ perceptual JND), 2.5–5 % = borderline, > 5 % = off */
+#stats td.good,.g-ok{color:var(--ok)}
+#stats td.mid,.g-mid{color:var(--mid)}
+#stats td.bad,.g-bad{color:var(--bad)}
+#stats td small{display:block;font-size:.7em;color:var(--muted)}
 .mic{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;font-size:.8rem;color:var(--muted)}
 .mic button{font:700 1rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
 .mic button.on{background:var(--hit);border-color:var(--hit);color:var(--bg)}
@@ -138,9 +141,9 @@ body{margin:0}
       <li><b>Delitev</b> pred tapkanjem pove, kaj je ena enota: z 1/8 je <code>2-2-3</code> takt 7/8, s privzeto 1/16 pa 7/16 (iz tapov se to ne da ločiti). Kasneje finejša delitev doda celice za risanje, ritem pa ostane zapisan na prvotnem nivoju (<code>2-2-1½-1½</code>); pod njim je zapis v trenutni delitvi. Grobejša delitev nivo zniža (note se lahko zlijejo). Reset začne na trenutni delitvi.</li>
       <li><b>Mreža</b>: klik na celico doda ali odstrani noto. Obrobljena celica je enka takta. Nov tap znova izračuna ritem iz tapov.</li>
       <li><b>Play</b> ponavlja ritem v BPM; okvir kaže trenutno celico. <b>Klik</b> je metronom na vsako celico (enka višja) – sam ali skupaj s Play, npr. za tapkanje ali igranje zraven.</li>
-      <li><b>Statistika</b> (ko se ritem ponavlja): zadnje 3 ponovitve – tempo, odstopanje not v % dobe (RMS, največje) in število not nad pragom zaznave (~2,5 % intervala, najmanj 6 ms). Zeleno ≤ 2,5 %, oranžno &gt; 5 %.</li>
+      <li><b>Statistika</b> (ko se ritem ponavlja): zadnje 3 ponovitve – tempo, odstopanje not v % dobe (RMS, največje) in število not nad pragom zaznave (~2,5 % intervala, najmanj 6 ms). Zeleno ≤ 2,5 %, rumeno do 5 %, rdeče &gt; 5 %.</li>
       <li><b>Mikrofon</b> v živo namesto tapov posluša napade not. Drsnik je prag glasnosti (levo = samo močni udarci); merilnik kaže glasnost, oranžna črta prag – udarci morajo čez črto, tišina in šum ne. Deluje le, če je stran odprta samostojno prek https ali localhost, ne v predogledu. Med poslušanjem predvajanje ni mogoče; uporabi slušalke.</li>
-      <li><b>Trening</b>: vklopi Mikrofon in Play, igraj zraven (s slušalkami). Tabela kaže za zadnje 3 ponovitve povprečni zamik (+ = prepozno), raztros (SD), največje odstopanje ter zgrešene/odvečne note. Enkrat izvedi <b>Kalib.</b> prek zvočnika (tiho okolje): izmeri zamik telefona, da je povprečje pravilno. Bluetooth slušalke dodajo svoj, neizmerjen zamik.</li>
+      <li><b>Trening</b>: vklopi Mikrofon in Play, igraj zraven (s slušalkami). Tabela kaže za zadnje 3 ponovitve povprečni zamik (+ = prepozno), raztros (SD), največje odstopanje (v % dobe in ms) ter zgrešene/odvečne note. Zeleno ≤ 2,5 % dobe (≈ prag zaznave), rumeno 2,5–5 %, rdeče &gt; 5 %. Enkrat izvedi <b>Kalib.</b> prek zvočnika (tiho okolje): izmeri zamik telefona, da je povprečje pravilno. Bluetooth slušalke dodajo svoj, neizmerjen zamik.</li>
       <li><b>Reset</b> pobriše vse, <b>Copy</b> kopira rezultat.</li>
     </ol>
   </details>
@@ -262,7 +265,7 @@ function stats(){
     const rms=Math.sqrt(res.reduce((s,x)=>s+x.d*x.d,0)/res.length), mx=Math.max(...res.map(x=>Math.abs(x.d)));
     rows.push({n:c+1,bpm:bpmOf(fc.u),rms:100*rms/beat,mx:100*mx/beat,over:res.filter(x=>Math.abs(x.d)>jnd(gapBefore(x.j))).length,cnt:res.length});
   }
-  const cls=v=>v<=2.5?'good':v>5?'bad':'';
+  const cls=v=>v<=2.5?'good':v>5?'bad':'mid';
   tb.tBodies[0].innerHTML=rows.map(x=>`<tr><td>#${x.n}</td><td>${x.bpm.toFixed(1)}</td><td class="${cls(x.rms)}">${x.rms.toFixed(1)} %</td><td class="${cls(x.mx)}">${x.mx.toFixed(1)} %</td><td>${x.over}/${x.cnt}</td></tr>`).join('');
   const b=rows.map(x=>x.bpm), mean=b.reduce((s,x)=>s+x,0)/b.length, sd=Math.sqrt(b.reduce((s,x)=>s+(x-mean)**2,0)/b.length), dr=100*(b[b.length-1]-b[0])/b[0];
   tb.tFoot.rows[0].cells[0].innerHTML=`tempo ${bpmOf(g.u).toFixed(1)} BPM`+(rows.length>1?` · raztros ±${(100*sd/mean).toFixed(1)} % · pomik ${dr>=0?'+':''}${dr.toFixed(1)} %`:'')
@@ -428,15 +431,17 @@ function renderTrain(){
   tb.tBodies[0].innerHTML=last.map(c=>{
     const ns=noteLog.filter(n=>n.cyc===c), d=ns.filter(n=>n.dev!==null).map(n=>n.dev); all.push(...d);
     const mean=d.length?d.reduce((a,b)=>a+b,0)/d.length:0, sd=d.length>1?Math.sqrt(d.reduce((a,b)=>a+(b-mean)**2,0)/(d.length-1)):0, mx=d.length?Math.max(...d.map(Math.abs)):0;
-    const cls=v=>Math.abs(v)/beat<=.025?'good':Math.abs(v)/beat>.05?'bad':'';
-    const v=(x,f)=>d.length>(f||0)?f===1?`<td class="${cls(x)}">${ms(x)} ms</td>`:`<td class="${cls(x)}">${x>=0&&f===undefined?'+':''}${ms(x)} ms</td>`:'<td>—</td>';
+    const cls=v=>Math.abs(v)/beat<=.025?'good':Math.abs(v)/beat>.05?'bad':'mid';
+    const pc=x=>(100*x/beat).toFixed(1).replace('.',',');
+    const v=(x,f)=>{ if(!(d.length>(f||0))) return '<td>—</td>'; const sg=f===undefined&&x>=0?'+':''; return `<td class="${cls(x)}">${sg}${pc(x)} %<small>${sg}${ms(x)} ms</small></td>`; };
     return `<tr><td>#${c+1}</td>${v(mean)}${v(sd,1)}${v(mx,0)}<td>${ns.length-d.length}/${extras.filter(x=>x.cyc===c).length}</td></tr>`;
   }).join('');
   const mean=all.length?all.reduce((a,b)=>a+b,0)/all.length:0, sd=all.length>1?Math.sqrt(all.reduce((a,b)=>a+(b-mean)**2,0)/(all.length-1)):0;
   tb.tFoot.rows[0].cells[0].innerHTML=`mikrofon zaznal ${micHits} udarcev`+(micHits===0?' – <span class="warn">nič: poglej merilnik, drsnik bolj desno</span>':'')+' · '+(all.length?`zadnje 3: ${mean>=0?'+':''}${ms(mean)} ms (${(100*mean/beat).toFixed(1)} % dobe) ± ${ms(sd)} ms (${(100*sd/beat).toFixed(1)} %) · `:'')
     +'+ = prepozno · '+(calLat?`latenca ${ms(calLat)} ms odšteta`:'<span class="warn">latenca ni kalibrirana – povprečje vsebuje zamik telefona</span>');
   tb.hidden=!last.length&&lastDev===null;
-  if(lastDev!==null) $('note').innerHTML=`zadnja nota: <b>${lastDev>=0?'+':''}${ms(lastDev)} ms</b> ${Math.abs(lastDev)<.006?'točno':lastDev>0?'prepozno':'prezgodaj'}`;
+  if(lastDev!==null){ const p=Math.abs(lastDev)/beat, g=p<=.025?'g-ok':p>.05?'g-bad':'g-mid';
+    $('note').innerHTML=`zadnja nota: <b class="${g}">${lastDev>=0?'+':''}${(100*lastDev/beat).toFixed(1).replace('.',',')} % (${lastDev>=0?'+':''}${ms(lastDev)} ms)</b> ${p<=.025?'točno':lastDev>0?'prepozno':'prezgodaj'}`; }
 }
 setInterval(()=>{ if(playing&&micOn) renderTrain(); },400);
 
