@@ -58,7 +58,7 @@ button:focus-visible{outline:3px solid var(--fg);outline-offset:3px}
 .mic button{font:700 1rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
 .mic button.on{background:var(--hit);border-color:var(--hit);color:var(--bg)}
 .meter{width:90px;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
-.meter i{display:block;height:100%;width:0;background:var(--hit);transition:width .12s linear}
+.meter i{display:block;height:100%;width:0;background:var(--hit)}
 .mic input[type=range]{width:110px}
 .btns{display:flex;gap:10px}
 .btns button{flex:1;font:700 1.2rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
@@ -77,8 +77,9 @@ body{padding-block:10px 12px}
 #micBtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
 .sbtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
 #micBtn.on{background:var(--hit);border-color:var(--hit);color:var(--bg)}
-.meter{width:56px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
-.meter i{display:block;height:100%;width:0;background:var(--hit);transition:width .12s linear}
+.meter{position:relative;width:70px;height:8px;border-radius:3px;background:var(--line);overflow:hidden}
+.meter b{position:absolute;top:0;bottom:0;width:2px;left:50%;background:var(--accent)}
+.meter i{display:block;height:100%;width:0;background:var(--hit)}
 #out{font-size:1.7rem;line-height:1.15}
 #out .mt{font-size:.9rem;color:var(--muted);margin-left:.6em;font-weight:400;white-space:nowrap}
 #out.empty{font-size:.95rem}
@@ -113,7 +114,7 @@ body{margin:0}
     <label for="clk"><input id="clk" type="checkbox"> Klik</label>
     <button id="micBtn" type="button">Mikrofon</button>
     <button id="calBtn" type="button" class="sbtn">Kalib.</button>
-    <span class="meter" title="Nivo; 50 % = prag"><i id="lvl"></i></span>
+    <span class="meter" title="Nivo mikrofona (−60…0 dB); črta = prag"><i id="lvl"></i><b id="gate"></b></span>
     <input id="sens" type="range" min="1" max="10" value="4" aria-label="Občutljivost mikrofona">
   </div>
   <div id="out" class="empty">tapkaj ritem</div>
@@ -138,7 +139,7 @@ body{margin:0}
       <li><b>Mreža</b>: klik na celico doda ali odstrani noto. Obrobljena celica je enka takta. Nov tap znova izračuna ritem iz tapov.</li>
       <li><b>Play</b> ponavlja ritem v BPM; okvir kaže trenutno celico. <b>Klik</b> je metronom na vsako celico (enka višja) – sam ali skupaj s Play, npr. za tapkanje ali igranje zraven.</li>
       <li><b>Statistika</b> (ko se ritem ponavlja): zadnje 3 ponovitve – tempo, odstopanje not v % dobe (RMS, največje) in število not nad pragom zaznave (~2,5 % intervala, najmanj 6 ms). Zeleno ≤ 2,5 %, oranžno &gt; 5 %.</li>
-      <li><b>Mikrofon</b> v živo namesto tapov posluša napade not. Drsnik je prag glasnosti (levo = samo močni udarci); udarci morajo preseči polovico merilnika, tišina in šum ne. Deluje le, če je stran odprta samostojno prek https ali localhost, ne v predogledu. Med poslušanjem predvajanje ni mogoče; uporabi slušalke.</li>
+      <li><b>Mikrofon</b> v živo namesto tapov posluša napade not. Drsnik je prag glasnosti (levo = samo močni udarci); merilnik kaže glasnost, oranžna črta prag – udarci morajo čez črto, tišina in šum ne. Deluje le, če je stran odprta samostojno prek https ali localhost, ne v predogledu. Med poslušanjem predvajanje ni mogoče; uporabi slušalke.</li>
       <li><b>Trening</b>: vklopi Mikrofon in Play, igraj zraven (s slušalkami). Tabela kaže za zadnje 3 ponovitve povprečni zamik (+ = prepozno), raztros (SD), največje odstopanje ter zgrešene/odvečne note. Enkrat izvedi <b>Kalib.</b> prek zvočnika (tiho okolje): izmeri zamik telefona, da je povprečje pravilno. Bluetooth slušalke dodajo svoj, neizmerjen zamik.</li>
       <li><b>Reset</b> pobriše vse, <b>Copy</b> kopira rezultat.</li>
     </ol>
@@ -358,7 +359,7 @@ const WORKLET=`class O extends AudioWorkletProcessor{
       if(this.env>gate && this.env>this.rise*ref && t-this.last>.05){this.last=t; this.port.postMessage({on:t});}
       if(this.env>this.pk) this.pk=this.env;
     }
-    if(++this.n>=16){this.port.postMessage({lvl:this.pk/Math.max(this.G*this.fl,this.abs,this.K*this.pks)});this.pk=0;this.n=0;}
+    if(++this.n>=8){this.port.postMessage({pk:this.pk,gate:Math.max(this.G*this.fl,this.abs,this.K*this.pks)});this.pk=0;this.n=0;}
     return true;}}
 registerProcessor('onset',O);`;
 /* Slider 1 (strict) … 10 (sensitive): absolute level −6 … −42 dBFS, share of recent peak 60 … 10 %,
@@ -374,7 +375,8 @@ async function micStart(){
     micNode=new AudioWorkletNode(ac,'onset'); micNode.port.postMessage(sensTh());
     micNode.port.onmessage=e=>{
       if(e.data.on!==undefined){ const t=e.data.on; if(calMode) calOns.push(t); else if(playing) trainOnset(t); else tap(t*1000,true); }
-      else { lvlDisp=Math.max(Math.min(1,e.data.lvl/2),lvlDisp*.85); $('lvl').style.width=(100*lvlDisp).toFixed(0)+'%'; }   // peak-hold with slow fall; 50 % = trigger
+      else { const db=x=>Math.max(0,Math.min(1,(20*Math.log10(x+1e-9)+60)/60));   // meter: −60 … 0 dBFS
+        lvlDisp=Math.max(db(e.data.pk),lvlDisp-.04); $('lvl').style.width=(100*lvlDisp).toFixed(1)+'%'; $('gate').style.left=(100*db(e.data.gate)).toFixed(1)+'%'; }
     };
     const src=ac.createMediaStreamSource(micStream), sink=ac.createGain(); sink.gain.value=0;
     src.connect(micNode).connect(sink).connect(ac.destination);   // keep the node running, silent
