@@ -144,7 +144,7 @@ body{margin:0}
       <li><b>Mreža</b>: klik na celico doda ali odstrani noto. Obrobljena celica je enka takta. Nov tap znova izračuna ritem iz tapov.</li>
       <li><b>Play</b> ponavlja ritem v BPM; okvir kaže trenutno celico. <b>Klik</b> je metronom na vsako celico (enka višja) – sam ali skupaj s Play, npr. za tapkanje ali igranje zraven.</li>
       <li><b>Statistika</b> (ko se ritem ponavlja): zadnje 3 ponovitve – tempo, odstopanje not v % dobe (RMS, največje) in število not nad pragom zaznave (~2,5 % intervala, najmanj 6 ms). Zeleno ≤ 2,5 %, rumeno do 5 %, rdeče &gt; 5 %.</li>
-      <li><b>Mikrofon</b> v živo namesto tapov posluša napade not. Drsnik je prag glasnosti (levo = samo močni udarci); merilnik kaže glasnost, oranžna črta prag – udarci morajo čez črto, tišina in šum ne. Deluje le, če je stran odprta samostojno prek https ali localhost, ne v predogledu. Med poslušanjem predvajanje ni mogoče; uporabi slušalke.</li>
+      <li><b>Mikrofon</b> posluša samo med Play (trening); ritma ne spreminja. Drsnik je prag glasnosti (levo = samo močni udarci); merilnik kaže glasnost, oranžna črta prag – udarci morajo čez črto, tišina in šum ne. Deluje le, če je stran odprta samostojno prek https ali localhost, ne v predogledu. Uporabi slušalke.</li>
       <li><b>Trening</b>: vklopi Mikrofon in Play, igraj zraven (s slušalkami). Tabela kaže za zadnje 3 ponovitve povprečni zamik (+ = prepozno), raztros (SD), največje odstopanje (v % dobe in ms) ter zgrešene/odvečne note. Zeleno ≤ 2,5 % dobe (≈ prag zaznave), rumeno 2,5–5 %, rdeče &gt; 5 %. Privzeta latenca je 150 ms (izmerjena na tvojem telefonu); na drugi napravi izvedi <b>Kalib.</b> prek zvočnika (tiho okolje). Vrednost je pod gumbom. Bluetooth slušalke dodajo svoj, neizmerjen zamik.</li>
       <li><b>Reset</b> pobriše vse, <b>Copy</b> kopira rezultat.</li>
     </ol>
@@ -379,7 +379,7 @@ async function micStart(){
     await ac.audioWorklet.addModule(url);
     micNode=new AudioWorkletNode(ac,'onset'); micNode.port.postMessage(sensTh());
     micNode.port.onmessage=e=>{
-      if(e.data.on!==undefined){ const t=e.data.on; if(calMode) calOns.push(t); else if(playing) trainOnset(t); else tap(t*1000,true); }
+      if(e.data.on!==undefined){ const t=e.data.on; if(calMode) calOns.push(t); else if(playing) trainOnset(t); }   // outside Play mic onsets are ignored, so the rhythm is never overwritten
       else { const db=x=>Math.max(0,Math.min(1,(20*Math.log10(x+1e-9)+60)/60));   // meter: −60 … 0 dBFS
         lvlDisp=Math.max(db(e.data.pk),lvlDisp-.04); $('lvl').style.width=(100*lvlDisp).toFixed(1)+'%'; $('gate').style.left=(100*db(e.data.gate)).toFixed(1)+'%'; }
     };
@@ -387,8 +387,8 @@ async function micStart(){
     src.connect(micNode).connect(sink).connect(ac.destination);   // keep the node running, silent
     const st=micStream.getAudioTracks()[0].getSettings?micStream.getAudioTracks()[0].getSettings():{};
     micInfo=st.autoGainControl?' · telefon vseeno uporablja samodejno ojačanje (AGC)':'';
-    micOn=true; taps=[]; r=null; $('micBtn').classList.add('on'); $('micBtn').textContent='Mikrofon: vklop'; $('pad').textContent='POSLUŠAM';
-    render('Brez Play: igraj, udarci postanejo tapi. S Play: igraj zraven, meri se točnost (slušalke!).'+micInfo);
+    micOn=true; $('micBtn').classList.add('on'); $('micBtn').textContent='Mikrofon: vklop'; 
+    render('Mikrofon posluša med Play: igraj zraven, meri se točnost (slušalke!).'+micInfo);
   }catch(err){
     micStop();
     render('Mikrofon v živo tu ni dovoljen'+(err.name==='NotAllowedError'?'':' ('+err.message+')')+'. Uporabi aplikacijo na https://kouszeg.github.io/test/ritem-tap/');
@@ -398,7 +398,7 @@ function micStop(){
   if(micStream) micStream.getTracks().forEach(t=>t.stop()); micStream=null;
   if(micNode){micNode.disconnect(); micNode=null;}
   micOn=false; $('micBtn').classList.remove('on'); $('micBtn').textContent='Mikrofon'; $('pad').textContent='TAP'; $('lvl').style.width='0';
-  taps=[]; r=null;
+  
 }
 
 
@@ -472,7 +472,6 @@ $('sens').addEventListener('input',()=>{ if(micNode) micNode.port.postMessage(se
 
 /* ---------- input ---------- */
 function tap(t,fromMic=false){
-  if(micOn&&!fromMic) return;   // screen taps and mic onsets use different clocks
   $('pad').classList.add('on'); setTimeout(()=>$('pad').classList.remove('on'),70);
   if(playing) stop();
   if(taps.length&&t-taps[taps.length-1]<25) return;
