@@ -79,7 +79,7 @@ body{padding-block:10px 12px}
 .set input[type=range]{width:80px}
 #micBtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
 .calw{display:inline-flex;flex-direction:column;align-items:center;gap:1px}
-.calw small{font-size:.6rem;color:var(--muted);white-space:nowrap}
+.calw small{font-size:.7rem;color:var(--fg);font-weight:600;white-space:nowrap}
 .sbtn{font:700 .9rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
 #micBtn.on{background:var(--hit);border-color:var(--hit);color:var(--bg)}
 .meter{position:relative;width:70px;height:8px;border-radius:3px;background:var(--line);overflow:hidden}
@@ -145,7 +145,7 @@ body{margin:0}
       <li><b>Play</b> ponavlja ritem v BPM; okvir kaže trenutno celico. <b>Klik</b> je metronom na vsako celico (enka višja) – sam ali skupaj s Play, npr. za tapkanje ali igranje zraven.</li>
       <li><b>Statistika</b> (ko se ritem ponavlja): zadnje 3 ponovitve – tempo, odstopanje not v % dobe (RMS, največje) in število not nad pragom zaznave (~2,5 % intervala, najmanj 6 ms). Zeleno ≤ 2,5 %, rumeno do 5 %, rdeče &gt; 5 %.</li>
       <li><b>Mikrofon</b> v živo namesto tapov posluša napade not. Drsnik je prag glasnosti (levo = samo močni udarci); merilnik kaže glasnost, oranžna črta prag – udarci morajo čez črto, tišina in šum ne. Deluje le, če je stran odprta samostojno prek https ali localhost, ne v predogledu. Med poslušanjem predvajanje ni mogoče; uporabi slušalke.</li>
-      <li><b>Trening</b>: vklopi Mikrofon in Play, igraj zraven (s slušalkami). Tabela kaže za zadnje 3 ponovitve povprečni zamik (+ = prepozno), raztros (SD), največje odstopanje (v % dobe in ms) ter zgrešene/odvečne note. Zeleno ≤ 2,5 % dobe (≈ prag zaznave), rumeno 2,5–5 %, rdeče &gt; 5 %. Privzeta latenca je 130 ms (izmerjena na tvojem telefonu); na drugi napravi izvedi <b>Kalib.</b> prek zvočnika (tiho okolje). Vrednost je pod gumbom. Bluetooth slušalke dodajo svoj, neizmerjen zamik.</li>
+      <li><b>Trening</b>: vklopi Mikrofon in Play, igraj zraven (s slušalkami). Tabela kaže za zadnje 3 ponovitve povprečni zamik (+ = prepozno), raztros (SD), največje odstopanje (v % dobe in ms) ter zgrešene/odvečne note. Zeleno ≤ 2,5 % dobe (≈ prag zaznave), rumeno 2,5–5 %, rdeče &gt; 5 %. Privzeta latenca je 150 ms (izmerjena na tvojem telefonu); na drugi napravi izvedi <b>Kalib.</b> prek zvočnika (tiho okolje). Vrednost je pod gumbom. Bluetooth slušalke dodajo svoj, neizmerjen zamik.</li>
       <li><b>Reset</b> pobriše vse, <b>Copy</b> kopira rezultat.</li>
     </ol>
   </details>
@@ -408,8 +408,8 @@ function micStop(){
    Latency: output + input delay of the phone, measured by Kalib. (speaker → mic loopback). Without
    calibration the average offset contains this unknown constant delay; the spread (SD) does not. */
 let noteLog=[], extras=[], cyc=-1, calLat=0, calMode=false, calOns=[];
-/* Default 130 ms: measured repeatedly on the user's phone (speaker → mic). Kalib. overrides it. */
-const CAL_DEF=.13; let calMeasured=false;
+/* Default 150 ms: measured repeatedly on the user's phone (speaker → mic). Kalib. overrides it. */
+const CAL_DEF=.15; let calMeasured=false;
 try{const v=+localStorage.getItem('rt-lat'); if(v){calLat=v; calMeasured=true;}}catch(e){}
 if(!calLat) calLat=CAL_DEF;
 function calShow(){ $('calLbl').textContent=Math.round(calLat*1000)+' ms'+(calMeasured?'':' (privzeto)'); }
