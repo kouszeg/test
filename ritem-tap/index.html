@@ -333,7 +333,7 @@ function stopEngineIfIdle(){
   if(playing||$('clk').checked) return;
   clearInterval(timer); engineOn=false; document.querySelectorAll('.cell.now').forEach(c=>c.classList.remove('now'));
 }
-function play(){ if(micOn){ micStop(); micStart(true); }   // fresh input stream each Play: resets any input buffering that built up
+function play(){ restartAt=-1; restarts=0; if(micOn){ micStop(); micStart(true); }   // fresh input stream each Play: resets any input buffering that built up
   noteLog=[]; extras=[]; micHits=0; lastDev=null; cyc=engineOn?-1:-1; playing=true; $('play').textContent='■ Stop'; if(engineOn) ci=0; ensureEngine(); }   // rhythm starts on cell 0
 function stop(){ playing=false; $('play').textContent='▶ Play'; stopEngineIfIdle(); }
 function head(){
@@ -352,7 +352,7 @@ $('play').onclick=()=>{ playing?stop():play(); if(playing&&micOn) render('Trenin
    Onset time = that sample, in the audio clock (ms). Offline test on synthetic bass plucks (41–220 Hz):
    timing error ~1–3 ms, occasionally ~10 ms on low notes; a re-attack < ~60 ms after a loud note can be missed.
    Constant input latency shifts all onsets equally, so it does not affect pattern, tempo or deviation. */
-let lvlDisp=0, micInfo='', micOn=false, micStream=null, micNode=null;
+let micSrc=null, restartAt=-1, restarting=false, lastRestart=-1e9, restarts=0, lvlDisp=0, micInfo='', micOn=false, micStream=null, micNode=null;
 const WORKLET=`class O extends AudioWorkletProcessor{
   constructor(){super();this.D=Math.round(.03*sampleRate);this.buf=new Float32Array(this.D);this.bi=0;this.env=0;this.fl=1e-6;
     this.rel=Math.exp(-1/(.1*sampleRate));this.last=-1;this.G=6;this.abs=.04;this.K=.35;this.rise=2.4;this.pks=0;this.pdec=Math.exp(-1/(2*sampleRate));this.warm=Math.round(.2*sampleRate);this.pk=0;this.n=0;
@@ -380,7 +380,16 @@ async function micStart(quiet=false){
   try{
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) throw new Error('ni podpore');
     if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); await ac.resume();
-    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,latency:0}});
+    // Run the context at the mic's own sample rate: resampling between mismatched device clocks is a
+    // likely source of a growing input delay (assumption, not verified on this phone).
+    const msr=(micStream.getAudioTracks()[0].getSettings?micStream.getAudioTracks()[0].getSettings():{}).sampleRate;
+    if(msr&&ac.sampleRate!==msr){
+      const wasPlay=playing, wasEng=engineOn; clearInterval(timer); engineOn=false;
+      try{ const nc=new AudioContext({sampleRate:msr,latencyHint:'interactive'}); await ac.close(); ac=nc; workletLoaded=false; await ac.resume(); }catch(e){}
+      noteLog=[]; extras=[]; marks=[];   // times from the old context are meaningless
+      if(wasEng){ playing=wasPlay; ensureEngine(); }
+    }
     const url=URL.createObjectURL(new Blob([WORKLET],{type:'application/javascript'}));
     if(!workletLoaded){ await ac.audioWorklet.addModule(url); workletLoaded=true; }   // registering the processor twice would throw
     micNode=new AudioWorkletNode(ac,'onset'); micNode.port.postMessage(sensTh());
@@ -389,7 +398,7 @@ async function micStart(quiet=false){
       else { const db=x=>Math.max(0,Math.min(1,(20*Math.log10(x+1e-9)+60)/60));   // meter: −60 … 0 dBFS
         lvlDisp=Math.max(db(e.data.pk),lvlDisp-.04); $('lvl').style.width=(100*lvlDisp).toFixed(1)+'%'; $('gate').style.left=(100*db(e.data.gate)).toFixed(1)+'%'; }
     };
-    const src=ac.createMediaStreamSource(micStream), sink=ac.createGain(); sink.gain.value=0;
+    const src=ac.createMediaStreamSource(micStream), sink=ac.createGain(); sink.gain.value=0; micSrc=src;
     src.connect(micNode).connect(sink).connect(ac.destination);   // keep the node running, silent
     const st=micStream.getAudioTracks()[0].getSettings?micStream.getAudioTracks()[0].getSettings():{};
     micInfo=st.autoGainControl?' · telefon vseeno uporablja samodejno ojačanje (AGC)':'';
@@ -403,6 +412,7 @@ async function micStart(quiet=false){
 function micStop(){
   if(micStream) micStream.getTracks().forEach(t=>t.stop()); micStream=null;
   if(micNode){micNode.disconnect(); micNode=null;}
+  if(micSrc){micSrc.disconnect(); micSrc=null;}
   micOn=false; $('micBtn').classList.remove('on'); $('micBtn').textContent='Mikrofon'; $('pad').textContent='TAP'; $('lvl').style.width='0';
   
 }
@@ -429,12 +439,22 @@ function matchWin(){
    average lean). Each note is scored against it, so only the error within the beat remains; slow drift
    does not count. Matching also follows the baseline, so drift cannot push notes out of the window. */
 const med=a=>{const b=[...a].sort((x,y)=>x-y), k=b.length>>1; return b.length%2?b[k]:(b[k-1]+b[k])/2;};
-function baseline(){ const r=noteLog.filter(n=>n.dev!==null).slice(-16).map(n=>n.dev); return r.length>=4?med(r):0; }
+function baseline(){ const r=noteLog.filter(n=>n.dev!==null&&n.t>restartAt).slice(-16).map(n=>n.dev); return r.length>=4?med(r):0; }
+/* Auto-recover: if the measured delay has crept > 60 ms away from the calibrated latency, reopen the mic
+   (resets the input buffer). Notes during the ~0.5 s gap are excluded, not counted as missed. */
+async function micRecover(){
+  if(restarting||!micOn||ac.currentTime-lastRestart<4) return;
+  restarting=true; lastRestart=ac.currentTime; const t0=ac.currentTime;
+  micStop(); await micStart(true);
+  const t1=ac.currentTime+.4; restartAt=t1; restarts++;
+  noteLog.forEach(n=>{ if(n.dev===null&&n.t>=t0-.2&&n.t<=t1) n.skip=true; });
+  restarting=false;
+}
 function trainOnset(t){
   micHits++;
   const base=baseline(), tt=t-calLat, w=matchWin(); let best=null;
   for(const n of noteLog){ const d=tt-base-n.t; if(n.dev===null&&Math.abs(d)<w&&(!best||Math.abs(d)<Math.abs(tt-base-best.t))) best=n; }
-  if(best){best.dev=tt-best.t; best.rel=best.dev-base; lastDev=best.rel;}
+  if(best){best.dev=tt-best.t; best.rel=best.dev-base; lastDev=best.rel; if(Math.abs(baseline())>.06) micRecover();}
   else{ const near=noteLog.reduce((a,n)=>!a||Math.abs(n.t-tt)<Math.abs(a.t-tt)?n:a,null); extras.push({t:tt,cyc:near?near.cyc:cyc}); }
   renderTrain();
 }
@@ -452,7 +472,7 @@ function renderTrain(){
     const cls=v=>Math.abs(v)/beat<=.025?'good':Math.abs(v)/beat>.05?'bad':'mid';
     const pc=x=>(100*x/beat).toFixed(1).replace('.',',');
     const v=(x,f)=>{ if(!(d.length>(f||0))) return '<td>—</td>'; const sg=f===undefined&&x>=0?'+':''; return `<td class="${cls(x)}">${sg}${pc(x)} %<small>${sg}${ms(x)} ms</small></td>`; };
-    return `<tr><td>#${c+1}</td>${v(mean)}${v(sd,1)}${v(mx,0)}<td>${ns.length-d.length}/${extras.filter(x=>x.cyc===c).length}</td></tr>`;
+    return `<tr><td>#${c+1}</td>${v(mean)}${v(sd,1)}${v(mx,0)}<td>${ns.filter(n=>n.rel===null&&!n.skip).length}/${extras.filter(x=>x.cyc===c).length}</td></tr>`;
   }).join('');
   const mean=all.length?all.reduce((a,b)=>a+b,0)/all.length:0, sd=all.length>1?Math.sqrt(all.reduce((a,b)=>a+(b-mean)**2,0)/(all.length-1)):0;
   // trend of all matched deviations since Play: a steady slope = latency drift (or you speeding up / slowing down)
@@ -463,7 +483,7 @@ function renderTrain(){
     const sl=nu/de*60000; trend=` · trend ${sl>=0?'+':''}${sl.toFixed(1)} ms/min`+(Math.abs(sl)>5?' <span class="warn">(lezenje)</span>':'');
   }
   tb.tFoot.rows[0].cells[0].innerHTML=`mikrofon zaznal ${micHits} udarcev`+trend+(micHits===0?' – <span class="warn">nič: poglej merilnik, drsnik bolj desno</span>':'')+' · '+(all.length?`zadnje 3: ${mean>=0?'+':''}${ms(mean)} ms (${(100*mean/beat).toFixed(1)} % dobe) ± ${ms(sd)} ms (${(100*sd/beat).toFixed(1)} %) · `:'')
-    +'+ = prepozno glede na tvoj drseči utrip · '+`osnova ${ms(calLat+baseline())} ms (latenca+drift, ne šteje v napako)`;
+    +'+ = prepozno glede na tvoj drseči utrip · '+`osnova ${ms(calLat+baseline())} ms (latenca+drift, ne šteje v napako)`+(restarts?` · mikrofon samodejno ponastavljen ${restarts}×`:'')+` · izhod ${ms(ac.outputLatency||0)} ms, ${ac.sampleRate} Hz`;
   tb.hidden=!last.length&&lastDev===null;
   if(lastDev!==null){ const p=Math.abs(lastDev)/beat, g=p<=.025?'g-ok':p>.05?'g-bad':'g-mid';
     $('note').innerHTML=`zadnja nota: <b class="${g}">${lastDev>=0?'+':''}${(100*lastDev/beat).toFixed(1).replace('.',',')} % (${lastDev>=0?'+':''}${ms(lastDev)} ms)</b> ${p<=.025?'točno':lastDev>0?'prepozno':'prezgodaj'}`; }
