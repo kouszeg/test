@@ -213,7 +213,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.8';   // bump on every release; shown bottom right
+const VERSION = '1.9';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -523,7 +523,8 @@ async function folderReady(ask){
   if (!rootHandle) return false;
   const opts = { mode: 'readwrite' };
   if (await rootHandle.queryPermission(opts) !== 'granted' && !(ask && await rootHandle.requestPermission(opts) === 'granted')) return false;
-  if (!recDir) { recDir = await rootHandle.getDirectoryHandle('recordings', { create: true }); curDir = recDir; curPath = []; }
+  // if the chosen folder itself is called "recordings", use it directly (no recordings\recordings)
+  if (!recDir) { recDir = /^recordings$/i.test(rootHandle.name) ? rootHandle : await rootHandle.getDirectoryHandle('recordings', { create: true }); curDir = recDir; curPath = []; }
   return true;
 }
 let iniLoaded = false;
@@ -531,7 +532,7 @@ async function showDir(){
   if (!rootHandle) { $('dirinfo').textContent = 'Mapa ni izbrana, shranjuje v Prenose'; $('unlock').hidden = true; render(); return; }
   const ok = await folderReady(false);
   $('unlock').hidden = ok;
-  $('dirinfo').textContent = 'Mapa: ' + rootHandle.name + '\\recordings';
+  $('dirinfo').textContent = 'Mapa: ' + rootHandle.name + (/^recordings$/i.test(rootHandle.name) ? '' : '\\recordings');
   if (ok) { if (!iniLoaded) { iniLoaded = true; await loadIni(); } await loadFolder(); } else render();
 }
 // Reads the current folder fresh (also used by "Osveži"): subfolders first, then audio files, newest first.
