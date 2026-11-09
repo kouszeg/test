@@ -1,0 +1,14 @@
+{
+  "name": "Bass Recorder",
+  "short_name": "Bass Rec",
+  "description": "Hitro snemanje basa: Space za snemanje, samodejna normalizacija in shranjevanje WAV.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#16181d",
+  "theme_color": "#16181d",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

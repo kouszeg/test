@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bass Recorder</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#16181d">
+<style>
+  :root{--bg:#16181d;--fg:#e8e8ea;--mut:#8a8f98;--acc:#e5484d;--ok:#3dd68c;--card:#20232a;--line:#2e323b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,Segoe UI,sans-serif;padding:16px;max-width:760px;margin-inline:auto}
+  h1{font-size:20px;margin:0 0 12px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  select,button,input[type=number]{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+  button{cursor:pointer}
+  #rec{font-size:18px;padding:14px 22px;min-width:180px}
+  #rec.on{background:var(--acc);border-color:var(--acc)}
+  .meter{flex:1;min-width:200px;height:14px;background:var(--card);border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .meter i{display:block;height:100%;width:0;background:var(--ok)}
+  .meter i.hot{background:var(--acc)}
+  .mut{color:var(--mut);font-size:13px}
+  ul{list-style:none;padding:0;margin:12px 0}
+  li{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  li .n{flex:1;min-width:160px}
+  li.playing{border-color:var(--ok)}
+  kbd{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:12px}
+</style>
+</head>
+<body>
+<h1>Bass Recorder</h1>
+
+<div class="row">
+  <select id="dev"><option value="">— klikni "Omogoči vhod" —</option></select>
+  <button id="enable">Omogoči vhod</button>
+</div>
+
+<div class="row">
+  <button id="rec" disabled>● Snemaj</button>
+  <div class="meter"><i id="m"></i></div>
+  <span id="db" class="mut">-∞ dB</span>
+</div>
+
+<div class="row mut">
+  <label><input type="checkbox" id="norm" checked> Normaliziraj na</label>
+  <input type="number" id="tgt" value="-1" step="0.5" style="width:70px"> dBFS
+  <label><input type="checkbox" id="autosave" checked> Samodejno shrani WAV</label>
+  <label><input type="checkbox" id="autoloop"> Po snemanju predvajaj v zanki</label>
+</div>
+
+<div class="row mut">
+  <button id="pickdir">📁 Izberi mapo</button>
+  <span id="dirinfo">Shranjuje v Prenose (mapa ni izbrana)</span>
+</div>
+
+<p class="mut"><kbd>Space</kbd> snemaj/ustavi · <kbd>L</kbd> zanka zadnjega posnetka · <kbd>Esc</kbd> ustavi predvajanje</p>
+
+<ul id="list"></ul>
+
+<script>
+const $ = id => document.getElementById(id);
+let ctx, stream, src, proc, mon, recording = false, chunks = [], chCount = 1, takes = [], player = null;
+
+const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+                set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
+
+async function listDevices(){
+  const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput');
+  const saved = store.get('dev');
+  $('dev').innerHTML = devs.map(d => `<option value="${d.deviceId}">${d.label || 'Vhod'}</option>`).join('');
+  const pick = devs.find(d => d.deviceId === saved) || devs.find(d => /me-?90|boss/i.test(d.label));
+  if (pick) $('dev').value = pick.deviceId;
+}
+
+// Capture runs on the audio thread (AudioWorklet) so UI work can't cause dropouts/clicks.
+const WORKLET = `class Cap extends AudioWorkletProcessor{
+  constructor(o){super();this.nc=o.processorOptions.nc;}
+  process(inp){const i=inp[0];if(!i||!i.length)return true;
+    const bufs=[];let pk=0;
+    for(let c=0;c<this.nc;c++){const d=i[Math.min(c,i.length-1)];bufs.push(d.slice());
+      for(let k=0;k<d.length;k++){const a=d[k]<0?-d[k]:d[k];if(a>pk)pk=a;}}
+    this.port.postMessage({bufs,pk},bufs.map(b=>b.buffer));return true;}}
+registerProcessor('cap',Cap);`;
+let peakHold = 0, lastUi = 0;
+
+async function openInput(){
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  const id = $('dev').value;
+  stream = await navigator.mediaDevices.getUserMedia({ audio: {
+    deviceId: id ? { exact: id } : undefined,
+    echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: { ideal: 2 } } });
+  const st = stream.getAudioTracks()[0].getSettings();
+  chCount = Math.min(2, st.channelCount || 1);
+  // Run the context at the device's own rate to avoid resampling artifacts.
+  if (!ctx || (st.sampleRate && ctx.sampleRate !== st.sampleRate)) {
+    if (ctx) await ctx.close();
+    ctx = new AudioContext(st.sampleRate ? { sampleRate: st.sampleRate, latencyHint: 'playback' } : { latencyHint: 'playback' });
+    await ctx.audioWorklet.addModule('data:text/javascript;charset=utf-8,' + encodeURIComponent(WORKLET));
+  }
+  await ctx.resume();
+  if (src) src.disconnect();
+  if (proc) { proc.port.onmessage = null; proc.disconnect(); }
+  src = ctx.createMediaStreamSource(stream);
+  proc = new AudioWorkletNode(ctx, 'cap', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: chCount,
+    channelCountMode: 'explicit', processorOptions: { nc: chCount } });
+  mon = ctx.createGain(); mon.gain.value = 0; // no monitoring through the computer
+  proc.port.onmessage = ({ data }) => {
+    if (recording) chunks.push(data.bufs);
+    peakHold = Math.max(peakHold * 0.9, data.pk);
+    const now = performance.now();
+    if (now - lastUi < 50) return;
+    lastUi = now;
+    const db = peakHold > 0 ? 20 * Math.log10(peakHold) : -Infinity;
+    $('m').style.width = Math.max(0, Math.min(100, (db + 60) / 60 * 100)) + '%';
+    $('m').classList.toggle('hot', db > -1);
+    $('db').textContent = (isFinite(db) ? db.toFixed(1) : '-∞') + ' dB';
+  };
+  src.connect(proc); proc.connect(mon); mon.connect(ctx.destination);
+  $('rec').disabled = false;
+}
+
+$('enable').onclick = async () => {
+  try { await openInput(); await listDevices(); await openInput(); $('enable').textContent = 'Osveži vhod'; }
+  catch (err) { alert('Ni dostopa do vhoda: ' + err.message); }
+};
+$('dev').onchange = async () => { store.set('dev', $('dev').value); try { await openInput(); } catch (err) { alert(err.message); } };
+
+function toggleRec(){
+  if ($('rec').disabled) return;
+  if (!recording) {
+    stopPlay(); chunks = []; recording = true;
+    $('rec').classList.add('on'); $('rec').textContent = '■ Ustavi';
+  } else {
+    recording = false;
+    $('rec').classList.remove('on'); $('rec').textContent = '● Snemaj';
+    finishTake();
+  }
+}
+$('rec').onclick = toggleRec;
+
+function finishTake(){
+  if (!chunks.length) return;
+  const len = chunks.reduce((s, b) => s + b[0].length, 0);
+  const ch = [];
+  for (let c = 0; c < chCount; c++) {
+    const out = new Float32Array(len); let o = 0;
+    for (const b of chunks) { out.set(b[c], o); o += b[c].length; }
+    ch.push(out);
+  }
+  let pk = 0; for (const d of ch) for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > pk) pk = a; }
+  const rawDb = pk > 0 ? 20 * Math.log10(pk) : -Infinity;
+  let gainDb = 0;
+  if ($('norm').checked && pk > 0) {
+    gainDb = parseFloat($('tgt').value || '-1') - rawDb;
+    const g = Math.pow(10, gainDb / 20);
+    for (const d of ch) for (let i = 0; i < d.length; i++) d[i] *= g;
+  }
+  const ts = new Date(); const p = n => String(n).padStart(2, '0');
+  const name = `bass_${ts.getFullYear()}${p(ts.getMonth()+1)}${p(ts.getDate())}_${p(ts.getHours())}${p(ts.getMinutes())}${p(ts.getSeconds())}.wav`;
+  const blob = encodeWav(ch, ctx.sampleRate);
+  const take = { name, blob, url: URL.createObjectURL(blob), secs: len / ctx.sampleRate, rawDb, gainDb };
+  takes.unshift(take); render();
+  if ($('autosave').checked) download(take);
+  if ($('autoloop').checked) play(take, true);
+}
+
+function encodeWav(ch, sr){
+  const n = ch[0].length, nc = ch.length, bps = 3, buf = new ArrayBuffer(44 + n * nc * bps), v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0,'RIFF'); v.setUint32(4, 36 + n*nc*bps, true); w(8,'WAVE'); w(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,nc,true); v.setUint32(24,sr,true);
+  v.setUint32(28,sr*nc*bps,true); v.setUint16(32,nc*bps,true); v.setUint16(34,24,true); w(36,'data'); v.setUint32(40,n*nc*bps,true);
+  let o = 44;
+  for (let i = 0; i < n; i++) for (let c = 0; c < nc; c++) {
+    let s = Math.max(-1, Math.min(1, ch[c][i])); let x = Math.round(s < 0 ? s * 0x800000 : s * 0x7FFFFF);
+    v.setUint8(o, x & 255); v.setUint8(o+1, (x >> 8) & 255); v.setUint8(o+2, (x >> 16) & 255); o += 3;
+  }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+
+// ---- Save straight into a chosen folder (File System Access API); fall back to a normal download.
+let dirHandle = null;
+const idb = (mode, fn) => new Promise((res, rej) => {
+  const r = indexedDB.open('bass-recorder', 1);
+  r.onupgradeneeded = () => r.result.createObjectStore('kv');
+  r.onsuccess = () => { const tx = r.result.transaction('kv', mode); const q = fn(tx.objectStore('kv')); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); };
+  r.onerror = () => rej(r.error);
+});
+async function dirReady(ask){
+  if (!dirHandle) return false;
+  const opts = { mode: 'readwrite' };
+  if (await dirHandle.queryPermission(opts) === 'granted') return true;
+  return ask && await dirHandle.requestPermission(opts) === 'granted';
+}
+async function showDir(){
+  if (!dirHandle) { $('dirinfo').textContent = 'Shranjuje v Prenose (mapa ni izbrana)'; return; }
+  const ok = await dirReady(false);
+  $('dirinfo').textContent = 'Mapa: ' + dirHandle.name + (ok ? '' : ' (dovoljenje se potrdi ob prvem snemanju)');
+}
+if (!('showDirectoryPicker' in window)) $('pickdir').style.display = 'none';
+$('pickdir').onclick = async () => {
+  try { dirHandle = await showDirectoryPicker({ id: 'bass-recorder', mode: 'readwrite' });
+        await idb('readwrite', s => s.put(dirHandle, 'dir')); showDir(); }
+  catch (e) { if (e.name !== 'AbortError') alert(e.message); }
+};
+(async () => { try { dirHandle = await idb('readonly', s => s.get('dir')) || null; } catch {} showDir(); })();
+
+async function download(t){
+  try {
+    if (await dirReady(true)) {
+      const fh = await dirHandle.getFileHandle(t.name, { create: true });
+      const w = await fh.createWritable(); await w.write(t.blob); await w.close();
+      t.saved = dirHandle.name; render(); showDir(); return;
+    }
+  } catch (e) { console.warn('folder save failed, falling back to download', e); }
+  const a = document.createElement('a'); a.href = t.url; a.download = t.name; document.body.appendChild(a); a.click(); a.remove();
+  t.saved = 'Prenosi'; render();
+}
+
+function play(t, loop){
+  stopPlay();
+  player = new Audio(t.url); player.loop = loop; player.play(); player._t = t;
+  player.onended = () => { player = null; render(); };
+  render();
+}
+function stopPlay(){ if (player) { player.pause(); player = null; render(); } }
+
+function render(){
+  $('list').innerHTML = '';
+  takes.forEach(t => {
+    const li = document.createElement('li');
+    if (player && player._t === t) li.classList.add('playing');
+    const n = document.createElement('span'); n.className = 'n';
+    n.textContent = `${t.name} · ${t.secs.toFixed(1)} s · vrh ${isFinite(t.rawDb) ? t.rawDb.toFixed(1) : '-∞'} dB` + (t.gainDb ? ` (${t.gainDb >= 0 ? "+" : ""}${t.gainDb.toFixed(1)} dB)` : '') + (t.rawDb > -0.3 ? " · ⚠ CLIP na vhodu" : "") + (t.saved ? " · ✓ " + t.saved : "");
+    const mk = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.onclick = fn; return b; };
+    li.append(n, mk('▶', () => play(t, false)), mk('⟳ Zanka', () => play(t, true)), mk('■', stopPlay), mk('⤓ Shrani', () => download(t)));
+    $('list').append(li);
+  });
+}
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') { e.preventDefault(); toggleRec(); }
+  else if (e.code === 'KeyL' && takes[0]) play(takes[0], true);
+  else if (e.code === 'Escape') stopPlay();
+});
+if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
