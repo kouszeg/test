@@ -195,9 +195,11 @@
     </div>
     <div class="wave" id="wavebox"><canvas id="wave"></canvas></div>
     <div class="ed-acts">
-      <button id="edplay" class="ghost go">Predvajaj</button>
-      <button id="edloop" class="ghost go">Predvajaj zanko</button>
-      <button id="edstop" class="ghost">Ustavi</button>
+      <span class="acts">
+        <button id="edplay" title="Predvajaj" aria-label="Predvajaj"></button>
+        <button id="edloop" title="Predvajaj v zanki" aria-label="Predvajaj v zanki"></button>
+        <button id="edstop" title="Ustavi" aria-label="Ustavi"></button>
+      </span>
       <button id="edauto" class="ghost">Najdi zanko</button>
       <button id="edclear" class="ghost">Počisti A–B</button>
       <button id="edfit" class="ghost">Prikaži vse</button>
@@ -220,7 +222,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.12';   // bump on every release; shown bottom right
+const VERSION = '1.13';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -703,7 +705,7 @@ function render(){
   takes.forEach(t => {
     const open = !!(ed && ed.t === t), active = open && !!ed.src;
     const li = document.createElement('li'); if (active) li.classList.add('playing'); else if (open) li.classList.add('editing');
-    li.onclick = e => { if (e.target.closest('button') || e.target.closest('input')) return; if (!open) play(t, false); else if (!ed.src) edPlay(false); };
+    li.onclick = e => { if (e.target.closest('button') || e.target.closest('input')) return; if (!open) play(t, true); else if (!ed.src) edPlay(true, ed.cursor); };
     const info = document.createElement('div');
     const nm = document.createElement('div'); nm.className = 'tname'; nm.textContent = t.name;
     const ren = document.createElement('button'); ren.className = 'ren'; ren.title = 'Preimenuj'; ren.setAttribute('aria-label', 'Preimenuj');
@@ -788,7 +790,7 @@ function edUpdate(){
   const z = dur() / (ed.view.e - ed.view.s);
   $('edsel').textContent = (hasSel() ? `A ${fmtS(ed.a)}   B ${fmtS(ed.b)}   dolžina ${fmtS(ed.b - ed.a)}` : `Dolžina ${fmtS(dur())}`) + (z > 1.05 ? `   povečava ${z.toFixed(1)}×` : '');
   $('edcrop').disabled = !hasSel();
-  $('edloop').textContent = hasSel() ? 'Predvajaj zanko A–B' : 'Predvajaj zanko';
+  $('edloop').title = hasSel() ? 'Predvajaj zanko A–B' : 'Predvajaj v zanki';
   drawWave();
 }
 function drawWave(){
@@ -906,7 +908,7 @@ function edPos(){
 function edStop(){   // pause: remember where we were
   if (!ed || !ed.src) return;
   ed.cursor = edPos(); const s = ed.src; ed.src = null; s.onended = null; try { s.stop(); } catch {}
-  render(); drawWave();
+  render(); drawWave(); edBtns();
 }
 function edPlay(loop, from){
   if (!ed) return;
@@ -921,9 +923,9 @@ function edPlay(loop, from){
   const s = ac.createBufferSource(); s.buffer = ed.ab; s.loop = ed.looping;
   if (ed.looping) { s.loopStart = ed.la; s.loopEnd = ed.lb; }
   s.connect(ac.destination); s.start(0, from);
-  s.onended = () => { if (ed && ed.src === s) { ed.src = null; ed.cursor = 0; render(); drawWave(); } };
+  s.onended = () => { if (ed && ed.src === s) { ed.src = null; ed.cursor = 0; render(); drawWave(); edBtns(); } };
   ed.src = s; ed.off = from; ed.t0 = ac.currentTime;
-  render(); drawWave();
+  render(); drawWave(); edBtns();
 }
 // A/B moved while looping: retarget the running source without stopping it.
 function edLoopUpdate(){
@@ -934,6 +936,8 @@ function edLoopUpdate(){
   ed.src.loopStart = la; ed.src.loopEnd = lb;
   ed.off = pos; ed.t0 = pctx.currentTime; ed.la = la; ed.lb = lb;
 }
+$('edplay').innerHTML = ICON.play; $('edloop').innerHTML = ICON.loop; $('edstop').innerHTML = ICON.stop;
+function edBtns(){ const on = !!(ed && ed.src); $('edplay').classList.toggle('active', on && !ed.looping); $('edloop').classList.toggle('active', on && ed.looping); }
 $('edplay').onclick = () => edPlay(false);
 $('edloop').onclick = () => edPlay(true);
 $('edstop').onclick = edStop;
