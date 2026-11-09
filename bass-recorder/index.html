@@ -189,6 +189,7 @@
     </div>
     <div class="wave" id="wavebox"><canvas id="wave"></canvas></div>
     <div class="ed-acts">
+      <button id="edplay" class="ghost go">Predvajaj</button>
       <button id="edloop" class="ghost go">Predvajaj zanko</button>
       <button id="edstop" class="ghost">Ustavi</button>
       <button id="edauto" class="ghost">Najdi zanko</button>
@@ -213,7 +214,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.10';   // bump on every release; shown bottom right
+const VERSION = '1.11';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -524,7 +525,7 @@ async function folderReady(ask){
   const opts = { mode: 'readwrite' };
   if (await rootHandle.queryPermission(opts) !== 'granted' && !(ask && await rootHandle.requestPermission(opts) === 'granted')) return false;
   // if the chosen folder itself is called "recordings", use it directly (no recordings\recordings)
-  if (!recDir) { recDir = /^recordings$/i.test(rootHandle.name) ? rootHandle : await rootHandle.getDirectoryHandle('recordings', { create: true }); curDir = recDir; curPath = []; }
+  if (!recDir) { recDir = rootHandle; curDir = recDir; curPath = []; }   // the chosen folder is the recordings folder
   return true;
 }
 let iniLoaded = false;
@@ -532,7 +533,7 @@ async function showDir(){
   if (!rootHandle) { $('dirinfo').textContent = 'Mapa ni izbrana, shranjuje v Prenose'; $('unlock').hidden = true; render(); return; }
   const ok = await folderReady(false);
   $('unlock').hidden = ok;
-  $('dirinfo').textContent = 'Mapa: ' + rootHandle.name + (/^recordings$/i.test(rootHandle.name) ? '' : '\\recordings');
+  $('dirinfo').textContent = 'Mapa: ' + rootHandle.name;
   if (ok) { if (!iniLoaded) { iniLoaded = true; await loadIni(); } await loadFolder(); } else render();
 }
 // Reads the current folder fresh (also used by "Osveži"): subfolders first, then audio files, newest first.
@@ -565,7 +566,7 @@ $('newdir').onclick = async () => {
 function renderCrumbs(){
   const c = $('crumbs'); c.innerHTML = ''; $('newdir').hidden = !curDir;
   if (!curDir) return;
-  const parts = ['recordings', ...curPath];
+  const parts = [rootHandle.name, ...curPath];
   parts.forEach((p, i) => {
     if (i) c.append(' / ');
     if (i === parts.length - 1) { const s = document.createElement('span'); s.textContent = p; c.append(s); }
@@ -658,15 +659,11 @@ async function deleteTake(t){
 }
 
 // ================= playback
-function play(t, loop){
-  stopPlay();
-  player = new Audio(t.url); player.loop = loop; player._t = t; player._loop = loop;
-  if (player.setSinkId && $('out').value) player.setSinkId($('out').value).catch(() => {});
-  player.play();
-  player.onended = () => { player = null; render(); };
-  render();
+async function play(t, loop){
+  if (!ed || ed.t !== t) { await openEditor(t); if (!ed || ed.t !== t) return; }
+  edPlay(loop, loop ? undefined : 0);
 }
-function stopPlay(){ edStop(); if (player) { player.pause(); player = null; render(); } }
+function stopPlay(){ edStop(); }
 
 // ================= list
 async function ensurePeaks(t){
@@ -695,13 +692,13 @@ function render(){
   renderCrumbs();
   const FOLDER = '<svg viewBox="0 0 16 16"><path d="M1 3h5l1.5 1.5H15V13H1z"/></svg>';
   const dirRow = (label, fn) => { const li = document.createElement('li'); li.className = 'dir'; li.innerHTML = FOLDER; const s = document.createElement('span'); s.textContent = label; li.append(s); li.onclick = fn; ul.append(li); };
-  if (curPath.length) dirRow('..  (nazaj)', () => goTo(curPath.slice(0, -1)));
+  if (curPath.length) dirRow('..', () => goTo(curPath.slice(0, -1)));
   folders.forEach(n => dirRow(n, () => goTo([...curPath, n])));
   if (!takes.length) { if (!folders.length) ul.insertAdjacentHTML('beforeend', '<li class="none">Še ni posnetkov. Pritisni Space in zaigraj.</li>'); return; }
   takes.forEach(t => {
-    const active = player && player._t === t;
+    const active = !!(ed && ed.src && ed.t === t);
     const li = document.createElement('li'); if (active) li.classList.add('playing'); if (ed && ed.t === t) li.classList.add('editing');
-    li.onclick = e => { if (!e.target.closest('button') && !e.target.closest('input') && !(ed && ed.t === t)) openEditor(t); };
+    li.onclick = e => { if (!e.target.closest('button') && !e.target.closest('input') && !(ed && ed.t === t)) play(t, false); };
     const info = document.createElement('div');
     const nm = document.createElement('div'); nm.className = 'tname'; nm.textContent = t.name; nm.title = 'Dvoklik za preimenovanje';
     nm.ondblclick = e => { e.stopPropagation(); startRename(t, nm); };
@@ -717,8 +714,8 @@ function render(){
     const cv = document.createElement('canvas'); cv.className = 'thumb'; drawThumb(cv, t, active);
     const acts = document.createElement('div'); acts.className = 'acts';
     const mk = (icon, label, fn, on) => { const b = document.createElement('button'); b.innerHTML = ICON[icon]; b.title = label; b.setAttribute('aria-label', label); if (on) b.classList.add('active'); b.onclick = fn; return b; };
-    acts.append(mk('play', 'Predvajaj', () => play(t, false), active && !player._loop),
-                mk('loop', 'Predvajaj v zanki', () => play(t, true), active && player._loop),
+    acts.append(mk('play', 'Predvajaj', () => play(t, false), active && !ed.looping),
+                mk('loop', 'Predvajaj v zanki', () => play(t, true), active && ed.looping),
                 mk('stop', 'Ustavi', stopPlay));
     if (!t.inFolder && !t.saved) acts.append(mk('save', 'Shrani', () => download(t)));
     const del = mk('del', 'Izbriši', () => deleteTake(t)); del.classList.add('del'); acts.append(del);
@@ -769,7 +766,7 @@ async function openEditor(t){
   const tok = ++edTok;
   stopPlay();
   $('editor').hidden = false; $('edname').textContent = t.name; $('edmsg').textContent = 'Nalagam…';
-  try { const buf = await loadBuf(t); if (tok !== edTok) return; ed = { t, buf, a: null, b: null, src: null, ab: null, view: { s: 0, e: buf.len / buf.sr } }; }
+  try { const buf = await loadBuf(t); if (tok !== edTok) return; ed = { t, buf, a: null, b: null, src: null, ab: null, cursor: 0, looping: false, view: { s: 0, e: buf.len / buf.sr } }; }
   catch (e) { $('edmsg').textContent = 'Posnetka ni mogoče prebrati: ' + e.message; return; }
   $('edmsg').textContent = ''; edUpdate(); render();
   $('editor').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
@@ -828,11 +825,8 @@ function drawWave(){
     g.fillStyle = '#ffb547'; g.fillRect(X(t) - 1, 0, 2, h);
     g.font = '700 14px "Barlow Condensed",sans-serif'; g.fillText(lab, X(t) + (lab === 'A' ? 4 : -12), 14);
   }
-  if (ed.src) {
-    const pos = ed.loopA + ((pctx.currentTime - ed.t0) % (ed.loopB - ed.loopA));
-    g.fillStyle = '#ff4d4f'; g.fillRect(X(pos) - 1, 0, 2, h);
-    requestAnimationFrame(drawWave);
-  }
+  if (ed.src) { g.fillStyle = '#ff4d4f'; g.fillRect(X(edPos()) - 1, 0, 2, h); requestAnimationFrame(drawWave); }
+  else if (ed.cursor > 0) { g.fillStyle = 'rgba(255,77,79,.5)'; g.fillRect(X(ed.cursor) - 1, 0, 2, h); }
 }
 addEventListener('resize', () => { if (ed) { ed.cols = null; drawWave(); } });
 
@@ -859,23 +853,28 @@ function setView(s, e){
   s = Math.max(0, Math.min(D - span, s)); ed.view = { s, e: s + span }; edUpdate();
 }
 (() => {
-  const box = $('wavebox'); let drag = null, prev = null;
+  const box = $('wavebox'); let drag = null, prev = null, x0 = 0, fresh = false;
   const tAt = e => { const r = box.getBoundingClientRect(); return ed.view.s + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (ed.view.e - ed.view.s); };
   const xOf = t => (t - ed.view.s) / (ed.view.e - ed.view.s) * box.clientWidth;
   box.addEventListener('pointerdown', e => {
-    if (!ed || e.button !== 0) return; box.setPointerCapture(e.pointerId); prev = null;
-    const t = tAt(e), x = e.clientX - box.getBoundingClientRect().left;
+    if (!ed || e.button !== 0) return; box.setPointerCapture(e.pointerId); prev = null; fresh = false;
+    const t = tAt(e), x = e.clientX - box.getBoundingClientRect().left; x0 = e.clientX;
     if (hasSel() && Math.abs(x - xOf(ed.a)) < 10) drag = 'a';
     else if (hasSel() && Math.abs(x - xOf(ed.b)) < 10) drag = 'b';
-    else { prev = hasSel() ? [ed.a, ed.b] : null; ed.a = t; ed.b = t; drag = 'b'; }
+    else { prev = hasSel() ? [ed.a, ed.b] : null; ed.a = t; ed.b = t; drag = 'b'; fresh = true; }
     edUpdate();
   });
-  box.addEventListener('pointermove', e => { if (!drag) return; ed[drag] = snapT(tAt(e), true); edUpdate(); });
-  box.addEventListener('pointerup', () => {
+  box.addEventListener('pointermove', e => { if (!drag) return; ed[drag] = snapT(tAt(e), true); edUpdate(); if (hasSel() && ed.a < ed.b) edLoopUpdate(); });
+  box.addEventListener('pointerup', e => {
     if (!drag) return; drag = null;
+    if (fresh && Math.abs(e.clientX - x0) < 4) {        // plain click: keep A–B, jump playback/cursor there
+      const t = ed.a; [ed.a, ed.b] = prev || [null, null]; edUpdate();
+      if (ed.src) edPlay(ed.looping, t); else { ed.cursor = t; drawWave(); }
+      return;
+    }
     if (ed.a > ed.b) [ed.a, ed.b] = [ed.b, ed.a];
     if (ed.b - ed.a < 0.02) { [ed.a, ed.b] = prev || [null, null]; } else { ed.a = snapT(ed.a); ed.b = snapT(ed.b); }
-    edUpdate(); if (ed.src) edPlay();
+    edUpdate(); edLoopUpdate();
   });
   // wheel = zoom around the cursor; shift+wheel or horizontal wheel = pan
   box.addEventListener('wheel', e => {
@@ -889,22 +888,48 @@ function setView(s, e){
 })();
 $('edfit').onclick = () => { if (ed) setView(0, dur()); };
 
-function edStop(){ if (ed && ed.src) { try { ed.src.stop(); } catch {} ed.src = null; drawWave(); } }
-function edPlay(){
+// Playback model: position = off + (now - t0), wrapped into [la, lb) once it reaches lb when looping.
+function edPos(){
+  if (!ed || !ed.src) return ed ? ed.cursor : 0;
+  let x = ed.off + (pctx.currentTime - ed.t0);
+  if (ed.looping && x >= ed.lb) x = ed.la + ((x - ed.la) % (ed.lb - ed.la));
+  return Math.min(x, dur());
+}
+function edStop(){   // pause: remember where we were
+  if (!ed || !ed.src) return;
+  ed.cursor = edPos(); const s = ed.src; ed.src = null; s.onended = null; try { s.stop(); } catch {}
+  render(); drawWave();
+}
+function edPlay(loop, from){
   if (!ed) return;
-  if (player) { player.pause(); player = null; render(); }
-  edStop();
   const ac = getPctx(); ac.resume();
   if (!ed.ab) { ed.ab = ac.createBuffer(ed.buf.ch.length, ed.buf.len, ed.buf.sr); ed.buf.ch.forEach((d, c) => ed.ab.copyToChannel(d, c)); }
-  const s = ac.createBufferSource(); s.buffer = ed.ab; s.loop = true;
-  ed.loopA = hasSel() ? ed.a : 0; ed.loopB = hasSel() ? ed.b : dur();
-  s.loopStart = ed.loopA; s.loopEnd = ed.loopB;
-  s.connect(ac.destination); s.start(0, ed.loopA);
-  ed.src = s; ed.t0 = ac.currentTime; drawWave();
+  if (ed.src) { ed.src.onended = null; try { ed.src.stop(); } catch {} ed.src = null; }
+  const sel = hasSel();
+  ed.looping = !!loop; ed.la = loop && sel ? ed.a : 0; ed.lb = loop && sel ? ed.b : dur();
+  if (from == null) from = loop ? ed.la : ed.cursor;
+  if (from >= dur() - 0.01) from = 0;
+  if (ed.looping && from >= ed.lb) { ed.looping = false; ed.la = 0; ed.lb = dur(); }   // clicked past B: play on to the end
+  const s = ac.createBufferSource(); s.buffer = ed.ab; s.loop = ed.looping;
+  if (ed.looping) { s.loopStart = ed.la; s.loopEnd = ed.lb; }
+  s.connect(ac.destination); s.start(0, from);
+  s.onended = () => { if (ed && ed.src === s) { ed.src = null; ed.cursor = 0; render(); drawWave(); } };
+  ed.src = s; ed.off = from; ed.t0 = ac.currentTime;
+  render(); drawWave();
 }
-$('edloop').onclick = edPlay;
+// A/B moved while looping: retarget the running source without stopping it.
+function edLoopUpdate(){
+  if (!ed || !ed.src || !ed.looping) return;
+  const pos = edPos(), sel = hasSel() && ed.a < ed.b;
+  const la = sel ? ed.a : 0, lb = sel ? ed.b : dur();
+  if (pos >= lb) { edPlay(true, la); return; }
+  ed.src.loopStart = la; ed.src.loopEnd = lb;
+  ed.off = pos; ed.t0 = pctx.currentTime; ed.la = la; ed.lb = lb;
+}
+$('edplay').onclick = () => edPlay(false);
+$('edloop').onclick = () => edPlay(true);
 $('edstop').onclick = edStop;
-$('edclear').onclick = () => { if (!ed) return; ed.a = ed.b = null; edUpdate(); if (ed.src) edPlay(); };
+$('edclear').onclick = () => { if (!ed) return; ed.a = ed.b = null; edUpdate(); edLoopUpdate(); };
 
 // Loop detection: onset envelope -> autocorrelation -> shortest strongly repeating period (1–8 s).
 // With a metronome grid the result is snapped to whole bars.
@@ -943,7 +968,7 @@ $('edauto').onclick = () => {
   if (!r) { $('edmsg').textContent = inSel ? 'Znotraj A–B ni vsaj dveh ponovitev vzorca (izsek mora biti vsaj 2 s). Razširi A–B ali počisti izbor.' : 'Ponavljajočega se vzorca nisem našel. Označi A–B ročno.'; return; }
   ed.a = r.snapped ? r.a : zeroSnap(r.a); ed.b = r.snapped ? r.b : zeroSnap(r.b);
   $('edmsg').textContent = 'Predlagana zanka: ' + fmtS(ed.b - ed.a) + (r.snapped ? ` (${r.snapped} ${r.snapped === 1 ? 'takt' : r.snapped < 5 ? 'takti' : 'taktov'})` : '') + '. Preveri na uho.';
-  edUpdate(); edPlay();
+  edUpdate(); edPlay(true);
 };
 
 $('edcrop').onclick = async () => {
@@ -979,7 +1004,7 @@ $('edcrop').onclick = async () => {
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
   if (e.code === 'Space') { e.preventDefault(); toggleRec(); }
-  else if (e.code === 'KeyL') { if (ed) edPlay(); else if (takes[0]) play(takes[0], true); }
+  else if (e.code === 'KeyL') { if (ed) edPlay(true); else if (takes[0]) play(takes[0], true); }
   else if (e.code === 'Escape') stopPlay();
 });
 // Space must only toggle recording, never also "click" a focused button.
