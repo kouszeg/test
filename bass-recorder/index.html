@@ -213,7 +213,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.9';   // bump on every release; shown bottom right
+const VERSION = '1.10';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -984,7 +984,15 @@ document.addEventListener('keydown', e => {
 });
 // Space must only toggle recording, never also "click" a focused button.
 document.addEventListener('keyup', e => { if (e.code === 'Space' && e.target.tagName === 'BUTTON') e.preventDefault(); });
-if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+// Check for a new service worker on every launch; when a new one takes over, reload once into the new version.
+if ('serviceWorker' in navigator) addEventListener('load', async () => {
+  try {
+    const had = !!navigator.serviceWorker.controller;
+    const reg = await navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
+    reg.update();
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (had && recState === 'idle') location.reload(); });
+  } catch {}
+});
 </script>
 </body>
 </html>
