@@ -208,11 +208,13 @@
     <button id="refresh" class="ghost">Osveži</button>
   </div>
   <ul id="list"></ul>
-  <p class="opts" style="margin-top:12px"><span><kbd>L</kbd> zanka</span><span><kbd>Esc</kbd> ustavi predvajanje</span><span>Dvoklik na ime = preimenuj</span></p>
+  <p class="opts" style="margin-top:12px"><span><kbd>L</kbd> zanka</span><span><kbd>Esc</kbd> ustavi predvajanje</span><span>Dvoklik na ime = preimenuj</span><span id="ver" class="ver" style="margin-left:auto"></span></p>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
+const VERSION = '1.8';   // bump on every release; shown bottom right
+$('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
 const RING = 2048; let ring = new Float32Array(RING), ringPos = 0, scopeSave = null;
