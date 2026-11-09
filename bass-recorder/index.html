@@ -110,7 +110,13 @@
   #list li{display:grid;grid-template-columns:minmax(0,1fr) 180px auto;gap:14px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--rule)}
   #list li:not(.none){cursor:pointer}
   #list li.playing{background:linear-gradient(90deg,rgba(91,227,154,.08),transparent 60%)}
-  #list li.editing{box-shadow:inset 3px 0 0 var(--led-amber)}
+  #list li.editing{box-shadow:inset 3px 0 0 rgba(255,181,71,.35)}
+  #list li.playing{box-shadow:inset 3px 0 0 var(--led-amber)}
+  .nrow{display:flex;align-items:center;gap:6px;min-width:0}
+  .ren{flex:none;width:26px;height:26px;border-radius:6px;border:1px solid transparent;background:transparent;cursor:pointer;display:grid;place-items:center;color:var(--dim)}
+  .ren:hover{border-color:var(--rule);color:var(--silk)}
+  .ren svg{width:14px;height:14px;fill:currentColor}
+  .nrow .tname{flex:1;min-width:0}
   #list li.none{display:block;color:var(--dim);padding:14px 4px}
   .tname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .tname input{width:100%;background:var(--panel);border:1px solid var(--led-amber);border-radius:6px;padding:2px 6px;font-weight:600}
@@ -209,12 +215,12 @@
     <button id="refresh" class="ghost">Osveži</button>
   </div>
   <ul id="list"></ul>
-  <p class="opts" style="margin-top:12px"><span><kbd>L</kbd> zanka</span><span><kbd>Esc</kbd> ustavi predvajanje</span><span>Dvoklik na ime = preimenuj</span><span id="ver" class="ver" style="margin-left:auto"></span></p>
+  <p class="opts" style="margin-top:12px"><span><kbd>L</kbd> zanka</span><span><kbd>Esc</kbd> ustavi predvajanje</span><span id="ver" class="ver" style="margin-left:auto"></span></p>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.11';   // bump on every release; shown bottom right
+const VERSION = '1.12';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -542,7 +548,7 @@ async function loadFolder(){
   for await (const h of curDir.values()) {
     if (h.kind === 'directory') { dirs.push(h.name); continue; }
     if (!/\.(wav|mp3|m4a|flac|ogg)$/i.test(h.name)) continue;
-    const old = takes.find(t => t.inFolder && t.dir === curDir && t.name === h.name);
+    const old = (ed && ed.t.inFolder && ed.t.dir === curDir && ed.t.name === h.name) ? ed.t : takes.find(t => t.inFolder && t.dir === curDir && t.name === h.name);
     const f = await h.getFile();
     if (old && old.mtime === f.lastModified) { found.push(old); continue; }
     found.push({ name: h.name, blob: f, url: URL.createObjectURL(f), mtime: f.lastModified, inFolder: true, dir: curDir, path });
@@ -550,7 +556,6 @@ async function loadFolder(){
   takes.filter(t => t.inFolder && !found.includes(t)).forEach(t => URL.revokeObjectURL(t.url));
   folders = dirs.sort((a, b) => a.localeCompare(b, 'sl'));
   takes = takes.filter(t => !t.inFolder).concat(found).sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
-  if (ed && !takes.includes(ed.t)) { edStop(); ed = null; $('editor').hidden = true; }
   render();
 }
 async function goTo(path){
@@ -696,12 +701,15 @@ function render(){
   folders.forEach(n => dirRow(n, () => goTo([...curPath, n])));
   if (!takes.length) { if (!folders.length) ul.insertAdjacentHTML('beforeend', '<li class="none">Še ni posnetkov. Pritisni Space in zaigraj.</li>'); return; }
   takes.forEach(t => {
-    const active = !!(ed && ed.src && ed.t === t);
-    const li = document.createElement('li'); if (active) li.classList.add('playing'); if (ed && ed.t === t) li.classList.add('editing');
-    li.onclick = e => { if (!e.target.closest('button') && !e.target.closest('input') && !(ed && ed.t === t)) play(t, false); };
+    const open = !!(ed && ed.t === t), active = open && !!ed.src;
+    const li = document.createElement('li'); if (active) li.classList.add('playing'); else if (open) li.classList.add('editing');
+    li.onclick = e => { if (e.target.closest('button') || e.target.closest('input')) return; if (!open) play(t, false); else if (!ed.src) edPlay(false); };
     const info = document.createElement('div');
-    const nm = document.createElement('div'); nm.className = 'tname'; nm.textContent = t.name; nm.title = 'Dvoklik za preimenovanje';
-    nm.ondblclick = e => { e.stopPropagation(); startRename(t, nm); };
+    const nm = document.createElement('div'); nm.className = 'tname'; nm.textContent = t.name;
+    const ren = document.createElement('button'); ren.className = 'ren'; ren.title = 'Preimenuj'; ren.setAttribute('aria-label', 'Preimenuj');
+    ren.innerHTML = '<svg viewBox="0 0 16 16"><path d="M11.5 1.5l3 3L5 14H2v-3zM10 3l3 3"/></svg>';
+    ren.onclick = e => { e.stopPropagation(); startRename(t, nm); };
+    const nrow = document.createElement('div'); nrow.className = 'nrow'; nrow.append(ren, nm);
     const meta = document.createElement('div'); meta.className = 'tmeta';
     const add = (txt, cls) => { const s = document.createElement('span'); s.textContent = txt; if (cls) s.className = cls; meta.append(s); };
     if (t.mtime) add(fmtTime(t.mtime));
@@ -710,7 +718,7 @@ function render(){
     if (t.rawDb != null) add('vrh ' + (isFinite(t.rawDb) ? t.rawDb.toFixed(1) : '−∞') + ' dB' + (t.gainDb ? `, normalizirano ${t.gainDb >= 0 ? '+' : ''}${t.gainDb.toFixed(1)} dB` : ''));
     if (t.rawDb > -0.3) add('Vhod je clippal', 'warn');
     if (t.saved) add('Shranjeno v ' + t.saved);
-    info.append(nm, meta);
+    info.append(nrow, meta);
     const cv = document.createElement('canvas'); cv.className = 'thumb'; drawThumb(cv, t, active);
     const acts = document.createElement('div'); acts.className = 'acts';
     const mk = (icon, label, fn, on) => { const b = document.createElement('button'); b.innerHTML = ICON[icon]; b.title = label; b.setAttribute('aria-label', label); if (on) b.classList.add('active'); b.onclick = fn; return b; };
