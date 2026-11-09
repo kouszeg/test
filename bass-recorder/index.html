@@ -79,6 +79,21 @@
            padding:10px 4px;border-bottom:1px solid var(--rule)}
   #list li.playing{background:linear-gradient(90deg,rgba(91,227,154,.08),transparent 60%)}
   #list li.none{display:block;color:var(--dim);padding:14px 4px}
+  #list li:not(.none){cursor:pointer}
+  #list li.editing{box-shadow:inset 3px 0 0 var(--led-amber)}
+
+  /* A–B editor */
+  .editor{background:var(--panel);border:1px solid var(--rule);border-radius:18px;padding:14px 16px 16px;margin:0 0 26px}
+  .ed-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .ed-head .tname{font-size:18px;flex:1;min-width:0}
+  #edsel{font-size:14px;color:var(--dim)}
+  .wave{position:relative;height:150px;border-radius:10px;background:#0b1124;border:1px solid var(--rule);touch-action:none;cursor:crosshair}
+  #wave{position:absolute;inset:0;width:100%;height:100%}
+  .ed-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+  .ed-acts .go{border-color:var(--led-green);color:var(--led-green)}
+  .ed-acts .danger{border-color:#7a3036;color:#ff8a8c}
+  .ed-acts button:disabled{opacity:.4;cursor:not-allowed}
+  #edmsg{font-size:14px;color:var(--dim);margin-left:auto}
   .tname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .tmeta{font-size:13px;color:var(--dim);display:flex;gap:12px;flex-wrap:wrap}
   .tmeta .warn{color:var(--led-amber)}
@@ -135,6 +150,23 @@
       <button id="pickdir" class="ghost">Izberi mapo</button>
     </div>
   </div>
+
+  <section id="editor" class="editor" hidden>
+    <div class="ed-head">
+      <span id="edname" class="tname"></span>
+      <span id="edsel">Povleci po valu, da označiš A–B.</span>
+      <button id="edclose" class="ghost">Zapri</button>
+    </div>
+    <div class="wave" id="wavebox"><canvas id="wave"></canvas></div>
+    <div class="ed-acts">
+      <button id="edloop" class="ghost go">Predvajaj zanko</button>
+      <button id="edstop" class="ghost">Ustavi</button>
+      <button id="edauto" class="ghost">Najdi zanko</button>
+      <button id="edclear" class="ghost">Počisti A–B</button>
+      <button id="edcrop" class="ghost danger" disabled>Obreži na A–B</button>
+      <span id="edmsg"></span>
+    </div>
+  </section>
 
   <h2>Posnetki</h2>
   <ul id="list"></ul>
@@ -342,7 +374,7 @@ function play(t, loop){
   player.onended = () => { player = null; render(); };
   render();
 }
-function stopPlay(){ if (player) { player.pause(); player = null; render(); } }
+function stopPlay(){ edStop(); if (player) { player.pause(); player = null; render(); } }
 
 // ---------- list
 async function ensurePeaks(t){
@@ -369,7 +401,8 @@ function render(){
   if (!takes.length) { ul.innerHTML = '<li class="none">Še ni posnetkov. Pritisni Space in zaigraj.</li>'; return; }
   takes.forEach(t => {
     const active = player && player._t === t;
-    const li = document.createElement('li'); if (active) li.classList.add('playing');
+    const li = document.createElement('li'); if (active) li.classList.add('playing'); if (ed && ed.t === t) li.classList.add('editing');
+    li.onclick = e => { if (!e.target.closest('button')) openEditor(t); };
     const info = document.createElement('div');
     const nm = document.createElement('div'); nm.className = 'tname'; nm.textContent = t.name;
     const meta = document.createElement('div'); meta.className = 'tmeta';
@@ -393,10 +426,212 @@ function render(){
 }
 render();
 
+// ---------- A–B editor
+let ed = null, pctx = null;
+const getPctx = () => (pctx = pctx || new AudioContext());
+
+// Read our own WAVs at their native rate (PCM 16/24/32, float32) so a crop never resamples.
+function parseWav(ab){
+  const v = new DataView(ab);
+  if (v.getUint32(0, false) !== 0x52494646 || v.getUint32(8, false) !== 0x57415645) return null;
+  let o = 12, fmt = null, data = null;
+  while (o + 8 <= v.byteLength) {
+    const id = v.getUint32(o, false), size = v.getUint32(o + 4, true);
+    if (id === 0x666d7420) fmt = { tag: v.getUint16(o+8, true), nc: v.getUint16(o+10, true), sr: v.getUint32(o+12, true), bits: v.getUint16(o+22, true) };
+    if (id === 0x64617461) { data = { off: o + 8, size: Math.min(size, v.byteLength - o - 8) }; break; }
+    o += 8 + size + (size & 1);
+  }
+  if (!fmt || !data) return null;
+  let tag = fmt.tag; if (tag === 0xFFFE) tag = fmt.bits === 32 ? 3 : 1;
+  const bps = fmt.bits / 8, n = Math.floor(data.size / (bps * fmt.nc));
+  const ch = Array.from({ length: fmt.nc }, () => new Float32Array(n));
+  let p = data.off;
+  for (let i = 0; i < n; i++) for (let c = 0; c < fmt.nc; c++, p += bps) {
+    let x;
+    if (tag === 3 && bps === 4) x = v.getFloat32(p, true);
+    else if (bps === 2) x = v.getInt16(p, true) / 32768;
+    else if (bps === 3) { let y = v.getUint8(p) | (v.getUint8(p+1) << 8) | (v.getUint8(p+2) << 16); if (y & 0x800000) y -= 0x1000000; x = y / 8388608; }
+    else if (bps === 4) x = v.getInt32(p, true) / 2147483648;
+    else return null;
+    ch[c][i] = x;
+  }
+  return { sr: fmt.sr, ch, len: n };
+}
+async function loadBuf(t){
+  const ab = await t.blob.arrayBuffer();
+  const w = parseWav(ab); if (w) return w;
+  const d = await getPctx().decodeAudioData(ab.slice(0));
+  return { sr: d.sampleRate, len: d.length, ch: Array.from({ length: d.numberOfChannels }, (_, c) => d.getChannelData(c)) };
+}
+
+async function openEditor(t){
+  stopPlay();
+  $('editor').hidden = false; $('edname').textContent = t.name; $('edmsg').textContent = 'Nalagam…';
+  try { const buf = await loadBuf(t); ed = { t, buf, a: null, b: null, src: null, ab: null }; }
+  catch (e) { $('edmsg').textContent = 'Posnetka ni mogoče prebrati: ' + e.message; return; }
+  $('edmsg').textContent = ''; edUpdate(); render();
+  $('editor').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+}
+$('edclose').onclick = () => { edStop(); ed = null; $('editor').hidden = true; render(); };
+
+const fmtS = x => x.toFixed(2) + ' s';
+function hasSel(){ return ed && ed.a != null && ed.b != null && ed.b - ed.a > 0.02; }
+function edUpdate(){
+  if (!ed) return;
+  $('edsel').textContent = hasSel() ? `A ${fmtS(ed.a)}   B ${fmtS(ed.b)}   dolžina ${fmtS(ed.b - ed.a)}` : `Dolžina ${fmtS(ed.buf.len / ed.buf.sr)}. Povleci po valu, da označiš A–B.`;
+  $('edcrop').disabled = !hasSel();
+  $('edloop').textContent = hasSel() ? 'Predvajaj zanko A–B' : 'Predvajaj zanko';
+  drawWave();
+}
+
+function drawWave(){
+  if (!ed) return;
+  const c = $('wave'), dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  if (c.width !== w * dpr || c.height !== h * dpr) { c.width = w * dpr; c.height = h * dpr; }
+  const g = c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
+  const d = ed.buf.ch[0], n = ed.buf.len, dur = n / ed.buf.sr, X = t => t / dur * w;
+  if (!ed.cols || ed.cols.w !== w) { // cache min/max per pixel column
+    const mn = new Float32Array(w), mx = new Float32Array(w);
+    for (let x = 0; x < w; x++) { let lo = 0, hi = 0; const s0 = Math.floor(x / w * n), s1 = Math.max(s0 + 1, Math.floor((x + 1) / w * n));
+      for (let i = s0; i < s1; i++) { const v = d[i]; if (v < lo) lo = v; if (v > hi) hi = v; } mn[x] = lo; mx[x] = hi; }
+    let pk = 0; for (let x = 0; x < w; x++) pk = Math.max(pk, -mn[x], mx[x]);
+    ed.cols = { w, mn, mx, pk: pk || 1 };
+  }
+  if (hasSel()) { g.fillStyle = 'rgba(91,227,154,.13)'; g.fillRect(X(ed.a), 0, X(ed.b) - X(ed.a), h); }
+  const { mn, mx, pk } = ed.cols;
+  g.fillStyle = '#8b93a7';
+  for (let x = 0; x < w; x++) {
+    const inSel = hasSel() && x >= X(ed.a) && x <= X(ed.b);
+    g.fillStyle = inSel ? '#5be39a' : '#8b93a7';
+    const y0 = h/2 - mx[x] / pk * h * .46, y1 = h/2 - mn[x] / pk * h * .46;
+    g.fillRect(x, y0, 1, Math.max(1, y1 - y0));
+  }
+  if (ed.a != null) for (const [t, lab] of [[ed.a, 'A'], [ed.b, 'B']]) {
+    if (t == null) continue;
+    g.fillStyle = '#ffb547'; g.fillRect(X(t) - 1, 0, 2, h);
+    g.font = '700 14px "Barlow Condensed",sans-serif'; g.fillText(lab, X(t) + (lab === 'A' ? 4 : -12), 14);
+  }
+  if (ed.src) {
+    const ctxT = pctx.currentTime - ed.t0, s = ed.loopA, L = ed.loopB - ed.loopA;
+    const pos = s + (ctxT % L);
+    g.fillStyle = '#ff4d4f'; g.fillRect(X(pos) - 1, 0, 2, h);
+    requestAnimationFrame(drawWave);
+  }
+}
+addEventListener('resize', () => { if (ed) { ed.cols = null; drawWave(); } });
+
+// Snap to the nearest rising zero crossing so loops and crops don't click.
+function zeroSnap(sec){
+  const d = ed.buf.ch[0], sr = ed.buf.sr, i0 = Math.max(1, Math.min(ed.buf.len - 1, Math.round(sec * sr))), R = Math.round(sr * 0.006);
+  for (let k = 0; k <= R; k++) for (const i of [i0 + k, i0 - k]) if (i > 0 && i < ed.buf.len && d[i-1] <= 0 && d[i] > 0) return i / sr;
+  return i0 / sr;
+}
+
+// Pointer: drag on the wave = new A–B; grab near A or B = move that marker.
+(() => {
+  const box = $('wavebox'); let drag = null;
+  const tAt = e => { const r = box.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * ed.buf.len / ed.buf.sr; };
+  const xOf = t => t / (ed.buf.len / ed.buf.sr) * box.clientWidth;
+  box.addEventListener('pointerdown', e => {
+    if (!ed) return; box.setPointerCapture(e.pointerId);
+    const t = tAt(e), x = e.clientX - box.getBoundingClientRect().left;
+    if (hasSel() && Math.abs(x - xOf(ed.a)) < 10) drag = 'a';
+    else if (hasSel() && Math.abs(x - xOf(ed.b)) < 10) drag = 'b';
+    else { ed.a = t; ed.b = t; drag = 'b'; }
+    edUpdate();
+  });
+  box.addEventListener('pointermove', e => { if (!drag) return; ed[drag] = tAt(e); edUpdate(); });
+  box.addEventListener('pointerup', () => {
+    if (!drag) return; drag = null;
+    if (ed.a > ed.b) [ed.a, ed.b] = [ed.b, ed.a];
+    if (ed.b - ed.a < 0.02) { ed.a = ed.b = null; }
+    else { ed.a = zeroSnap(ed.a); ed.b = zeroSnap(ed.b); }
+    edUpdate(); if (ed.src) edPlay();
+  });
+})();
+
+function edStop(){ if (ed && ed.src) { try { ed.src.stop(); } catch {} ed.src = null; drawWave(); } }
+function edPlay(){
+  if (!ed) return;
+  if (player) { player.pause(); player = null; render(); }
+  edStop();
+  const ac = getPctx(); ac.resume();
+  if (!ed.ab) { ed.ab = ac.createBuffer(ed.buf.ch.length, ed.buf.len, ed.buf.sr); ed.buf.ch.forEach((d, c) => ed.ab.copyToChannel(d, c)); }
+  const src = ac.createBufferSource(); src.buffer = ed.ab; src.loop = true;
+  ed.loopA = hasSel() ? ed.a : 0; ed.loopB = hasSel() ? ed.b : ed.buf.len / ed.buf.sr;
+  src.loopStart = ed.loopA; src.loopEnd = ed.loopB;
+  src.connect(ac.destination); src.start(0, ed.loopA);
+  ed.src = src; ed.t0 = ac.currentTime; drawWave();
+}
+$('edloop').onclick = edPlay;
+$('edstop').onclick = edStop;
+$('edclear').onclick = () => { if (!ed) return; ed.a = ed.b = null; edUpdate(); if (ed.src) edPlay(); };
+
+// Loop detection: onset envelope -> autocorrelation -> shortest strongly repeating period (>= 1 s).
+function findLoop(){
+  const sr = ed.buf.sr, hop = Math.round(sr * 0.01), n = ed.buf.len, chs = ed.buf.ch;
+  const F = Math.floor(n / hop); if (F < 300) return null;
+  const env = new Float32Array(F);
+  for (let f = 0; f < F; f++) { let s = 0; for (let i = f * hop; i < (f + 1) * hop; i++) { let v = 0; for (const d of chs) v += d[i]; s += v * v; } env[f] = Math.sqrt(s / hop); }
+  const on = new Float32Array(F); for (let f = 1; f < F; f++) on[f] = Math.max(0, env[f] - env[f-1]);
+  let mean = 0; for (const v of on) mean += v; mean /= F; for (let f = 0; f < F; f++) on[f] -= mean;
+  const minL = 100, maxL = Math.min(800, Math.floor(F / 2)); if (maxL <= minL) return null;
+  const ac = new Float32Array(maxL + 1); let best = -Infinity;
+  for (let L = minL; L <= maxL; L++) { let s = 0, c = 0; for (let f = 0; f + L < F; f++) { s += on[f] * on[f+L]; c++; } ac[L] = s / c; if (ac[L] > best) best = ac[L]; }
+  if (!(best > 0)) return null;
+  let lag = -1; for (let L = minL + 1; L < maxL; L++) if (ac[L] >= 0.85 * best && ac[L] >= ac[L-1] && ac[L] >= ac[L+1]) { lag = L; break; }
+  if (lag < 0) return null;
+  let omax = 0; for (const v of on) if (v > omax) omax = v;
+  let a = 0; while (a < F && on[a] < 0.3 * omax) a++;
+  let peak = a; for (let f = a; f < Math.min(F, a + 10); f++) if (on[f] > on[peak]) peak = f;
+  if (peak + lag >= F) return null;
+  let b = peak + lag; for (let f = Math.max(0, peak + lag - 5); f <= Math.min(F - 1, peak + lag + 5); f++) if (on[f] > on[b]) b = f;
+  const pre = 0.01;
+  return { a: Math.max(0, peak * hop / sr - pre), b: Math.min(n / sr, b * hop / sr - pre) };
+}
+$('edauto').onclick = () => {
+  if (!ed) return;
+  const r = findLoop();
+  if (!r) { $('edmsg').textContent = 'Ponavljajočega se vzorca nisem našel. Označi A–B ročno.'; return; }
+  ed.a = zeroSnap(r.a); ed.b = zeroSnap(r.b);
+  $('edmsg').textContent = 'Predlagana zanka: ' + fmtS(ed.b - ed.a) + '. Preveri in po potrebi premakni A ali B.';
+  edUpdate(); edPlay();
+};
+
+// Crop: replace the file's content with the A–B section.
+$('edcrop').onclick = async () => {
+  if (!hasSel()) return;
+  const t = ed.t, sr = ed.buf.sr, i0 = Math.round(ed.a * sr), i1 = Math.round(ed.b * sr);
+  const isWav = /\.wav$/i.test(t.name), inFolder = dirHandle && t.saved === dirHandle.name;
+  const target = isWav ? t.name : t.name.replace(/\.[^.]+$/, '') + '.wav';
+  const msg = inFolder && isWav ? `Prepišem ${t.name} z izsekom A–B (${fmtS(ed.b - ed.a)})? Tega ni mogoče razveljaviti.`
+            : `Shranim izsek A–B (${fmtS(ed.b - ed.a)}) kot ${target}?`;
+  if (!confirm(msg)) return;
+  edStop();
+  const ch = ed.buf.ch.map(d => d.slice(i0, i1));
+  const blob = encodeWav(ch, sr);
+  try {
+    if (inFolder && await dirReady(true)) {
+      const fh = await dirHandle.getFileHandle(target, { create: true });
+      const w = await fh.createWritable(); await w.write(blob); await w.close();
+      $('edmsg').textContent = 'Obrezano in shranjeno: ' + target;
+    } else {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = target; document.body.appendChild(a); a.click(); a.remove();
+      $('edmsg').textContent = 'Obrezan posnetek je v Prenosih (izvirnika tam ni mogoče prepisati).';
+    }
+  } catch (e) { $('edmsg').textContent = 'Shranjevanje ni uspelo: ' + e.message; return; }
+  const old = takes.find(x => x.name === target && x !== t);
+  if (old) takes = takes.filter(x => x !== old);
+  URL.revokeObjectURL(t.url);
+  Object.assign(t, { name: target, blob, url: URL.createObjectURL(blob), secs: ch[0].length / sr, peaks: peaksOf(ch[0]), mtime: Date.now(), rawDb: undefined, gainDb: undefined });
+  ed.buf = { sr, ch, len: ch[0].length }; ed.ab = null; ed.cols = null; ed.a = ed.b = null;
+  $('edname').textContent = target; edUpdate(); render();
+};
+
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
   if (e.code === 'Space') { e.preventDefault(); toggleRec(); }
-  else if (e.code === 'KeyL' && takes[0]) play(takes[0], true);
+  else if (e.code === 'KeyL') { if (ed) edPlay(); else if (takes[0]) play(takes[0], true); }
   else if (e.code === 'Escape') stopPlay();
 });
 // Space must only toggle recording, never also "click" a focused button.
