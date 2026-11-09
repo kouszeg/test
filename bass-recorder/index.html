@@ -68,8 +68,9 @@
   .metro input[type=number]{width:66px;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:4px 6px}
   .metro select{padding:4px 6px}
   .metro input[type=range]{width:90px;accent-color:var(--led-amber)}
-  #metbtn{border-radius:8px;padding:6px 12px;border:1px solid var(--rule);background:var(--panel);cursor:pointer}
-  #metbtn.on{border-color:var(--led-amber);color:var(--led-amber)}
+  .metro label.meton{color:var(--silk);font-weight:600}
+  .metro label.meton input{accent-color:var(--led-amber)}
+  .acts button.del:hover{border-color:#7a3036;color:#ff8a8c}
   .beats{display:flex;gap:5px}
   .beats i{width:9px;height:9px;border-radius:50%;background:#2c3760}
   .beats i.on{background:var(--led-amber)}
@@ -130,7 +131,8 @@
   <header>
     <h1>Bass Recorder</h1>
     <div class="input">
-      <select id="dev" aria-label="Vhod"><option value="">Vhod ni izbran</option></select>
+      <select id="dev" aria-label="Vhod" title="Vhod"><option value="">Vhod ni izbran</option></select>
+      <select id="out" aria-label="Izhod (metronom, predvajanje)" title="Izhod: metronom in predvajanje"><option value="">Privzeti izhod</option></select>
       <button id="enable" class="ghost">Poveži vhod</button>
     </div>
   </header>
@@ -152,7 +154,7 @@
     </div>
   </section>
   <div class="metro">
-    <button id="metbtn" aria-pressed="false">Metronom</button>
+    <label class="meton"><input type="checkbox" id="meton"> Metronom</label>
     <label>Tempo <input type="number" id="bpm" min="30" max="300" step="1"> BPM</label>
     <label>Takt <select id="beats"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>/4</label>
     <label>Odštevanje <select id="countin"><option value="0">brez</option><option value="1">1 takt</option><option value="2">2 takta</option></select></label>
@@ -200,6 +202,7 @@
 const $ = id => document.getElementById(id);
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
+const RING = 2048; let ring = new Float32Array(RING), ringPos = 0, scopePk = 0.01;
 // recording state machine: idle -> count (waiting for start frame) -> rec
 let recState = 'idle', recStartFrame = 0, recStartTime = 0, chunks = [], recGrid = null, recCounting = false;
 
@@ -207,11 +210,12 @@ const ICON = {
   play:'<svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z"/></svg>',
   loop:'<svg viewBox="0 0 16 16"><path d="M3 6a4 4 0 0 1 7-2.6L8.5 5H13V.5l-1.6 1.6A6 6 0 0 0 1 6zm10 4a4 4 0 0 1-7 2.6L7.5 11H3v4.5l1.6-1.6A6 6 0 0 0 15 10z"/></svg>',
   stop:'<svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1"/></svg>',
-  save:'<svg viewBox="0 0 16 16"><path d="M7 1h2v7.6l2.6-2.6L13 7.4 8 12.4 3 7.4 4.4 6 7 8.6zM2 13h12v2H2z"/></svg>'
+  save:'<svg viewBox="0 0 16 16"><path d="M7 1h2v7.6l2.6-2.6L13 7.4 8 12.4 3 7.4 4.4 6 7 8.6zM2 13h12v2H2z"/></svg>',
+  del:'<svg viewBox="0 0 16 16"><path d="M6 1h4l1 1h3v2H2V2h3zM3 5h10l-1 10H4z"/></svg>'
 };
 
 // ================= settings (mirrored to localStorage, persisted to bass-recorder.ini in the app folder)
-const DEF = { bpm: 100, beats: 4, countin: 1, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '' };
+const DEF = { met: false, bpm: 100, beats: 4, countin: 1, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '' };
 let S = { ...DEF }, META = {};   // META: per-file beat grid {bpm, beats, offset}
 const ls = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
 try { const j = JSON.parse(ls.get('br-settings') || '{}'); S = { ...DEF, ...j.S }; META = j.META || {}; } catch {}
@@ -256,6 +260,7 @@ function applySettingsToUi(){
   $('bpm').value = S.bpm; $('beats').value = String(S.beats); $('countin').value = String(S.countin); $('vol').value = S.vol;
   $('lat').value = S.lat === '' || S.lat == null || isNaN(S.lat) ? '' : S.lat;
   $('norm').checked = S.norm; $('tgt').value = S.tgt; $('autosave').checked = S.autosave; $('autoloop').checked = S.autoloop;
+  $('meton').checked = S.met;
   buildBeatLeds();
 }
 applySettingsToUi();
@@ -269,12 +274,28 @@ for (const k of ['norm', 'autosave', 'autoloop']) $(k).onchange = () => { S[k] =
 $('bpm').addEventListener('change', () => { if (met.on) metRestart(); });
 
 // ================= input / capture
+const ME90 = /me-?90|boss/i;
 async function listDevices(){
-  const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput');
-  $('dev').innerHTML = devs.map(d => `<option value="${d.deviceId}">${(d.label || 'Vhod').replace(/</g,'&lt;')}</option>`).join('');
-  const pick = devs.find(d => d.label && d.label === S.dev) || devs.find(d => /me-?90|boss/i.test(d.label));
-  if (pick) $('dev').value = pick.deviceId;
+  const all = await navigator.mediaDevices.enumerateDevices();
+  const esc = x => (x || '').replace(/</g, '&lt;');
+  const ins = all.filter(d => d.kind === 'audioinput');
+  $('dev').innerHTML = ins.map(d => `<option value="${d.deviceId}">${esc(d.label) || 'Vhod'}</option>`).join('');
+  const pin = ins.find(d => d.label && d.label === S.dev) || ins.find(d => ME90.test(d.label));
+  if (pin) $('dev').value = pin.deviceId;
+  const outs = all.filter(d => d.kind === 'audiooutput' && d.deviceId !== 'default' && d.deviceId !== 'communications');
+  $('out').innerHTML = '<option value="">Privzeti izhod</option>' + outs.map(d => `<option value="${d.deviceId}">${esc(d.label) || 'Izhod'}</option>`).join('');
+  const pout = outs.find(d => d.label && d.label === S.out) || (S.out === '' ? null : null) || outs.find(d => ME90.test(d.label));
+  if (pout) $('out').value = pout.deviceId;
+  $('out').hidden = !('setSinkId' in AudioContext.prototype) || !outs.length;
+  await applySink();
 }
+// Route metronome + playback to the chosen output (ME-90B by default, so you hear the click in your headphones/amp).
+async function applySink(){
+  const id = $('out').value;
+  for (const c of [ctx, pctx]) if (c && c.setSinkId) { try { await c.setSinkId(id); } catch (e) { console.warn('setSinkId', e); } }
+  if (player && player.setSinkId) { try { await player.setSinkId(id); } catch {} }
+}
+$('out').onchange = async () => { const o = $('out').selectedOptions[0]; S.out = o && o.value ? o.textContent : ''; saveSettings(); await applySink(); };
 // Capture runs on the audio thread; each block carries its frame index so takes can start sample-exactly.
 const WORKLET = `class Cap extends AudioWorkletProcessor{
   constructor(o){super();this.nc=o.processorOptions.nc;}
@@ -291,6 +312,7 @@ async function ensureCtx(rate){
   if (ctx) await ctx.close();
   ctx = new AudioContext(rate ? { sampleRate: rate, latencyHint: 'interactive' } : { latencyHint: 'interactive' });
   await ctx.audioWorklet.addModule('data:text/javascript;charset=utf-8,' + encodeURIComponent(WORKLET));
+  await applySink();
   if (wasMet) metStart();
 }
 async function openInput(){
@@ -321,6 +343,7 @@ function onBlock(data){
     chunks = [data.bufs.map(b => b.subarray(off))]; recState = 'rec'; setRecUi('rec');
   } else if (recState === 'rec') chunks.push(data.bufs);
   lastBuf = data.bufs[0];
+  for (let i = 0; i < lastBuf.length; i++) { ring[ringPos] = lastBuf[i]; ringPos = (ringPos + 1) % RING; }
   peakHold = Math.max(peakHold * 0.92, data.pk);
 }
 $('enable').onclick = async () => {
@@ -360,11 +383,12 @@ function metStop(){ clearInterval(met.timer); met.on = false; met.temp = false; 
 function metRestart(){ if (!met.on) return; const next = nextBeat(); metStart(next); }
 function nextBeat(){ const b = beatSec(), k = Math.ceil((ctx.currentTime + 0.05 - met.t0) / b); return met.t0 + k * b; }
 function nextBar(){ const bar = beatSec() * S.beats, k = Math.ceil((ctx.currentTime + 0.05 - met.t0) / bar); return met.t0 + k * bar; }
-function metUi(){ const on = met.on && !met.temp; $('metbtn').classList.toggle('on', on); $('metbtn').setAttribute('aria-pressed', on); }
-$('metbtn').onclick = async () => {
-  if (met.on && !met.temp) { metStop(); return; }
-  try { await ensureCtx(); await ctx.resume(); metStart(); } catch (e) { alert(e.message); }
-};
+function metUi(){}
+async function metEnable(on){
+  if (!on) { metStop(); return; }
+  try { await ensureCtx(); await ctx.resume(); if (!met.on || met.temp) { met.temp = false; metStart(); } } catch (e) { alert(e.message); }
+}
+$('meton').onchange = () => { S.met = $('meton').checked; saveSettings(); metEnable(S.met); };
 function buildBeatLeds(){ $('beatleds').innerHTML = Array.from({ length: S.beats }, (_, i) => `<i${i ? '' : ' class="one"'}></i>`).join(''); }
 
 // ================= scope, meter, count-in, beat LEDs (one animation loop)
@@ -374,9 +398,11 @@ function drawScope(){
   const g = c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
   g.strokeStyle = '#1c2547'; g.lineWidth = 1; g.beginPath(); g.moveTo(0,h/2); g.lineTo(w,h/2); g.stroke();
   if (lastBuf) {
+    let pk = 0; for (let i = 0; i < RING; i++) { const a = ring[i] < 0 ? -ring[i] : ring[i]; if (a > pk) pk = a; }
+    scopePk = Math.max(pk, scopePk * 0.97, 0.002);           // display gain follows the signal (max +54 dB)
+    const gain = 0.9 / scopePk;
     g.strokeStyle = recState === 'rec' ? '#ff4d4f' : '#5be39a'; g.lineWidth = 2; g.beginPath();
-    const n = lastBuf.length;
-    for (let x = 0; x < w; x++) { const v = lastBuf[Math.floor(x / w * n)] || 0; const y = h/2 - v * h * 0.45; x ? g.lineTo(x,y) : g.moveTo(x,y); }
+    for (let x = 0; x < w; x++) { const v = ring[(ringPos + Math.floor(x / w * RING)) % RING]; const y = h/2 - v * gain * h * 0.48; x ? g.lineTo(x,y) : g.moveTo(x,y); }
     g.stroke();
   }
   const db = peakHold > 0 ? 20 * Math.log10(peakHold) : -Infinity;
@@ -412,17 +438,17 @@ async function toggleRec(){
   if (recState === 'count') { recState = 'idle'; chunks = []; setRecUi('idle'); if (met.temp) metStop(); return; }
   busy = true; stopPlay();
   try {
-    const useMet = met.on || S.countin > 0;
+    const useMet = S.met || S.countin > 0;
     if (useMet) await openInput();   // fresh input stream per take: no buffered latency creep
     $('timer').textContent = '0:00'; chunks = [];
     if (useMet) {
       // the count-in bar starts on the next beat (metronome re-phased so beat 1 = start of count-in)
-      if (!met.on) { metStart(ctx.currentTime + 0.15); met.temp = true; metUi(); }
+      if (!met.on) { metStart(ctx.currentTime + 0.15); met.temp = !S.met; }
       else metStart(nextBeat());
       const downbeat = met.t0;
       recStartTime = downbeat + S.countin * S.beats * beatSec();
       if (met.temp) met.stopAt = recStartTime;
-      recGrid = met.temp ? null : { bpm: S.bpm, beats: S.beats, offset: 0 };
+      recGrid = !S.met ? null : { bpm: S.bpm, beats: S.beats, offset: 0 };
       // the bass you hear in time with click N reaches the capture `latency()` later
       recStartFrame = Math.round((recStartTime + latency()) * ctx.sampleRate);
       recCounting = true; recState = 'count'; setRecUi('count');
@@ -517,6 +543,23 @@ $('pickdir').onclick = async () => {
 };
 $('unlock').onclick = async () => { if (await folderReady(true)) showDir(); };
 (async () => { try { rootHandle = await idb('readonly', s => s.get('root')) || null; } catch {} showDir(); })();
+(async () => {
+  try {
+    const st = await navigator.permissions.query({ name: 'microphone' });
+    if (st.state !== 'granted') return;
+    await listDevices(); await openInput();
+    if (S.met) metEnable(true);
+  } catch (e) { console.warn('auto-connect', e); }
+})();
+// Browsers start audio only after a user gesture, and may ask again for folder access: do both on the first click/key.
+let gestureDone = false;
+async function onFirstGesture(){
+  if (gestureDone) return; gestureDone = true;
+  for (const c of [ctx, pctx]) if (c && c.state === 'suspended') c.resume();
+  if (rootHandle && !(await folderReady(false)) && await folderReady(true)) showDir();
+}
+addEventListener('pointerdown', onFirstGesture, true);
+addEventListener('keydown', onFirstGesture, true);
 
 async function download(t){
   try {
@@ -559,10 +602,25 @@ function startRename(t, el){
   inp.onclick = e => e.stopPropagation();
 }
 
+// ================= delete
+async function deleteTake(t){
+  if (!confirm(`Izbrišem ${t.name}?` + (t.inFolder ? ' Datoteka bo izbrisana z diska.' : '') + ' Tega ni mogoče razveljaviti.')) return;
+  if (t.inFolder) {
+    if (!(await folderReady(true))) { alert('Mapa ni odprta.'); return; }
+    try { await recDir.removeEntry(t.name); } catch (e) { if (e.name !== 'NotFoundError') { alert('Brisanje ni uspelo: ' + e.message); return; } }
+  }
+  if (player && player._t === t) stopPlay();
+  if (ed && ed.t === t) { edStop(); ed = null; $('editor').hidden = true; }
+  if (META[t.name]) { delete META[t.name]; saveSettings(); }
+  URL.revokeObjectURL(t.url); takes = takes.filter(x => x !== t); render();
+}
+
 // ================= playback
 function play(t, loop){
   stopPlay();
-  player = new Audio(t.url); player.loop = loop; player._t = t; player._loop = loop; player.play();
+  player = new Audio(t.url); player.loop = loop; player._t = t; player._loop = loop;
+  if (player.setSinkId && $('out').value) player.setSinkId($('out').value).catch(() => {});
+  player.play();
   player.onended = () => { player = null; render(); };
   render();
 }
@@ -616,6 +674,7 @@ function render(){
                 mk('loop', 'Predvajaj v zanki', () => play(t, true), active && player._loop),
                 mk('stop', 'Ustavi', stopPlay));
     if (!t.inFolder && !t.saved) acts.append(mk('save', 'Shrani', () => download(t)));
+    const del = mk('del', 'Izbriši', () => deleteTake(t)); del.classList.add('del'); acts.append(del);
     li.append(info, cv, acts); ul.append(li);
     if (!t.peaks) ensurePeaks(t);
   });
@@ -624,7 +683,7 @@ render();
 
 // ================= A–B editor
 let ed = null, pctx = null;
-const getPctx = () => (pctx = pctx || new AudioContext());
+const getPctx = () => { if (!pctx) { pctx = new AudioContext(); applySink(); } return pctx; };
 function parseWav(ab){
   const v = new DataView(ab);
   if (v.byteLength < 12 || v.getUint32(0, false) !== 0x52494646 || v.getUint32(8, false) !== 0x57415645) return null;
