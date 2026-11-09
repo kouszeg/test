@@ -50,7 +50,8 @@
 </div>
 
 <div class="row mut">
-  <button id="pickdir">📁 Izberi mapo</button>
+  <button id="pickdir">📁 Mapa posnetkov</button>
+  <button id="unlock" style="display:none">🔓 Odpri mapo</button>
   <span id="dirinfo">Shranjuje v Prenose (mapa ni izbrana)</span>
 </div>
 
@@ -159,7 +160,7 @@ function finishTake(){
   const ts = new Date(); const p = n => String(n).padStart(2, '0');
   const name = `bass_${ts.getFullYear()}${p(ts.getMonth()+1)}${p(ts.getDate())}_${p(ts.getHours())}${p(ts.getMinutes())}${p(ts.getSeconds())}.wav`;
   const blob = encodeWav(ch, ctx.sampleRate);
-  const take = { name, blob, url: URL.createObjectURL(blob), secs: len / ctx.sampleRate, rawDb, gainDb };
+  const take = { name, blob, url: URL.createObjectURL(blob), secs: len / ctx.sampleRate, rawDb, gainDb, mtime: Date.now() };
   takes.unshift(take); render();
   if ($('autosave').checked) download(take);
   if ($('autoloop').checked) play(take, true);
@@ -194,14 +195,29 @@ async function dirReady(ask){
   return ask && await dirHandle.requestPermission(opts) === 'granted';
 }
 async function showDir(){
-  if (!dirHandle) { $('dirinfo').textContent = 'Shranjuje v Prenose (mapa ni izbrana)'; return; }
+  if (!dirHandle) { $('dirinfo').textContent = 'Shranjuje v Prenose (mapa ni izbrana)'; $('unlock').style.display = 'none'; return; }
   const ok = await dirReady(false);
-  $('dirinfo').textContent = 'Mapa: ' + dirHandle.name + (ok ? '' : ' (dovoljenje se potrdi ob prvem snemanju)');
+  $('unlock').style.display = ok ? 'none' : '';
+  $('dirinfo').textContent = 'Mapa: ' + dirHandle.name + (ok ? '' : ' — klikni "Odpri mapo" za prikaz posnetkov');
+  if (ok) await loadFolder();
 }
+// List existing recordings from the chosen folder (newest first).
+async function loadFolder(){
+  const found = [];
+  for await (const h of dirHandle.values()) {
+    if (h.kind !== 'file' || !/\.(wav|mp3|m4a|flac|ogg)$/i.test(h.name)) continue;
+    if (takes.some(t => t.name === h.name)) continue;
+    const f = await h.getFile();
+    found.push({ name: h.name, blob: f, url: URL.createObjectURL(f), mtime: f.lastModified, saved: dirHandle.name, fromDisk: true });
+  }
+  takes = takes.concat(found).sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
+  render();
+}
+$('unlock').onclick = async () => { if (await dirReady(true)) showDir(); };
 if (!('showDirectoryPicker' in window)) $('pickdir').style.display = 'none';
 $('pickdir').onclick = async () => {
   try { dirHandle = await showDirectoryPicker({ id: 'bass-recorder', mode: 'readwrite' });
-        await idb('readwrite', s => s.put(dirHandle, 'dir')); showDir(); }
+        await idb('readwrite', s => s.put(dirHandle, 'dir')); takes = takes.filter(t => !t.fromDisk); showDir(); }
   catch (e) { if (e.name !== 'AbortError') alert(e.message); }
 };
 (async () => { try { dirHandle = await idb('readonly', s => s.get('dir')) || null; } catch {} showDir(); })();
@@ -232,9 +248,16 @@ function render(){
     const li = document.createElement('li');
     if (player && player._t === t) li.classList.add('playing');
     const n = document.createElement('span'); n.className = 'n';
-    n.textContent = `${t.name} · ${t.secs.toFixed(1)} s · vrh ${isFinite(t.rawDb) ? t.rawDb.toFixed(1) : '-∞'} dB` + (t.gainDb ? ` (${t.gainDb >= 0 ? "+" : ""}${t.gainDb.toFixed(1)} dB)` : '') + (t.rawDb > -0.3 ? " · ⚠ CLIP na vhodu" : "") + (t.saved ? " · ✓ " + t.saved : "");
+    const parts = [t.name];
+    if (t.secs != null) parts.push(t.secs.toFixed(1) + ' s');
+    else if (t.mtime) parts.push(new Date(t.mtime).toLocaleString('sl-SI'));
+    if (t.rawDb != null) parts.push('vrh ' + (isFinite(t.rawDb) ? t.rawDb.toFixed(1) : '-∞') + ' dB' + (t.gainDb ? ` (${t.gainDb >= 0 ? '+' : ''}${t.gainDb.toFixed(1)} dB)` : ''));
+    if (t.rawDb > -0.3) parts.push('⚠ CLIP na vhodu');
+    if (t.saved) parts.push('✓ ' + t.saved);
+    n.textContent = parts.join(' · ');
     const mk = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.onclick = fn; return b; };
-    li.append(n, mk('▶', () => play(t, false)), mk('⟳ Zanka', () => play(t, true)), mk('■', stopPlay), mk('⤓ Shrani', () => download(t)));
+    li.append(n, mk('▶', () => play(t, false)), mk('⟳ Zanka', () => play(t, true)), mk('■', stopPlay));
+    if (!t.fromDisk && !t.saved) li.append(mk('⤓ Shrani', () => download(t)));
     $('list').append(li);
   });
 }
