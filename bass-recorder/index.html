@@ -12,23 +12,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --enclosure:#10172e;   /* pedal-blue base */
-    --panel:#18213f;
-    --panel-2:#202a4d;
-    --silk:#dfe3ec;        /* silkscreen silver */
-    --dim:#8b93a7;
-    --rule:#2c3760;
-    --led-red:#ff4d4f;
-    --led-green:#5be39a;
-    --led-amber:#ffb547;
+    --enclosure:#10172e; --panel:#18213f; --panel-2:#202a4d;
+    --silk:#dfe3ec; --dim:#8b93a7; --rule:#2c3760;
+    --led-red:#ff4d4f; --led-green:#5be39a; --led-amber:#ffb547;
   }
   *{box-sizing:border-box}
   html,body{background:var(--enclosure)}
   body{margin:0;color:var(--silk);font:16px/1.45 Barlow,system-ui,sans-serif;padding:20px 16px 40px}
-  .wrap{max-width:820px;margin:0 auto}
+  .wrap{max-width:860px;margin:0 auto}
   h1,h2,.cond{font-family:"Barlow Condensed",Barlow,sans-serif;letter-spacing:.01em}
   button,select,input{font:inherit;color:inherit}
   :focus-visible{outline:2px solid var(--led-amber);outline-offset:2px}
+  [hidden]{display:none!important}
 
   header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px}
   h1{font-size:34px;font-weight:700;margin:0;flex:1;line-height:1}
@@ -37,12 +32,13 @@
   .ghost{background:transparent;border:1px solid var(--rule);border-radius:8px;padding:8px 12px;cursor:pointer}
   .ghost:hover{background:var(--panel)}
 
-  /* the deck: footswitch + scope */
+  /* deck: footswitch + scope */
   .deck{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:stretch;
-        background:var(--panel);border:1px solid var(--rule);border-radius:18px;padding:18px}
+        background:var(--panel);border:1px solid var(--rule);border-radius:18px 18px 0 0;padding:18px}
   .switch{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:150px}
   .led{width:12px;height:12px;border-radius:50%;background:#3a1d24;box-shadow:inset 0 0 2px #000}
   .led.on{background:var(--led-red);box-shadow:0 0 10px var(--led-red),0 0 2px #fff inset}
+  .led.wait{background:var(--led-amber);box-shadow:0 0 10px var(--led-amber)}
   #rec{width:118px;height:118px;border-radius:50%;cursor:pointer;border:0;
        background:radial-gradient(circle at 50% 38%,#eef1f6 0,#b9c0cd 38%,#7d8597 70%,#4d5466 100%);
        box-shadow:0 6px 0 #0a0f20,0 10px 18px rgba(0,0,0,.45),inset 0 -3px 6px rgba(0,0,0,.35);
@@ -59,12 +55,26 @@
   .readout.hot{color:var(--led-red)}
   .timer{position:absolute;left:12px;top:8px;font:700 28px "Barlow Condensed",sans-serif;color:var(--dim)}
   .timer.on{color:var(--led-red)}
+  .count{position:absolute;inset:0;display:grid;place-items:center;font:700 92px/1 "Barlow Condensed",sans-serif;color:var(--led-amber);pointer-events:none}
   .bar{position:absolute;left:0;right:0;bottom:0;height:6px;background:#141c38}
   .bar i{display:block;height:100%;width:0;background:var(--led-green)}
   .bar i.hot{background:var(--led-red)}
   .empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--dim);text-align:center;padding:16px}
 
-  /* options */
+  /* metronome strip, attached under the deck */
+  .metro{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:var(--panel-2);border:1px solid var(--rule);border-top:0;
+         border-radius:0 0 18px 18px;padding:10px 18px;font-size:15px}
+  .metro label{display:flex;align-items:center;gap:6px;color:var(--dim)}
+  .metro input[type=number]{width:66px;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:4px 6px}
+  .metro select{padding:4px 6px}
+  .metro input[type=range]{width:90px;accent-color:var(--led-amber)}
+  #metbtn{border-radius:8px;padding:6px 12px;border:1px solid var(--rule);background:var(--panel);cursor:pointer}
+  #metbtn.on{border-color:var(--led-amber);color:var(--led-amber)}
+  .beats{display:flex;gap:5px}
+  .beats i{width:9px;height:9px;border-radius:50%;background:#2c3760}
+  .beats i.on{background:var(--led-amber)}
+  .beats i.on.one{background:var(--led-red)}
+
   .opts{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin:14px 2px 26px;color:var(--dim);font-size:15px}
   .opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
   .opts input[type=number]{width:62px;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:4px 6px}
@@ -72,29 +82,30 @@
   .folder{margin-left:auto;display:flex;gap:8px;align-items:center}
   #dirinfo{color:var(--silk)}
 
-  /* takes */
-  h2{font-size:24px;font-weight:700;margin:0 0 10px}
-  #list{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
-  #list li{display:grid;grid-template-columns:minmax(0,1fr) 180px auto;gap:14px;align-items:center;
-           padding:10px 4px;border-bottom:1px solid var(--rule)}
-  #list li.playing{background:linear-gradient(90deg,rgba(91,227,154,.08),transparent 60%)}
-  #list li.none{display:block;color:var(--dim);padding:14px 4px}
-  #list li:not(.none){cursor:pointer}
-  #list li.editing{box-shadow:inset 3px 0 0 var(--led-amber)}
-
   /* A–B editor */
   .editor{background:var(--panel);border:1px solid var(--rule);border-radius:18px;padding:14px 16px 16px;margin:0 0 26px}
   .ed-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
   .ed-head .tname{font-size:18px;flex:1;min-width:0}
   #edsel{font-size:14px;color:var(--dim)}
-  .wave{position:relative;height:150px;border-radius:10px;background:#0b1124;border:1px solid var(--rule);touch-action:none;cursor:crosshair}
+  .wave{position:relative;height:160px;border-radius:10px;background:#0b1124;border:1px solid var(--rule);touch-action:none;cursor:crosshair}
   #wave{position:absolute;inset:0;width:100%;height:100%}
   .ed-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
   .ed-acts .go{border-color:var(--led-green);color:var(--led-green)}
   .ed-acts .danger{border-color:#7a3036;color:#ff8a8c}
   .ed-acts button:disabled{opacity:.4;cursor:not-allowed}
   #edmsg{font-size:14px;color:var(--dim);margin-left:auto}
+  .ed-hint{font-size:13px;color:var(--dim);margin:8px 0 0}
+
+  /* takes */
+  h2{font-size:24px;font-weight:700;margin:0 0 10px}
+  #list{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+  #list li{display:grid;grid-template-columns:minmax(0,1fr) 180px auto;gap:14px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--rule)}
+  #list li:not(.none){cursor:pointer}
+  #list li.playing{background:linear-gradient(90deg,rgba(91,227,154,.08),transparent 60%)}
+  #list li.editing{box-shadow:inset 3px 0 0 var(--led-amber)}
+  #list li.none{display:block;color:var(--dim);padding:14px 4px}
   .tname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tname input{width:100%;background:var(--panel);border:1px solid var(--led-amber);border-radius:6px;padding:2px 6px;font-weight:600}
   .tmeta{font-size:13px;color:var(--dim);display:flex;gap:12px;flex-wrap:wrap}
   .tmeta .warn{color:var(--led-amber)}
   .thumb{width:180px;height:36px}
@@ -135,18 +146,28 @@
       <canvas id="scope"></canvas>
       <span id="timer" class="timer">0:00</span>
       <span id="db" class="readout">−∞ dB</span>
+      <div id="count" class="count" hidden></div>
       <div class="bar"><i id="m"></i></div>
       <div id="empty" class="empty">Poveži vhod (ME-90B), potem pritisni Space.</div>
     </div>
   </section>
+  <div class="metro">
+    <button id="metbtn" aria-pressed="false">Metronom</button>
+    <label>Tempo <input type="number" id="bpm" min="30" max="300" step="1"> BPM</label>
+    <label>Takt <select id="beats"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>/4</label>
+    <label>Odštevanje <select id="countin"><option value="0">brez</option><option value="1">1 takt</option><option value="2">2 takta</option></select></label>
+    <label>Glasnost <input type="range" id="vol" min="0" max="1" step="0.05"></label>
+    <label title="Zamik med klikom in posnetim zvokom. Prazno = samodejno.">Latenca <input type="number" id="lat" step="1" placeholder="auto"> ms</label>
+    <span class="beats" id="beatleds" aria-hidden="true"></span>
+  </div>
 
   <div class="opts">
-    <label><input type="checkbox" id="norm" checked> Normaliziraj na <input type="number" id="tgt" value="-1" step="0.5" aria-label="Cilj v dBFS"> dBFS</label>
-    <label><input type="checkbox" id="autosave" checked> Shrani samodejno</label>
+    <label><input type="checkbox" id="norm"> Normaliziraj na <input type="number" id="tgt" step="0.5" aria-label="Cilj v dBFS"> dBFS</label>
+    <label><input type="checkbox" id="autosave"> Shrani samodejno</label>
     <label><input type="checkbox" id="autoloop"> Po snemanju vrti v zanki</label>
     <div class="folder">
-      <span id="dirinfo">Shranjuje v Prenose</span>
-      <button id="unlock" class="ghost" style="display:none">Odpri mapo</button>
+      <span id="dirinfo">Mapa ni izbrana, shranjuje v Prenose</span>
+      <button id="unlock" class="ghost" hidden>Odpri mapo</button>
       <button id="pickdir" class="ghost">Izberi mapo</button>
     </div>
   </div>
@@ -154,7 +175,7 @@
   <section id="editor" class="editor" hidden>
     <div class="ed-head">
       <span id="edname" class="tname"></span>
-      <span id="edsel">Povleci po valu, da označiš A–B.</span>
+      <span id="edsel"></span>
       <button id="edclose" class="ghost">Zapri</button>
     </div>
     <div class="wave" id="wavebox"><canvas id="wave"></canvas></div>
@@ -163,23 +184,25 @@
       <button id="edstop" class="ghost">Ustavi</button>
       <button id="edauto" class="ghost">Najdi zanko</button>
       <button id="edclear" class="ghost">Počisti A–B</button>
+      <button id="edfit" class="ghost">Prikaži vse</button>
       <button id="edcrop" class="ghost danger" disabled>Obreži na A–B</button>
       <span id="edmsg"></span>
     </div>
+    <p class="ed-hint">Povleci za A–B, primi A ali B za premik. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse.</p>
   </section>
 
   <h2>Posnetki</h2>
   <ul id="list"></ul>
-  <p class="opts" style="margin-top:12px"><span><kbd>L</kbd> zanka zadnjega posnetka</span><span><kbd>Esc</kbd> ustavi predvajanje</span></p>
+  <p class="opts" style="margin-top:12px"><span><kbd>L</kbd> zanka</span><span><kbd>Esc</kbd> ustavi predvajanje</span><span>Dvoklik na ime = preimenuj</span></p>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
-let ctx, stream, src, proc, mon, recording = false, chunks = [], chCount = 1, takes = [], player = null;
-let lastBuf = null, peakHold = 0, recStart = 0, decodeCtx = null;
+let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
+let lastBuf = null, peakHold = 0, decodeCtx = null;
+// recording state machine: idle -> count (waiting for start frame) -> rec
+let recState = 'idle', recStartFrame = 0, recStartTime = 0, chunks = [], recGrid = null, recCounting = false;
 
-const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } },
-                set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
 const ICON = {
   play:'<svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z"/></svg>',
   loop:'<svg viewBox="0 0 16 16"><path d="M3 6a4 4 0 0 1 7-2.6L8.5 5H13V.5l-1.6 1.6A6 6 0 0 0 1 6zm10 4a4 4 0 0 1-7 2.6L7.5 11H3v4.5l1.6-1.6A6 6 0 0 0 15 10z"/></svg>',
@@ -187,69 +210,171 @@ const ICON = {
   save:'<svg viewBox="0 0 16 16"><path d="M7 1h2v7.6l2.6-2.6L13 7.4 8 12.4 3 7.4 4.4 6 7 8.6zM2 13h12v2H2z"/></svg>'
 };
 
-// ---------- input
+// ================= settings (mirrored to localStorage, persisted to bass-recorder.ini in the app folder)
+const DEF = { bpm: 100, beats: 4, countin: 1, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '' };
+let S = { ...DEF }, META = {};   // META: per-file beat grid {bpm, beats, offset}
+const ls = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
+try { const j = JSON.parse(ls.get('br-settings') || '{}'); S = { ...DEF, ...j.S }; META = j.META || {}; } catch {}
+
+function toIni(){
+  const L = ['; Bass Recorder settings', '[settings]'];
+  for (const k of Object.keys(DEF)) L.push(`${k}=${S[k] === true ? 1 : S[k] === false ? 0 : S[k]}`);
+  L.push('', '[takes]');
+  for (const [n, g] of Object.entries(META)) L.push(`${n}=bpm:${g.bpm};beats:${g.beats};offset:${(+g.offset).toFixed(4)}`);
+  return L.join('\r\n') + '\r\n';
+}
+function fromIni(txt){
+  let sec = '', s = {}, meta = {};
+  for (const raw of txt.split(/\r?\n/)) {
+    const line = raw.trim(); if (!line || line[0] === ';' || line[0] === '#') continue;
+    const h = line.match(/^\[(.+)\]$/); if (h) { sec = h[1].toLowerCase(); continue; }
+    const i = sec === 'takes' ? line.lastIndexOf('=') : line.indexOf('='); if (i < 0) continue;
+    const k = line.slice(0, i).trim(), v = line.slice(i + 1).trim();
+    if (sec === 'settings' && k in DEF) s[k] = typeof DEF[k] === 'boolean' ? v === '1' || v === 'true' : typeof DEF[k] === 'number' ? +v : v;
+    if (sec === 'takes') { const g = {}; v.split(';').forEach(p => { const [a, b] = p.split(':'); g[a] = +b; }); if (g.bpm) meta[k] = g; }
+  }
+  return { s, meta };
+}
+let saveTimer = null;
+function saveSettings(){
+  ls.set('br-settings', JSON.stringify({ S, META }));
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    if (!(await folderReady(false))) return;
+    try { const fh = await rootHandle.getFileHandle('bass-recorder.ini', { create: true }); const w = await fh.createWritable(); await w.write(toIni()); await w.close(); }
+    catch (e) { console.warn('ini write failed', e); }
+  }, 400);
+}
+async function loadIni(){
+  try {
+    const fh = await rootHandle.getFileHandle('bass-recorder.ini');
+    const { s, meta } = fromIni(await (await fh.getFile()).text());
+    S = { ...S, ...s }; META = { ...META, ...meta }; applySettingsToUi(); ls.set('br-settings', JSON.stringify({ S, META }));
+  } catch { saveSettings(); }   // no ini yet: create it from current settings
+}
+function applySettingsToUi(){
+  $('bpm').value = S.bpm; $('beats').value = String(S.beats); $('countin').value = String(S.countin); $('vol').value = S.vol;
+  $('lat').value = S.lat === '' || S.lat == null || isNaN(S.lat) ? '' : S.lat;
+  $('norm').checked = S.norm; $('tgt').value = S.tgt; $('autosave').checked = S.autosave; $('autoloop').checked = S.autoloop;
+  buildBeatLeds();
+}
+applySettingsToUi();
+const bindNum = (id, k, lo, hi) => $(id).addEventListener('change', () => { let v = parseFloat($(id).value); if (isNaN(v)) v = DEF[k]; S[k] = Math.max(lo, Math.min(hi, v)); $(id).value = S[k]; saveSettings(); });
+bindNum('bpm', 'bpm', 30, 300); bindNum('tgt', 'tgt', -24, 0); bindNum('vol', 'vol', 0, 1);
+$('vol').addEventListener('input', () => { S.vol = +$('vol').value; });
+$('beats').onchange = () => { S.beats = +$('beats').value; buildBeatLeds(); saveSettings(); };
+$('countin').onchange = () => { S.countin = +$('countin').value; saveSettings(); };
+$('lat').onchange = () => { const v = $('lat').value.trim(); S.lat = v === '' ? '' : Math.max(0, Math.min(1000, +v)); $('lat').value = S.lat; saveSettings(); };
+for (const k of ['norm', 'autosave', 'autoloop']) $(k).onchange = () => { S[k] = $(k).checked; saveSettings(); };
+$('bpm').addEventListener('change', () => { if (met.on) metRestart(); });
+
+// ================= input / capture
 async function listDevices(){
   const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput');
-  const saved = store.get('dev');
   $('dev').innerHTML = devs.map(d => `<option value="${d.deviceId}">${(d.label || 'Vhod').replace(/</g,'&lt;')}</option>`).join('');
-  const pick = devs.find(d => d.deviceId === saved) || devs.find(d => /me-?90|boss/i.test(d.label));
+  const pick = devs.find(d => d.label && d.label === S.dev) || devs.find(d => /me-?90|boss/i.test(d.label));
   if (pick) $('dev').value = pick.deviceId;
 }
-
-// Capture runs on the audio thread (AudioWorklet) so UI work can't cause dropouts/clicks.
+// Capture runs on the audio thread; each block carries its frame index so takes can start sample-exactly.
 const WORKLET = `class Cap extends AudioWorkletProcessor{
   constructor(o){super();this.nc=o.processorOptions.nc;}
   process(inp){const i=inp[0];if(!i||!i.length)return true;
     const bufs=[];let pk=0;
     for(let c=0;c<this.nc;c++){const d=i[Math.min(c,i.length-1)];bufs.push(d.slice());
       for(let k=0;k<d.length;k++){const a=d[k]<0?-d[k]:d[k];if(a>pk)pk=a;}}
-    this.port.postMessage({bufs,pk},bufs.map(b=>b.buffer));return true;}}
+    this.port.postMessage({bufs,pk,f:currentFrame},bufs.map(b=>b.buffer));return true;}}
 registerProcessor('cap',Cap);`;
-
+let inputLatency = 0;
+async function ensureCtx(rate){
+  if (ctx && (!rate || ctx.sampleRate === rate)) return;
+  const wasMet = met.on; metStop();
+  if (ctx) await ctx.close();
+  ctx = new AudioContext(rate ? { sampleRate: rate, latencyHint: 'interactive' } : { latencyHint: 'interactive' });
+  await ctx.audioWorklet.addModule('data:text/javascript;charset=utf-8,' + encodeURIComponent(WORKLET));
+  if (wasMet) metStart();
+}
 async function openInput(){
   if (stream) stream.getTracks().forEach(t => t.stop());
   const id = $('dev').value;
   stream = await navigator.mediaDevices.getUserMedia({ audio: {
     deviceId: id ? { exact: id } : undefined,
-    echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: { ideal: 2 } } });
-  const st = stream.getAudioTracks()[0].getSettings();
-  chCount = Math.min(2, st.channelCount || 1);
-  if (!ctx || (st.sampleRate && ctx.sampleRate !== st.sampleRate)) {
-    if (ctx) await ctx.close();
-    ctx = new AudioContext(st.sampleRate ? { sampleRate: st.sampleRate, latencyHint: 'playback' } : { latencyHint: 'playback' });
-    await ctx.audioWorklet.addModule('data:text/javascript;charset=utf-8,' + encodeURIComponent(WORKLET));
-  }
+    echoCancellation: false, noiseSuppression: false, autoGainControl: false, latency: 0, channelCount: { ideal: 2 } } });
+  const tr = stream.getAudioTracks()[0], st = tr.getSettings();
+  chCount = Math.min(2, st.channelCount || 1); inputLatency = st.latency || 0;
+  if (tr.label) { S.dev = tr.label; saveSettings(); }
+  await ensureCtx(st.sampleRate);   // context runs at the device's own rate: no resampling, no drift
   await ctx.resume();
   if (src) src.disconnect();
   if (proc) { proc.port.onmessage = null; proc.disconnect(); }
   src = ctx.createMediaStreamSource(stream);
-  proc = new AudioWorkletNode(ctx, 'cap', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: chCount,
-    channelCountMode: 'explicit', processorOptions: { nc: chCount } });
-  mon = ctx.createGain(); mon.gain.value = 0; // no monitoring through the computer
-  proc.port.onmessage = ({ data }) => {
-    if (recording) chunks.push(data.bufs);
-    lastBuf = data.bufs[0];
-    peakHold = Math.max(peakHold * 0.92, data.pk);
-  };
+  proc = new AudioWorkletNode(ctx, 'cap', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: chCount, channelCountMode: 'explicit', processorOptions: { nc: chCount } });
+  mon = ctx.createGain(); mon.gain.value = 0;
+  proc.port.onmessage = ({ data }) => onBlock(data);
   src.connect(proc); proc.connect(mon); mon.connect(ctx.destination);
-  $('rec').disabled = false; $('empty').style.display = 'none';
-  $('enable').textContent = 'Znova poveži';
+  $('rec').disabled = false; $('empty').hidden = true; $('enable').textContent = 'Znova poveži';
+  $('lat').placeholder = 'auto ' + Math.round(autoLatency() * 1000);
 }
-
+function onBlock(data){
+  const n = data.bufs[0].length;
+  if (recState === 'count' && data.f + n > recStartFrame) {
+    const off = Math.max(0, recStartFrame - data.f);
+    chunks = [data.bufs.map(b => b.subarray(off))]; recState = 'rec'; setRecUi('rec');
+  } else if (recState === 'rec') chunks.push(data.bufs);
+  lastBuf = data.bufs[0];
+  peakHold = Math.max(peakHold * 0.92, data.pk);
+}
 $('enable').onclick = async () => {
   try { await openInput(); await listDevices(); await openInput(); }
   catch (err) { alert('Vhoda ni mogoče odpreti: ' + (err.message || err.name) + '\nPreveri, ali je ME-90B priključen prek USB.'); }
 };
-$('dev').onchange = async () => { store.set('dev', $('dev').value); try { await openInput(); } catch (err) { alert(err.message); } };
+$('dev').onchange = async () => { try { await openInput(); } catch (err) { alert(err.message); } };
 
-// ---------- scope + meter (one animation loop)
+// ================= metronome (look-ahead scheduler on the capture context, same clock as the recording)
+const met = { on: false, temp: false, t0: 0, k: 0, timer: null, stopAt: Infinity };
+const beatSec = () => 60 / S.bpm;
+function autoLatency(){ return ctx ? (ctx.outputLatency || ctx.baseLatency || 0) + inputLatency : 0; }
+function latency(){ return S.lat === '' || S.lat == null || isNaN(S.lat) ? autoLatency() : S.lat / 1000; }
+function click(t, accent){
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.frequency.value = accent ? 1600 : 1000;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(S.vol * (accent ? 1 : 0.6), t + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.06);
+}
+function metTick(){
+  const now = ctx.currentTime;
+  while (met.t0 + met.k * beatSec() < now + 0.3) {
+    const t = met.t0 + met.k * beatSec();
+    // beats that are already late (page stalled) are skipped, never played late
+    if (t >= now + 0.005 && t < met.stopAt - 0.001) click(t, met.k % S.beats === 0);
+    met.k++;
+    if (met.temp && t >= met.stopAt) { metStop(); return; }
+  }
+}
+function metStart(t0){
+  if (!ctx) return;
+  clearInterval(met.timer); met.on = true; met.t0 = t0 ?? ctx.currentTime + 0.1; met.k = 0; met.stopAt = Infinity;
+  met.timer = setInterval(metTick, 25); metTick(); metUi();
+}
+function metStop(){ clearInterval(met.timer); met.on = false; met.temp = false; metUi(); }
+function metRestart(){ if (!met.on) return; const next = nextBeat(); metStart(next); }
+function nextBeat(){ const b = beatSec(), k = Math.ceil((ctx.currentTime + 0.05 - met.t0) / b); return met.t0 + k * b; }
+function nextBar(){ const bar = beatSec() * S.beats, k = Math.ceil((ctx.currentTime + 0.05 - met.t0) / bar); return met.t0 + k * bar; }
+function metUi(){ const on = met.on && !met.temp; $('metbtn').classList.toggle('on', on); $('metbtn').setAttribute('aria-pressed', on); }
+$('metbtn').onclick = async () => {
+  if (met.on && !met.temp) { metStop(); return; }
+  try { await ensureCtx(); await ctx.resume(); metStart(); } catch (e) { alert(e.message); }
+};
+function buildBeatLeds(){ $('beatleds').innerHTML = Array.from({ length: S.beats }, (_, i) => `<i${i ? '' : ' class="one"'}></i>`).join(''); }
+
+// ================= scope, meter, count-in, beat LEDs (one animation loop)
 function drawScope(){
   const c = $('scope'), dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
   if (c.width !== w * dpr || c.height !== h * dpr) { c.width = w * dpr; c.height = h * dpr; }
   const g = c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
   g.strokeStyle = '#1c2547'; g.lineWidth = 1; g.beginPath(); g.moveTo(0,h/2); g.lineTo(w,h/2); g.stroke();
   if (lastBuf) {
-    g.strokeStyle = recording ? '#ff4d4f' : '#5be39a'; g.lineWidth = 2; g.beginPath();
+    g.strokeStyle = recState === 'rec' ? '#ff4d4f' : '#5be39a'; g.lineWidth = 2; g.beginPath();
     const n = lastBuf.length;
     for (let x = 0; x < w; x++) { const v = lastBuf[Math.floor(x / w * n)] || 0; const y = h/2 - v * h * 0.45; x ? g.lineTo(x,y) : g.moveTo(x,y); }
     g.stroke();
@@ -258,20 +383,54 @@ function drawScope(){
   $('m').style.width = Math.max(0, Math.min(100, (db + 60) / 60 * 100)) + '%';
   const hot = db > -1; $('m').classList.toggle('hot', hot); $('db').classList.toggle('hot', hot);
   $('db').textContent = (isFinite(db) ? db.toFixed(1) : '−∞') + ' dB';
-  if (recording) { const s = Math.floor((performance.now() - recStart) / 1000); $('timer').textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
+  if (ctx) {
+    const heard = ctx.currentTime - (ctx.outputLatency || ctx.baseLatency || 0);
+    if (recState === 'rec') { const s = Math.max(0, Math.floor(heard - recStartTime)); $('timer').textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
+    if (recState === 'count' && recCounting) { const left = Math.ceil((recStartTime - heard) / beatSec()); $('count').hidden = false; $('count').textContent = left > 0 ? left : ''; }
+    else $('count').hidden = true;
+    const leds = $('beatleds').children;
+    let cur = -1;
+    if (met.on && heard >= met.t0) { const k = Math.floor((heard - met.t0) / beatSec()); if ((heard - met.t0) - k * beatSec() < 0.12) cur = k % S.beats; }
+    for (let i = 0; i < leds.length; i++) leds[i].classList.toggle('on', i === cur);
+  }
   requestAnimationFrame(drawScope);
 }
 requestAnimationFrame(drawScope);
 
-// ---------- record
-function setRecUi(on){
-  $('rec').classList.toggle('on', on); $('led').classList.toggle('on', on); $('timer').classList.toggle('on', on);
-  $('reclabel').textContent = on ? 'Ustavi' : 'Snemaj'; $('rec').setAttribute('aria-label', on ? 'Ustavi' : 'Snemaj');
+// ================= record
+function setRecUi(state){
+  const on = state === 'rec', wait = state === 'count';
+  $('rec').classList.toggle('on', on || wait); $('led').classList.toggle('on', on); $('led').classList.toggle('wait', wait);
+  $('timer').classList.toggle('on', on);
+  $('reclabel').textContent = on ? 'Ustavi' : wait ? 'Prekliči' : 'Snemaj';
+  $('rec').setAttribute('aria-label', $('reclabel').textContent);
 }
-function toggleRec(){
-  if ($('rec').disabled) return;
-  if (!recording) { stopPlay(); chunks = []; recording = true; recStart = performance.now(); $('timer').textContent = '0:00'; setRecUi(true); }
-  else { recording = false; setRecUi(false); finishTake(); }
+let busy = false;
+async function toggleRec(){
+  if ($('rec').disabled || busy) return;
+  if (recState === 'rec') { recState = 'idle'; setRecUi('idle'); if (met.temp) metStop(); finishTake(); return; }
+  if (recState === 'count') { recState = 'idle'; chunks = []; setRecUi('idle'); if (met.temp) metStop(); return; }
+  busy = true; stopPlay();
+  try {
+    const useMet = met.on || S.countin > 0;
+    if (useMet) await openInput();   // fresh input stream per take: no buffered latency creep
+    $('timer').textContent = '0:00'; chunks = [];
+    if (useMet) {
+      // the count-in bar starts on the next beat (metronome re-phased so beat 1 = start of count-in)
+      if (!met.on) { metStart(ctx.currentTime + 0.15); met.temp = true; metUi(); }
+      else metStart(nextBeat());
+      const downbeat = met.t0;
+      recStartTime = downbeat + S.countin * S.beats * beatSec();
+      if (met.temp) met.stopAt = recStartTime;
+      recGrid = met.temp ? null : { bpm: S.bpm, beats: S.beats, offset: 0 };
+      // the bass you hear in time with click N reaches the capture `latency()` later
+      recStartFrame = Math.round((recStartTime + latency()) * ctx.sampleRate);
+      recCounting = true; recState = 'count'; setRecUi('count');
+    } else {
+      recCounting = false; recGrid = null; recStartTime = ctx.currentTime; recStartFrame = 0; recState = 'count'; setRecUi('count');
+    }
+  } catch (e) { alert(e.message); }
+  busy = false;
 }
 $('rec').onclick = toggleRec;
 
@@ -281,25 +440,25 @@ function peaksOf(d, bins = 180){
     for (let i = Math.floor(b * step); i < e; i++) { const a = d[i] < 0 ? -d[i] : d[i]; if (a > m) m = a; } out[b] = m; }
   return out;
 }
-
 function finishTake(){
   if (!chunks.length) return;
   const len = chunks.reduce((s, b) => s + b[0].length, 0);
   const ch = [];
   for (let c = 0; c < chCount; c++) { const out = new Float32Array(len); let o = 0; for (const b of chunks) { out.set(b[c], o); o += b[c].length; } ch.push(out); }
+  chunks = [];
   let pk = 0; for (const d of ch) for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > pk) pk = a; }
   const rawDb = pk > 0 ? 20 * Math.log10(pk) : -Infinity;
   let gainDb = 0;
-  if ($('norm').checked && pk > 0) { gainDb = parseFloat($('tgt').value || '-1') - rawDb; const g = Math.pow(10, gainDb / 20); for (const d of ch) for (let i = 0; i < d.length; i++) d[i] *= g; }
+  if (S.norm && pk > 0) { gainDb = S.tgt - rawDb; const g = Math.pow(10, gainDb / 20); for (const d of ch) for (let i = 0; i < d.length; i++) d[i] *= g; }
   const ts = new Date(), p = n => String(n).padStart(2, '0');
   const name = `bass_${ts.getFullYear()}${p(ts.getMonth()+1)}${p(ts.getDate())}_${p(ts.getHours())}${p(ts.getMinutes())}${p(ts.getSeconds())}.wav`;
   const blob = encodeWav(ch, ctx.sampleRate);
   const take = { name, blob, url: URL.createObjectURL(blob), secs: len / ctx.sampleRate, rawDb, gainDb, mtime: Date.now(), peaks: peaksOf(ch[0]) };
+  if (recGrid) { META[name] = recGrid; saveSettings(); }
   takes.unshift(take); render();
-  if ($('autosave').checked) download(take);
-  if ($('autoloop').checked) play(take, true);
+  if (S.autosave) download(take);
+  if (S.autoloop) play(take, true);
 }
-
 function encodeWav(ch, sr){
   const n = ch[0].length, nc = ch.length, bps = 3, buf = new ArrayBuffer(44 + n * nc * bps), v = new DataView(buf);
   const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
@@ -314,60 +473,93 @@ function encodeWav(ch, sr){
   return new Blob([buf], { type: 'audio/wav' });
 }
 
-// ---------- folder (File System Access API), fallback = normal download
-let dirHandle = null;
+// ================= app folder: <folder>/bass-recorder.ini + <folder>/recordings/
+let rootHandle = null, recDir = null;
 const idb = (mode, fn) => new Promise((res, rej) => {
   const r = indexedDB.open('bass-recorder', 1);
   r.onupgradeneeded = () => r.result.createObjectStore('kv');
   r.onsuccess = () => { const tx = r.result.transaction('kv', mode); const q = fn(tx.objectStore('kv')); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); };
   r.onerror = () => rej(r.error);
 });
-async function dirReady(ask){
-  if (!dirHandle) return false;
+async function folderReady(ask){
+  if (!rootHandle) return false;
   const opts = { mode: 'readwrite' };
-  if (await dirHandle.queryPermission(opts) === 'granted') return true;
-  return ask && await dirHandle.requestPermission(opts) === 'granted';
+  if (await rootHandle.queryPermission(opts) !== 'granted' && !(ask && await rootHandle.requestPermission(opts) === 'granted')) return false;
+  if (!recDir) recDir = await rootHandle.getDirectoryHandle('recordings', { create: true });
+  return true;
 }
+let iniLoaded = false;
 async function showDir(){
-  if (!dirHandle) { $('dirinfo').textContent = 'Shranjuje v Prenose'; $('unlock').style.display = 'none'; render(); return; }
-  const ok = await dirReady(false);
-  $('unlock').style.display = ok ? 'none' : '';
-  $('dirinfo').textContent = 'Mapa: ' + dirHandle.name;
-  if (ok) await loadFolder(); else render();
+  if (!rootHandle) { $('dirinfo').textContent = 'Mapa ni izbrana, shranjuje v Prenose'; $('unlock').hidden = true; render(); return; }
+  const ok = await folderReady(false);
+  $('unlock').hidden = ok;
+  $('dirinfo').textContent = 'Mapa: ' + rootHandle.name + '\\recordings';
+  if (ok) { if (!iniLoaded) { iniLoaded = true; await loadIni(); } await loadFolder(); } else render();
 }
 async function loadFolder(){
   const found = [];
-  for await (const h of dirHandle.values()) {
+  for await (const h of recDir.values()) {
     if (h.kind !== 'file' || !/\.(wav|mp3|m4a|flac|ogg)$/i.test(h.name)) continue;
     if (takes.some(t => t.name === h.name)) continue;
     const f = await h.getFile();
-    found.push({ name: h.name, blob: f, url: URL.createObjectURL(f), mtime: f.lastModified, saved: dirHandle.name, fromDisk: true });
+    found.push({ name: h.name, blob: f, url: URL.createObjectURL(f), mtime: f.lastModified, inFolder: true });
   }
   takes = takes.concat(found).sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
   render();
 }
-if (!('showDirectoryPicker' in window)) $('pickdir').style.display = 'none';
+if (!('showDirectoryPicker' in window)) $('pickdir').hidden = true;
 $('pickdir').onclick = async () => {
-  try { dirHandle = await showDirectoryPicker({ id: 'bass-recorder', mode: 'readwrite' });
-        await idb('readwrite', s => s.put(dirHandle, 'dir')); takes = takes.filter(t => !t.fromDisk); showDir(); }
-  catch (e) { if (e.name !== 'AbortError') alert(e.message); }
+  try {
+    rootHandle = await showDirectoryPicker({ id: 'bass-recorder-root', mode: 'readwrite', startIn: 'documents' });
+    recDir = null; iniLoaded = false; await idb('readwrite', s => s.put(rootHandle, 'root'));
+    takes = takes.filter(t => !t.inFolder); showDir();
+  } catch (e) { if (e.name !== 'AbortError') alert('Te mape ni mogoče uporabiti: ' + e.message + '\nIzberi podmapo, npr. D:\\Bass.'); }
 };
-$('unlock').onclick = async () => { if (await dirReady(true)) showDir(); };
-(async () => { try { dirHandle = await idb('readonly', s => s.get('dir')) || null; } catch {} showDir(); })();
+$('unlock').onclick = async () => { if (await folderReady(true)) showDir(); };
+(async () => { try { rootHandle = await idb('readonly', s => s.get('root')) || null; } catch {} showDir(); })();
 
 async function download(t){
   try {
-    if (await dirReady(true)) {
-      const fh = await dirHandle.getFileHandle(t.name, { create: true });
+    if (await folderReady(true)) {
+      const fh = await recDir.getFileHandle(t.name, { create: true });
       const w = await fh.createWritable(); await w.write(t.blob); await w.close();
-      t.saved = dirHandle.name; render(); showDir(); return;
+      t.inFolder = true; t.saved = null; render(); return;
     }
   } catch (e) { console.warn('folder save failed, falling back to download', e); }
   const a = document.createElement('a'); a.href = t.url; a.download = t.name; document.body.appendChild(a); a.click(); a.remove();
   t.saved = 'Prenosi'; render();
 }
 
-// ---------- playback
+// ================= rename (double-click the name)
+async function renameTake(t, newName){
+  newName = newName.trim().replace(/[\\/:*?"<>|]/g, '_');
+  if (!newName || newName === t.name) return;
+  const ext = (t.name.match(/\.[^.]+$/) || ['.wav'])[0];
+  if (!/\.[a-z0-9]{2,4}$/i.test(newName)) newName += ext;
+  if (takes.some(x => x !== t && x.name === newName)) { alert('Datoteka ' + newName + ' že obstaja.'); return; }
+  if (t.inFolder) {
+    if (!(await folderReady(true))) { alert('Mapa ni odprta.'); return; }
+    try {
+      const fh = await recDir.getFileHandle(t.name);
+      if (fh.move) await fh.move(newName);
+      else { const nf = await recDir.getFileHandle(newName, { create: true }); const w = await nf.createWritable(); await w.write(await fh.getFile()); await w.close(); await recDir.removeEntry(t.name); }
+    } catch (e) { alert('Preimenovanje ni uspelo: ' + e.message); return; }
+  }
+  if (META[t.name]) { META[newName] = META[t.name]; delete META[t.name]; saveSettings(); }
+  t.name = newName; if (ed && ed.t === t) $('edname').textContent = newName; render();
+}
+function startRename(t, el){
+  if (renaming) return;
+  const inp = document.createElement('input'); inp.value = t.name; el.textContent = ''; el.append(inp);
+  inp.focus(); inp.setSelectionRange(0, t.name.replace(/\.[^.]+$/, '').length);
+  let done = false; renaming = true;
+  const finish = ok => { if (done) return; done = true; renaming = false; ok ? renameTake(t, inp.value).then(render) : render(); };
+  inp.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false); };
+  inp.onblur = () => finish(true);
+  inp.onclick = e => e.stopPropagation();
+}
+
+// ================= playback
 function play(t, loop){
   stopPlay();
   player = new Audio(t.url); player.loop = loop; player._t = t; player._loop = loop; player.play();
@@ -376,7 +568,7 @@ function play(t, loop){
 }
 function stopPlay(){ edStop(); if (player) { player.pause(); player = null; render(); } }
 
-// ---------- list
+// ================= list
 async function ensurePeaks(t){
   if (t.peaks || t._decoding) return;
   t._decoding = true;
@@ -396,22 +588,26 @@ function drawThumb(cv, t, active){
   t.peaks.forEach((v, i) => { const bh = Math.max(1, v / mx * (h - 4)); g.fillRect(i * bw, (h - bh) / 2, Math.max(1, bw - .5), bh); });
 }
 function fmtTime(ms){ return new Date(ms).toLocaleString('sl-SI', { day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit' }); }
+let renaming = false;
 function render(){
+  if (renaming) return;
   const ul = $('list'); ul.innerHTML = '';
   if (!takes.length) { ul.innerHTML = '<li class="none">Še ni posnetkov. Pritisni Space in zaigraj.</li>'; return; }
   takes.forEach(t => {
     const active = player && player._t === t;
     const li = document.createElement('li'); if (active) li.classList.add('playing'); if (ed && ed.t === t) li.classList.add('editing');
-    li.onclick = e => { if (!e.target.closest('button')) openEditor(t); };
+    li.onclick = e => { if (!e.target.closest('button') && !e.target.closest('input') && !(ed && ed.t === t)) openEditor(t); };
     const info = document.createElement('div');
-    const nm = document.createElement('div'); nm.className = 'tname'; nm.textContent = t.name;
+    const nm = document.createElement('div'); nm.className = 'tname'; nm.textContent = t.name; nm.title = 'Dvoklik za preimenovanje';
+    nm.ondblclick = e => { e.stopPropagation(); startRename(t, nm); };
     const meta = document.createElement('div'); meta.className = 'tmeta';
     const add = (txt, cls) => { const s = document.createElement('span'); s.textContent = txt; if (cls) s.className = cls; meta.append(s); };
     if (t.mtime) add(fmtTime(t.mtime));
     if (t.secs != null) add(t.secs.toFixed(1) + ' s');
+    const g = META[t.name]; if (g) add(`${g.bpm} BPM, ${g.beats}/4`);
     if (t.rawDb != null) add('vrh ' + (isFinite(t.rawDb) ? t.rawDb.toFixed(1) : '−∞') + ' dB' + (t.gainDb ? `, normalizirano ${t.gainDb >= 0 ? '+' : ''}${t.gainDb.toFixed(1)} dB` : ''));
     if (t.rawDb > -0.3) add('Vhod je clippal', 'warn');
-    if (t.saved && !(dirHandle && t.saved === dirHandle.name)) add('Shranjeno v ' + t.saved);
+    if (t.saved) add('Shranjeno v ' + t.saved);
     info.append(nm, meta);
     const cv = document.createElement('canvas'); cv.className = 'thumb'; drawThumb(cv, t, active);
     const acts = document.createElement('div'); acts.className = 'acts';
@@ -419,21 +615,19 @@ function render(){
     acts.append(mk('play', 'Predvajaj', () => play(t, false), active && !player._loop),
                 mk('loop', 'Predvajaj v zanki', () => play(t, true), active && player._loop),
                 mk('stop', 'Ustavi', stopPlay));
-    if (!t.fromDisk && !t.saved) acts.append(mk('save', 'Shrani', () => download(t)));
+    if (!t.inFolder && !t.saved) acts.append(mk('save', 'Shrani', () => download(t)));
     li.append(info, cv, acts); ul.append(li);
     if (!t.peaks) ensurePeaks(t);
   });
 }
 render();
 
-// ---------- A–B editor
+// ================= A–B editor
 let ed = null, pctx = null;
 const getPctx = () => (pctx = pctx || new AudioContext());
-
-// Read our own WAVs at their native rate (PCM 16/24/32, float32) so a crop never resamples.
 function parseWav(ab){
   const v = new DataView(ab);
-  if (v.getUint32(0, false) !== 0x52494646 || v.getUint32(8, false) !== 0x57415645) return null;
+  if (v.byteLength < 12 || v.getUint32(0, false) !== 0x52494646 || v.getUint32(8, false) !== 0x57415645) return null;
   let o = 12, fmt = null, data = null;
   while (o + 8 <= v.byteLength) {
     const id = v.getUint32(o, false), size = v.getUint32(o + 4, true);
@@ -463,11 +657,13 @@ async function loadBuf(t){
   const d = await getPctx().decodeAudioData(ab.slice(0));
   return { sr: d.sampleRate, len: d.length, ch: Array.from({ length: d.numberOfChannels }, (_, c) => d.getChannelData(c)) };
 }
-
+const dur = () => ed.buf.len / ed.buf.sr;
+let edTok = 0;
 async function openEditor(t){
+  const tok = ++edTok;
   stopPlay();
   $('editor').hidden = false; $('edname').textContent = t.name; $('edmsg').textContent = 'Nalagam…';
-  try { const buf = await loadBuf(t); ed = { t, buf, a: null, b: null, src: null, ab: null }; }
+  try { const buf = await loadBuf(t); if (tok !== edTok) return; ed = { t, buf, a: null, b: null, src: null, ab: null, view: { s: 0, e: buf.len / buf.sr } }; }
   catch (e) { $('edmsg').textContent = 'Posnetka ni mogoče prebrati: ' + e.message; return; }
   $('edmsg').textContent = ''; edUpdate(); render();
   $('editor').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
@@ -478,77 +674,101 @@ const fmtS = x => x.toFixed(2) + ' s';
 function hasSel(){ return ed && ed.a != null && ed.b != null && ed.b - ed.a > 0.02; }
 function edUpdate(){
   if (!ed) return;
-  $('edsel').textContent = hasSel() ? `A ${fmtS(ed.a)}   B ${fmtS(ed.b)}   dolžina ${fmtS(ed.b - ed.a)}` : `Dolžina ${fmtS(ed.buf.len / ed.buf.sr)}. Povleci po valu, da označiš A–B.`;
+  const z = dur() / (ed.view.e - ed.view.s);
+  $('edsel').textContent = (hasSel() ? `A ${fmtS(ed.a)}   B ${fmtS(ed.b)}   dolžina ${fmtS(ed.b - ed.a)}` : `Dolžina ${fmtS(dur())}`) + (z > 1.05 ? `   povečava ${z.toFixed(1)}×` : '');
   $('edcrop').disabled = !hasSel();
   $('edloop').textContent = hasSel() ? 'Predvajaj zanko A–B' : 'Predvajaj zanko';
   drawWave();
 }
-
 function drawWave(){
   if (!ed) return;
   const c = $('wave'), dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
   if (c.width !== w * dpr || c.height !== h * dpr) { c.width = w * dpr; c.height = h * dpr; }
   const g = c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
-  const d = ed.buf.ch[0], n = ed.buf.len, dur = n / ed.buf.sr, X = t => t / dur * w;
-  if (!ed.cols || ed.cols.w !== w) { // cache min/max per pixel column
-    const mn = new Float32Array(w), mx = new Float32Array(w);
-    for (let x = 0; x < w; x++) { let lo = 0, hi = 0; const s0 = Math.floor(x / w * n), s1 = Math.max(s0 + 1, Math.floor((x + 1) / w * n));
-      for (let i = s0; i < s1; i++) { const v = d[i]; if (v < lo) lo = v; if (v > hi) hi = v; } mn[x] = lo; mx[x] = hi; }
-    let pk = 0; for (let x = 0; x < w; x++) pk = Math.max(pk, -mn[x], mx[x]);
-    ed.cols = { w, mn, mx, pk: pk || 1 };
+  const { s: vs, e: ve } = ed.view, sr = ed.buf.sr, d = ed.buf.ch[0], X = t => (t - vs) / (ve - vs) * w;
+  const key = w + ':' + vs + ':' + ve;
+  if (!ed.cols || ed.cols.key !== key) {
+    const mn = new Float32Array(w), mx = new Float32Array(w), i0 = vs * sr, span = (ve - vs) * sr;
+    for (let x = 0; x < w; x++) {
+      const s0 = Math.floor(i0 + x / w * span), s1 = Math.max(s0 + 1, Math.floor(i0 + (x + 1) / w * span));
+      let lo = 0, hi = 0; for (let i = Math.max(0, s0); i < Math.min(ed.buf.len, s1); i++) { const v = d[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+      mn[x] = lo; mx[x] = hi;
+    }
+    if (!ed.pk) { let pk = 0; for (let i = 0; i < ed.buf.len; i++) { const a = d[i] < 0 ? -d[i] : d[i]; if (a > pk) pk = a; } ed.pk = pk || 1; }
+    ed.cols = { key, mn, mx };
+  }
+  // beat grid (only for takes recorded with the metronome)
+  const grid = META[ed.t.name];
+  if (grid) {
+    const b = 60 / grid.bpm, k0 = Math.ceil((vs - grid.offset) / b), k1 = Math.floor((ve - grid.offset) / b);
+    if ((k1 - k0) < w / 3) {
+      g.font = '600 11px Barlow,sans-serif';
+      for (let k = k0; k <= k1; k++) {
+        const x = X(grid.offset + k * b), bar = ((k % grid.beats) + grid.beats) % grid.beats === 0;
+        g.fillStyle = bar ? 'rgba(255,181,71,.55)' : 'rgba(139,147,167,.25)'; g.fillRect(Math.round(x), 0, 1, h);
+        if (bar) { g.fillStyle = 'rgba(255,181,71,.8)'; g.fillText(String(Math.floor(k / grid.beats) + 1), x + 3, h - 6); }
+      }
+    }
   }
   if (hasSel()) { g.fillStyle = 'rgba(91,227,154,.13)'; g.fillRect(X(ed.a), 0, X(ed.b) - X(ed.a), h); }
-  const { mn, mx, pk } = ed.cols;
-  g.fillStyle = '#8b93a7';
+  const { mn, mx } = ed.cols, pk = ed.pk, xa = hasSel() ? X(ed.a) : -1, xb = hasSel() ? X(ed.b) : -1;
   for (let x = 0; x < w; x++) {
-    const inSel = hasSel() && x >= X(ed.a) && x <= X(ed.b);
-    g.fillStyle = inSel ? '#5be39a' : '#8b93a7';
+    g.fillStyle = x >= xa && x <= xb ? '#5be39a' : '#8b93a7';
     const y0 = h/2 - mx[x] / pk * h * .46, y1 = h/2 - mn[x] / pk * h * .46;
     g.fillRect(x, y0, 1, Math.max(1, y1 - y0));
   }
-  if (ed.a != null) for (const [t, lab] of [[ed.a, 'A'], [ed.b, 'B']]) {
-    if (t == null) continue;
+  for (const [t, lab] of [[ed.a, 'A'], [ed.b, 'B']]) {
+    if (t == null || !hasSel()) continue;
     g.fillStyle = '#ffb547'; g.fillRect(X(t) - 1, 0, 2, h);
     g.font = '700 14px "Barlow Condensed",sans-serif'; g.fillText(lab, X(t) + (lab === 'A' ? 4 : -12), 14);
   }
   if (ed.src) {
-    const ctxT = pctx.currentTime - ed.t0, s = ed.loopA, L = ed.loopB - ed.loopA;
-    const pos = s + (ctxT % L);
+    const pos = ed.loopA + ((pctx.currentTime - ed.t0) % (ed.loopB - ed.loopA));
     g.fillStyle = '#ff4d4f'; g.fillRect(X(pos) - 1, 0, 2, h);
     requestAnimationFrame(drawWave);
   }
 }
 addEventListener('resize', () => { if (ed) { ed.cols = null; drawWave(); } });
 
-// Snap to the nearest rising zero crossing so loops and crops don't click.
 function zeroSnap(sec){
   const d = ed.buf.ch[0], sr = ed.buf.sr, i0 = Math.max(1, Math.min(ed.buf.len - 1, Math.round(sec * sr))), R = Math.round(sr * 0.006);
   for (let k = 0; k <= R; k++) for (const i of [i0 + k, i0 - k]) if (i > 0 && i < ed.buf.len && d[i-1] <= 0 && d[i] > 0) return i / sr;
   return i0 / sr;
 }
-
-// Pointer: drag on the wave = new A–B; grab near A or B = move that marker.
+function setView(s, e){
+  const D = dur(), span = Math.max(0.05, Math.min(D, e - s));
+  s = Math.max(0, Math.min(D - span, s)); ed.view = { s, e: s + span }; edUpdate();
+}
 (() => {
-  const box = $('wavebox'); let drag = null;
-  const tAt = e => { const r = box.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * ed.buf.len / ed.buf.sr; };
-  const xOf = t => t / (ed.buf.len / ed.buf.sr) * box.clientWidth;
+  const box = $('wavebox'); let drag = null, prev = null;
+  const tAt = e => { const r = box.getBoundingClientRect(); return ed.view.s + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (ed.view.e - ed.view.s); };
+  const xOf = t => (t - ed.view.s) / (ed.view.e - ed.view.s) * box.clientWidth;
   box.addEventListener('pointerdown', e => {
-    if (!ed) return; box.setPointerCapture(e.pointerId);
+    if (!ed || e.button !== 0) return; box.setPointerCapture(e.pointerId); prev = null;
     const t = tAt(e), x = e.clientX - box.getBoundingClientRect().left;
     if (hasSel() && Math.abs(x - xOf(ed.a)) < 10) drag = 'a';
     else if (hasSel() && Math.abs(x - xOf(ed.b)) < 10) drag = 'b';
-    else { ed.a = t; ed.b = t; drag = 'b'; }
+    else { prev = hasSel() ? [ed.a, ed.b] : null; ed.a = t; ed.b = t; drag = 'b'; }
     edUpdate();
   });
   box.addEventListener('pointermove', e => { if (!drag) return; ed[drag] = tAt(e); edUpdate(); });
   box.addEventListener('pointerup', () => {
     if (!drag) return; drag = null;
     if (ed.a > ed.b) [ed.a, ed.b] = [ed.b, ed.a];
-    if (ed.b - ed.a < 0.02) { ed.a = ed.b = null; }
-    else { ed.a = zeroSnap(ed.a); ed.b = zeroSnap(ed.b); }
+    if (ed.b - ed.a < 0.02) { [ed.a, ed.b] = prev || [null, null]; } else { ed.a = zeroSnap(ed.a); ed.b = zeroSnap(ed.b); }
     edUpdate(); if (ed.src) edPlay();
   });
+  // wheel = zoom around the cursor; shift+wheel or horizontal wheel = pan
+  box.addEventListener('wheel', e => {
+    if (!ed) return; e.preventDefault();
+    const { s, e: en } = ed.view, span = en - s;
+    if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { const d = (e.shiftKey ? e.deltaY : e.deltaX) / box.clientWidth * span; setView(s + d, en + d); return; }
+    const t = tAt(e), f = Math.pow(1.0015, e.deltaY), ns = Math.max(0.05, Math.min(dur(), span * f)), r = (t - s) / span;
+    setView(t - r * ns, t - r * ns + ns);
+  }, { passive: false });
+  box.addEventListener('dblclick', () => { if (ed) setView(0, dur()); });
 })();
+$('edfit').onclick = () => { if (ed) setView(0, dur()); };
 
 function edStop(){ if (ed && ed.src) { try { ed.src.stop(); } catch {} ed.src = null; drawWave(); } }
 function edPlay(){
@@ -557,17 +777,18 @@ function edPlay(){
   edStop();
   const ac = getPctx(); ac.resume();
   if (!ed.ab) { ed.ab = ac.createBuffer(ed.buf.ch.length, ed.buf.len, ed.buf.sr); ed.buf.ch.forEach((d, c) => ed.ab.copyToChannel(d, c)); }
-  const src = ac.createBufferSource(); src.buffer = ed.ab; src.loop = true;
-  ed.loopA = hasSel() ? ed.a : 0; ed.loopB = hasSel() ? ed.b : ed.buf.len / ed.buf.sr;
-  src.loopStart = ed.loopA; src.loopEnd = ed.loopB;
-  src.connect(ac.destination); src.start(0, ed.loopA);
-  ed.src = src; ed.t0 = ac.currentTime; drawWave();
+  const s = ac.createBufferSource(); s.buffer = ed.ab; s.loop = true;
+  ed.loopA = hasSel() ? ed.a : 0; ed.loopB = hasSel() ? ed.b : dur();
+  s.loopStart = ed.loopA; s.loopEnd = ed.loopB;
+  s.connect(ac.destination); s.start(0, ed.loopA);
+  ed.src = s; ed.t0 = ac.currentTime; drawWave();
 }
 $('edloop').onclick = edPlay;
 $('edstop').onclick = edStop;
 $('edclear').onclick = () => { if (!ed) return; ed.a = ed.b = null; edUpdate(); if (ed.src) edPlay(); };
 
-// Loop detection: onset envelope -> autocorrelation -> shortest strongly repeating period (>= 1 s).
+// Loop detection: onset envelope -> autocorrelation -> shortest strongly repeating period (1–8 s).
+// With a metronome grid the result is snapped to whole bars.
 function findLoop(){
   const sr = ed.buf.sr, hop = Math.round(sr * 0.01), n = ed.buf.len, chs = ed.buf.ch;
   const F = Math.floor(n / hop); if (F < 300) return null;
@@ -586,33 +807,39 @@ function findLoop(){
   let peak = a; for (let f = a; f < Math.min(F, a + 10); f++) if (on[f] > on[peak]) peak = f;
   if (peak + lag >= F) return null;
   let b = peak + lag; for (let f = Math.max(0, peak + lag - 5); f <= Math.min(F - 1, peak + lag + 5); f++) if (on[f] > on[b]) b = f;
-  const pre = 0.01;
-  return { a: Math.max(0, peak * hop / sr - pre), b: Math.min(n / sr, b * hop / sr - pre) };
+  let A = Math.max(0, peak * hop / sr - 0.01), B = Math.min(n / sr, b * hop / sr - 0.01);
+  const grid = META[ed.t.name];
+  if (grid) {   // snap to bar lines: start on the nearest bar, length = whole bars
+    const bar = 60 / grid.bpm * grid.beats, bars = Math.max(1, Math.round((B - A) / bar));
+    const k = Math.max(0, Math.round((A - grid.offset) / bar)); A = grid.offset + k * bar; B = A + bars * bar;
+    if (B > n / sr) { A = Math.max(grid.offset, A - bar); B = A + bars * bar; }
+    if (B > n / sr || A < 0) return null;
+    return { a: A, b: B, snapped: bars };
+  }
+  return { a: A, b: B };
 }
 $('edauto').onclick = () => {
   if (!ed) return;
   const r = findLoop();
   if (!r) { $('edmsg').textContent = 'Ponavljajočega se vzorca nisem našel. Označi A–B ročno.'; return; }
-  ed.a = zeroSnap(r.a); ed.b = zeroSnap(r.b);
-  $('edmsg').textContent = 'Predlagana zanka: ' + fmtS(ed.b - ed.a) + '. Preveri in po potrebi premakni A ali B.';
+  ed.a = r.snapped ? r.a : zeroSnap(r.a); ed.b = r.snapped ? r.b : zeroSnap(r.b);
+  $('edmsg').textContent = 'Predlagana zanka: ' + fmtS(ed.b - ed.a) + (r.snapped ? ` (${r.snapped} ${r.snapped === 1 ? 'takt' : r.snapped < 5 ? 'takti' : 'taktov'})` : '') + '. Preveri na uho.';
   edUpdate(); edPlay();
 };
 
-// Crop: replace the file's content with the A–B section.
 $('edcrop').onclick = async () => {
   if (!hasSel()) return;
   const t = ed.t, sr = ed.buf.sr, i0 = Math.round(ed.a * sr), i1 = Math.round(ed.b * sr);
-  const isWav = /\.wav$/i.test(t.name), inFolder = dirHandle && t.saved === dirHandle.name;
-  const target = isWav ? t.name : t.name.replace(/\.[^.]+$/, '') + '.wav';
-  const msg = inFolder && isWav ? `Prepišem ${t.name} z izsekom A–B (${fmtS(ed.b - ed.a)})? Tega ni mogoče razveljaviti.`
+  const isWav = /\.wav$/i.test(t.name), target = isWav ? t.name : t.name.replace(/\.[^.]+$/, '') + '.wav';
+  const msg = t.inFolder && isWav ? `Prepišem ${t.name} z izsekom A–B (${fmtS(ed.b - ed.a)})? Tega ni mogoče razveljaviti.`
             : `Shranim izsek A–B (${fmtS(ed.b - ed.a)}) kot ${target}?`;
   if (!confirm(msg)) return;
   edStop();
   const ch = ed.buf.ch.map(d => d.slice(i0, i1));
   const blob = encodeWav(ch, sr);
   try {
-    if (inFolder && await dirReady(true)) {
-      const fh = await dirHandle.getFileHandle(target, { create: true });
+    if (t.inFolder && await folderReady(true)) {
+      const fh = await recDir.getFileHandle(target, { create: true });
       const w = await fh.createWritable(); await w.write(blob); await w.close();
       $('edmsg').textContent = 'Obrezano in shranjeno: ' + target;
     } else {
@@ -620,14 +847,16 @@ $('edcrop').onclick = async () => {
       $('edmsg').textContent = 'Obrezan posnetek je v Prenosih (izvirnika tam ni mogoče prepisati).';
     }
   } catch (e) { $('edmsg').textContent = 'Shranjevanje ni uspelo: ' + e.message; return; }
-  const old = takes.find(x => x.name === target && x !== t);
-  if (old) takes = takes.filter(x => x !== old);
+  const g = META[t.name];
+  if (g) { delete META[t.name]; META[target] = { ...g, offset: g.offset - ed.a }; saveSettings(); }
+  takes = takes.filter(x => x === t || x.name !== target);
   URL.revokeObjectURL(t.url);
   Object.assign(t, { name: target, blob, url: URL.createObjectURL(blob), secs: ch[0].length / sr, peaks: peaksOf(ch[0]), mtime: Date.now(), rawDb: undefined, gainDb: undefined });
-  ed.buf = { sr, ch, len: ch[0].length }; ed.ab = null; ed.cols = null; ed.a = ed.b = null;
+  ed.buf = { sr, ch, len: ch[0].length }; ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.view = { s: 0, e: ch[0].length / sr };
   $('edname').textContent = target; edUpdate(); render();
 };
 
+// ================= keys
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
   if (e.code === 'Space') { e.preventDefault(); toggleRec(); }
