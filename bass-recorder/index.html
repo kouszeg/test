@@ -100,6 +100,11 @@
   .ed-acts button:disabled{opacity:.4;cursor:not-allowed}
   #edmsg{font-size:14px;color:var(--dim);margin-left:auto}
   .ed-hint{font-size:13px;color:var(--dim);margin:8px 0 0}
+  .eq{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;align-items:center;color:var(--dim);font-size:15px}
+  .eq label{display:flex;align-items:center;gap:6px}
+  .eq input[type=range]{width:110px;accent-color:var(--led-amber)}
+  .eq output{min-width:44px;font-variant-numeric:tabular-nums;color:var(--silk)}
+  .dirty{color:var(--led-amber);font-size:14px;margin-left:8px}
   .help{margin-top:22px;border:1px solid var(--rule);border-radius:12px;background:var(--panel)}
   .help summary{cursor:pointer;padding:10px 14px;font:700 18px "Barlow Condensed",sans-serif}
   .helpbody{padding:0 16px 12px;color:var(--dim);font-size:15px;max-width:75ch}
@@ -199,7 +204,7 @@
 
   <section id="editor" class="editor" hidden>
     <div class="ed-head">
-      <span id="edname" class="tname"></span>
+      <span id="edname" class="tname"></span><span id="eddirty" class="dirty" hidden>neshranjeno</span>
       <span id="edsel"></span>
       <button id="edclose" class="ghost">Zapri</button>
     </div>
@@ -217,7 +222,16 @@
       <button id="edcut" class="ghost danger" disabled>Izreži A–B</button>
       <button id="edcrop" class="ghost danger" disabled>Obreži na A–B</button>
       <button id="edundo" class="ghost" disabled>Undo</button>
+      <button id="edsave" class="ghost go" disabled title="Ctrl+S">Shrani</button>
       <span id="edmsg"></span>
+    </div>
+    <div class="eq" title="EQ vpliva samo na predvajanje, dokler ga ne vpišeš v posnetek">
+      <span>EQ</span>
+      <label>Bas <input type="range" id="eqlow" min="-15" max="15" step="1"><output id="eqlowv"></output></label>
+      <label>Sredina <input type="range" id="eqmid" min="-15" max="15" step="1"><output id="eqmidv"></output></label>
+      <label>Visoki <input type="range" id="eqhigh" min="-15" max="15" step="1"><output id="eqhighv"></output></label>
+      <button id="eqflat" class="ghost">Flat</button>
+      <button id="eqbake" class="ghost">Vpiši EQ v posnetek</button>
     </div>
     <p class="ed-hint">Povleci za A–B, primi A ali B za premik. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse.</p>
   </section>
@@ -237,6 +251,8 @@
         <li><kbd>R</kbd> začni / ustavi snemanje (med odštevanjem prekliče)</li>
         <li><kbd>Space</kbd> predvajaj v zanki / ustavi odprt posnetek</li>
         <li><kbd>Del</kbd> izreži označeni del A–B</li>
+        <li><kbd>D</kbd> izbriši odprt posnetek (z disku, vpraša za potrditev)</li>
+        <li><kbd>Ctrl</kbd>+<kbd>S</kbd> shrani spremembe odprtega posnetka</li>
         <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo zadnjega rezanja ali obrezovanja</li>
         <li><kbd>Esc</kbd> ustavi predvajanje</li>
       </ul>
@@ -252,16 +268,17 @@
         <li>Prvi klik na posnetek ga odpre, naslednji ga predvaja v zanki oziroma ustavi. Svinčnik = preimenuj, koš = izbriši datoteko.</li>
         <li>Na valu: povleci za A–B, primi A ali B za premik, klik skoči na to mesto. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse.</li>
         <li>Snap na takt pripne A in B na takte (le pri posnetkih z metronomom). Najdi zanko išče ponavljajoči se vzorec, znotraj A–B, če je izbran.</li>
-        <li>Izreži A–B (Del) odstrani del, Obreži na A–B obdrži samo del. Oboje takoj prepiše datoteko; Undo (Ctrl+Z) deluje, dokler je posnetek odprt.</li>
+        <li>Izreži A–B (Del) odstrani del, Obreži na A–B obdrži samo del. Spremembe so le v aplikaciji, dokler ne klikneš Shrani (Ctrl+S). Undo (Ctrl+Z) deluje, dokler je posnetek odprt. Ob preklopu na drug posnetek vpraša, ali shrani.</li>
+        <li>EQ (Bas 120 Hz, Sredina 800 Hz, Visoki 3,5 kHz, ±15 dB) velja za predvajanje vseh posnetkov in se zapomni. Vpiši EQ v posnetek ga vgradi v zvok (kot urejanje, potem Shrani) in EQ vrne na Flat.</li>
       </ul>
     </div>
   </details>
-  <p class="opts" style="margin-top:12px"><span><kbd>R</kbd> snemaj</span><span><kbd>Space</kbd> zanka / stop</span><span><kbd>Del</kbd> izreži A–B</span><span><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo</span><span id="ver" class="ver" style="margin-left:auto"></span></p>
+  <p class="opts" style="margin-top:12px"><span><kbd>R</kbd> snemaj</span><span><kbd>Space</kbd> zanka / stop</span><span><kbd>Del</kbd> izreži A–B</span><span><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo</span><span><kbd>Ctrl</kbd>+<kbd>S</kbd> shrani</span><span><kbd>D</kbd> izbriši posnetek</span><span id="ver" class="ver" style="margin-left:auto"></span></p>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.15';   // bump on every release; shown bottom right
+const VERSION = '1.16';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -278,7 +295,7 @@ const ICON = {
 };
 
 // ================= settings (mirrored to localStorage, persisted to bass-recorder.ini in the app folder)
-const DEF = { snap: true, scopeMax: 0.05, met: false, bpm: 100, beats: 4, countin: 0, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '' };
+const DEF = { snap: true, scopeMax: 0.05, met: false, bpm: 100, beats: 4, countin: 0, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '', eqLow: -6, eqMid: 0, eqHigh: 0 };
 let S = { ...DEF }, META = {};   // META: per-file beat grid {bpm, beats, offset}
 const ls = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
 try { const j = JSON.parse(ls.get('br-settings') || '{}'); S = { ...DEF, ...j.S }; META = j.META || {}; } catch {}
@@ -316,7 +333,7 @@ async function loadIni(){
   try {
     const fh = await rootHandle.getFileHandle('bass-recorder.ini');
     const { s, meta } = fromIni(await (await fh.getFile()).text());
-    S = { ...S, ...s }; META = { ...META, ...meta }; applySettingsToUi(); ls.set('br-settings', JSON.stringify({ S, META }));
+    S = { ...S, ...s }; META = { ...META, ...meta }; applySettingsToUi(); eqUi(); ls.set('br-settings', JSON.stringify({ S, META }));
   } catch { saveSettings(); }   // no ini yet: create it from current settings
 }
 function applySettingsToUi(){
@@ -788,7 +805,17 @@ render();
 
 // ================= A–B editor
 let ed = null, pctx = null;
-const getPctx = () => { if (!pctx) { pctx = new AudioContext(); applySink(); } return pctx; };
+let eqN = null;
+const EQF = [['eqLow', 'lowshelf', 120], ['eqMid', 'peaking', 800], ['eqHigh', 'highshelf', 3500]];
+function mkEq(ac){   // Bas / Sredina / Visoki, used for live playback and for baking into the file
+  const n = EQF.map(([k, type, f]) => { const b = ac.createBiquadFilter(); b.type = type; b.frequency.value = f; if (type === 'peaking') b.Q.value = 0.9; b.gain.value = S[k]; return b; });
+  n[0].connect(n[1]); n[1].connect(n[2]); return n;
+}
+const getPctx = () => { if (!pctx) { pctx = new AudioContext(); applySink(); eqN = mkEq(pctx); eqN[2].connect(pctx.destination); } return pctx; };
+function eqUi(){ EQF.forEach(([k]) => { const id = k.toLowerCase(); $(id).value = S[k]; $(id + 'v').textContent = (S[k] > 0 ? '+' : '') + S[k] + ' dB'; if (eqN) eqN[EQF.findIndex(f => f[0] === k)].gain.value = S[k]; }); }
+EQF.forEach(([k]) => { const id = k.toLowerCase(); $(id).addEventListener('input', () => { S[k] = +$(id).value; eqUi(); }); $(id).addEventListener('change', saveSettings); });
+$('eqflat').onclick = () => { EQF.forEach(([k]) => S[k] = 0); eqUi(); saveSettings(); };
+eqUi();
 function parseWav(ab){
   const v = new DataView(ab);
   if (v.byteLength < 12 || v.getUint32(0, false) !== 0x52494646 || v.getUint32(8, false) !== 0x57415645) return null;
@@ -823,16 +850,24 @@ async function loadBuf(t){
 }
 const dur = () => ed.buf.len / ed.buf.sr;
 let edTok = 0;
+const isDirty = () => !!(ed && ed.rev !== ed.savedRev);
+// Leaving a take with unsaved edits: OK saves, Cancel discards.
+async function edLeave(){
+  if (!isDirty()) return true;
+  if (confirm(`${ed.t.name} ima neshranjene spremembe.\nOK = shrani, Prekliči = zavrzi.`)) return await edSave();
+  return true;
+}
 async function openEditor(t){
+  if (ed && ed.t !== t && !(await edLeave())) return;
   const tok = ++edTok;
   stopPlay();
   $('editor').hidden = false; $('edname').textContent = t.name; $('edmsg').textContent = 'Nalagam…';
-  try { const buf = await loadBuf(t); if (tok !== edTok) return; ed = { t, buf, a: null, b: null, src: null, ab: null, cursor: 0, looping: false, view: { s: 0, e: buf.len / buf.sr } }; }
+  try { const buf = await loadBuf(t); if (tok !== edTok) return; const g = META[keyOf(t)]; ed = { t, buf, a: null, b: null, src: null, ab: null, cursor: 0, looping: false, view: { s: 0, e: buf.len / buf.sr }, grid: g ? { ...g } : null, hist: [], rev: 0, savedRev: 0, revSeq: 0 }; }
   catch (e) { $('edmsg').textContent = 'Posnetka ni mogoče prebrati: ' + e.message; return; }
   $('edmsg').textContent = ''; edUpdate(); render();
   $('editor').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
 }
-$('edclose').onclick = () => { edStop(); ed = null; $('editor').hidden = true; render(); };
+$('edclose').onclick = async () => { if (!ed || !(await edLeave())) return; edStop(); ed = null; $('editor').hidden = true; render(); };
 
 const fmtS = x => x.toFixed(2) + ' s';
 function hasSel(){ return ed && ed.a != null && ed.b != null && ed.b - ed.a > 0.02; }
@@ -842,6 +877,7 @@ function edUpdate(){
   $('edsel').textContent = (hasSel() ? `A ${fmtS(ed.a)}   B ${fmtS(ed.b)}   dolžina ${fmtS(ed.b - ed.a)}` : `Dolžina ${fmtS(dur())}`) + (z > 1.05 ? `   povečava ${z.toFixed(1)}×` : '');
   $('edcrop').disabled = $('edcut').disabled = !hasSel();
   $('edundo').disabled = !(ed.hist && ed.hist.length);
+  $('edsave').disabled = !isDirty(); $('eddirty').hidden = !isDirty(); $('edname').textContent = ed.t.name;
   $('edloop').title = hasSel() ? 'Predvajaj zanko A–B' : 'Predvajaj v zanki';
   drawWave();
 }
@@ -863,7 +899,7 @@ function drawWave(){
     ed.cols = { key, mn, mx };
   }
   // beat grid (only for takes recorded with the metronome)
-  const grid = META[keyOf(ed.t)];
+  const grid = ed.grid;
   if (grid) {
     const b = 60 / grid.bpm, k0 = Math.ceil((vs - grid.offset) / b), k1 = Math.floor((ve - grid.offset) / b);
     if ((k1 - k0) < w / 3) {
@@ -900,7 +936,7 @@ function zeroSnap(sec){
 // Snap: with a beat grid, a marker within 14 px of a bar line (or 7 px of a beat) jumps onto it;
 // otherwise it goes to the nearest zero crossing so loops don't click.
 function snapT(t, live){
-  const grid = META[keyOf(ed.t)];
+  const grid = ed.grid;
   if (S.snap && grid) {
     const w = $('wavebox').clientWidth, pxPerS = w / (ed.view.e - ed.view.s), b = 60 / grid.bpm, bar = b * grid.beats;
     const tb = grid.offset + Math.round((t - grid.offset) / bar) * bar;
@@ -974,7 +1010,7 @@ function edPlay(loop, from){
   if (ed.looping && from >= ed.lb) { ed.looping = false; ed.la = 0; ed.lb = dur(); }   // clicked past B: play on to the end
   const s = ac.createBufferSource(); s.buffer = ed.ab; s.loop = ed.looping;
   if (ed.looping) { s.loopStart = ed.la; s.loopEnd = ed.lb; }
-  s.connect(ac.destination); s.start(0, from);
+  s.connect(eqN[0]); s.start(0, from);
   s.onended = () => { if (ed && ed.src === s) { ed.src = null; ed.cursor = 0; render(); drawWave(); edBtns(); } };
   ed.src = s; ed.off = from; ed.t0 = ac.currentTime;
   render(); drawWave(); edBtns();
@@ -1016,7 +1052,7 @@ function findLoop(t0 = 0, t1 = dur()){
   if (peak + lag >= F) return null;
   let b = peak + lag; for (let f = Math.max(0, peak + lag - 5); f <= Math.min(F - 1, peak + lag + 5); f++) if (on[f] > on[b]) b = f;
   let A = Math.max(t0, base + peak * hop / sr - 0.01), B = Math.min(t1, base + b * hop / sr - 0.01);
-  const grid = META[keyOf(ed.t)];
+  const grid = ed.grid;
   if (grid) {   // snap to bar lines: start on the nearest bar, length = whole bars
     const bar = 60 / grid.bpm * grid.beats, bars = Math.max(1, Math.round((B - A) / bar));
     const k = Math.max(0, Math.round((A - grid.offset) / bar)); A = grid.offset + k * bar; B = A + bars * bar;
@@ -1035,7 +1071,7 @@ $('edauto').onclick = () => {
   edUpdate(); edPlay(true);
 };
 
-// Destructive edits write the file immediately; each one pushes the previous audio so Ctrl+Z can restore it.
+// Edits change only the in-app audio; the file (and its beat grid in the ini) is written on Shrani.
 async function writeTake(t, ch, sr){
   ch = toMono(ch);
   const blob = encodeWav(ch, sr);
@@ -1048,45 +1084,72 @@ async function writeTake(t, ch, sr){
   URL.revokeObjectURL(t.url);
   Object.assign(t, { blob, url: URL.createObjectURL(blob), secs: ch[0].length / sr, peaks: peaksOf(ch[0]), mtime: Date.now(), rawDb: undefined, gainDb: undefined });
 }
-async function applyEdit(ch, label, gridShift){
+function setBuf(ch){
+  const sr = ed.buf.sr;
+  ed.buf = { sr, ch, len: ch[0].length }; ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.cursor = 0; ed.view = { s: 0, e: ch[0].length / sr };
+}
+function applyEdit(ch, label, gridShift){
   if (!ed) return;
   edStop();
-  const t = ed.t, sr = ed.buf.sr, g = META[keyOf(t)];
-  const snap = { ch: ed.buf.ch, grid: g ? { ...g } : null };
-  try { await writeTake(t, ch, sr); } catch (e) { $('edmsg').textContent = 'Shranjevanje ni uspelo: ' + e.message; return; }
-  (ed.hist = ed.hist || []).push(snap);
-  if (g && gridShift) { META[keyOf(t)].offset = g.offset - gridShift; }
-  saveSettings();
-  ed.buf = { sr, ch, len: ch[0].length }; ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.cursor = 0; ed.view = { s: 0, e: ch[0].length / sr };
-  $('edname').textContent = t.name; $('edmsg').textContent = label + (t.inFolder ? ', shranjeno' : '') + '. Ctrl+Z = undo.';
+  ed.hist.push({ ch: ed.buf.ch, grid: ed.grid ? { ...ed.grid } : null, rev: ed.rev });
+  if (ed.grid && gridShift) ed.grid.offset -= gridShift;
+  ed.rev = ++ed.revSeq;
+  setBuf(ch);
+  $('edmsg').textContent = label + '. Shrani = zapiši v datoteko, Ctrl+Z = undo.';
   edUpdate(); render();
 }
+async function edSave(){
+  if (!ed || !isDirty()) return true;
+  const e0 = ed; edStop();
+  $('edmsg').textContent = 'Shranjujem…';
+  try { await writeTake(e0.t, e0.buf.ch, e0.buf.sr); } catch (e) { $('edmsg').textContent = 'Shranjevanje ni uspelo: ' + e.message; return false; }
+  const k = keyOf(e0.t); if (e0.grid) META[k] = { ...e0.grid }; else delete META[k];
+  saveSettings();
+  e0.savedRev = e0.rev;
+  if (ed === e0) { $('edmsg').textContent = e0.t.inFolder ? 'Shranjeno.' : 'Shranjeno v aplikaciji (ni mape), za disk klikni ikono za prenos.'; edUpdate(); }
+  render(); return true;
+}
+$('edsave').onclick = edSave;
 function selIdx(){ const sr = ed.buf.sr; return [Math.round(ed.a * sr), Math.round(ed.b * sr)]; }
 $('edcrop').onclick = () => { if (!hasSel()) return; const [i0, i1] = selIdx(); applyEdit(ed.buf.ch.map(d => d.slice(i0, i1)), 'Obrezano na A–B', ed.a); };
 function cutSel(){
   if (!hasSel()) return;
   const [i0, i1] = selIdx(), n = ed.buf.len - (i1 - i0);
-  if (n < ed.buf.sr * 0.05) { $('edmsg').textContent = 'Izrezal bi skoraj ves posnetek. Za brisanje datoteke uporabi koš.'; return; }
+  if (n < ed.buf.sr * 0.05) { $('edmsg').textContent = 'Izrezal bi skoraj ves posnetek. Za brisanje datoteke uporabi koš ali D.'; return; }
   applyEdit(ed.buf.ch.map(d => { const o = new Float32Array(n); o.set(d.subarray(0, i0)); o.set(d.subarray(i1), i0); return o; }), 'Izrezano A–B', 0);
 }
 $('edcut').onclick = cutSel;
-async function undo(){
-  if (!ed || !ed.hist || !ed.hist.length) return;
+function undo(){
+  if (!ed || !ed.hist.length) return;
   edStop();
-  const h = ed.hist.pop(), t = ed.t, sr = ed.buf.sr;
-  try { await writeTake(t, h.ch, sr); } catch (e) { ed.hist.push(h); $('edmsg').textContent = 'Undo ni uspel: ' + e.message; return; }
-  if (h.grid) META[keyOf(t)] = h.grid; else delete META[keyOf(t)];
-  saveSettings();
-  ed.buf = { sr, ch: h.ch, len: h.ch[0].length }; ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.cursor = 0; ed.view = { s: 0, e: h.ch[0].length / sr };
-  $('edmsg').textContent = 'Undo' + (t.inFolder ? ': datoteka obnovljena' : '') + '.';
+  const h = ed.hist.pop();
+  ed.grid = h.grid; ed.rev = h.rev; setBuf(h.ch);
+  $('edmsg').textContent = 'Undo' + (isDirty() ? ' (še ni shranjeno)' : '') + '.';
   edUpdate(); render();
 }
 $('edundo').onclick = undo;
+// Bake the current EQ into the audio (offline render), then reset EQ to flat so it isn't applied twice.
+$('eqbake').onclick = async () => {
+  if (!ed) return;
+  if (EQF.every(([k]) => !S[k])) { $('edmsg').textContent = 'EQ je Flat, ni kaj vpisati.'; return; }
+  const { sr, len, ch } = ed.buf, oc = new OfflineAudioContext(1, len, sr);
+  const b = oc.createBuffer(1, len, sr); b.copyToChannel(ch[0], 0);
+  const s = oc.createBufferSource(); s.buffer = b; const n = mkEq(oc); s.connect(n[0]); n[2].connect(oc.destination); s.start();
+  const out = (await oc.startRendering()).getChannelData(0).slice();
+  let pk = 0; for (let i = 0; i < out.length; i++) { const a = out[i] < 0 ? -out[i] : out[i]; if (a > pk) pk = a; }
+  const tg = S.norm ? Math.pow(10, S.tgt / 20) : Math.min(1, pk) * 0.999;   // renormalize (cutting bass lowers the peak)
+  if (pk > 0) { const g = tg / pk; for (let i = 0; i < out.length; i++) out[i] *= g; }
+  const lab = EQF.map(([k], i) => ['Bas', 'Sredina', 'Visoki'][i] + ' ' + (S[k] > 0 ? '+' : '') + S[k]).join(', ');
+  applyEdit([out], 'EQ vpisan (' + lab + ' dB), EQ na Flat');
+  EQF.forEach(([k]) => S[k] = 0); eqUi(); saveSettings();
+};
+addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
 
 // ================= keys
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { e.preventDefault(); undo(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') { e.preventDefault(); edSave(); return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.code === 'KeyR') { e.preventDefault(); toggleRec(); }
   else if (e.code === 'Space' || e.code === 'KeyL') {
@@ -1095,6 +1158,7 @@ document.addEventListener('keydown', e => {
     else if (takes[0]) play(takes[0], true);
   }
   else if (e.code === 'Delete') { if (ed && hasSel()) { e.preventDefault(); cutSel(); } }
+  else if (e.code === 'KeyD') { if (ed) { e.preventDefault(); deleteTake(ed.t); } }
   else if (e.code === 'Escape') stopPlay();
 });
 // Space must only toggle recording, never also "click" a focused button.
@@ -1105,7 +1169,7 @@ if ('serviceWorker' in navigator) addEventListener('load', async () => {
     const had = !!navigator.serviceWorker.controller;
     const reg = await navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
     reg.update();
-    navigator.serviceWorker.addEventListener('controllerchange', () => { if (had && recState === 'idle') location.reload(); });
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (had && recState === 'idle' && !isDirty()) location.reload(); });
   } catch {}
 });
 </script>
