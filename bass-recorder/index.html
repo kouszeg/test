@@ -96,6 +96,12 @@
   .ed-acts button:disabled{opacity:.4;cursor:not-allowed}
   #edmsg{font-size:14px;color:var(--dim);margin-left:auto}
   .ed-hint{font-size:13px;color:var(--dim);margin:8px 0 0}
+  .help{margin-top:22px;border:1px solid var(--rule);border-radius:12px;background:var(--panel)}
+  .help summary{cursor:pointer;padding:10px 14px;font:700 18px "Barlow Condensed",sans-serif}
+  .helpbody{padding:0 16px 12px;color:var(--dim);font-size:15px;max-width:75ch}
+  .helpbody h3{font:700 16px "Barlow Condensed",sans-serif;color:var(--silk);margin:12px 0 4px}
+  .helpbody ul{margin:0;padding-left:18px}
+  .helpbody code{color:var(--silk)}
   .snap{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:15px}
   .snap input{accent-color:var(--led-amber)}
 
@@ -155,7 +161,7 @@
       <span id="led" class="led" aria-hidden="true"></span>
       <button id="rec" disabled aria-label="Snemaj"></button>
       <span id="reclabel" class="cond">Snemaj</span>
-      <span class="hint"><kbd>Space</kbd> začni / ustavi</span>
+      <span class="hint"><kbd>R</kbd> začni / ustavi</span>
     </div>
     <div class="scope">
       <canvas id="scope"></canvas>
@@ -163,7 +169,7 @@
       <span id="db" class="readout">−∞ dB</span>
       <div id="count" class="count" hidden></div>
       <div class="bar"><i id="m"></i></div>
-      <div id="empty" class="empty">Poveži vhod (ME-90B), potem pritisni Space.</div>
+      <div id="empty" class="empty">Poveži vhod (ME-90B), potem pritisni R.</div>
     </div>
   </section>
   <div class="metro">
@@ -204,7 +210,9 @@
       <button id="edclear" class="ghost">Počisti A–B</button>
       <button id="edfit" class="ghost">Prikaži vse</button>
       <label class="snap" title="A in B se blizu takta (ali dobe) pripneta nanj"><input type="checkbox" id="snap"> Snap na takt</label>
+      <button id="edcut" class="ghost danger" disabled>Izreži A–B</button>
       <button id="edcrop" class="ghost danger" disabled>Obreži na A–B</button>
+      <button id="edundo" class="ghost" disabled>Razveljavi</button>
       <span id="edmsg"></span>
     </div>
     <p class="ed-hint">Povleci za A–B, primi A ali B za premik. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse.</p>
@@ -217,12 +225,39 @@
     <button id="refresh" class="ghost">Osveži</button>
   </div>
   <ul id="list"></ul>
-  <p class="opts" style="margin-top:12px"><span><kbd>L</kbd> zanka</span><span><kbd>Esc</kbd> ustavi predvajanje</span><span id="ver" class="ver" style="margin-left:auto"></span></p>
+  <details class="help">
+    <summary>Navodila</summary>
+    <div class="helpbody">
+      <h3>Tipke</h3>
+      <ul>
+        <li><kbd>R</kbd> začni / ustavi snemanje (med odštevanjem prekliče)</li>
+        <li><kbd>Space</kbd> predvajaj v zanki / ustavi odprt posnetek</li>
+        <li><kbd>Del</kbd> izreži označeni del A–B</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> razveljavi zadnje rezanje ali obrezovanje</li>
+        <li><kbd>Esc</kbd> ustavi predvajanje</li>
+      </ul>
+      <h3>Snemanje</h3>
+      <ul>
+        <li>Prvič izberi vhod (ME-90B) in izhod ter mapo s posnetki. Aplikacija si vse zapomni v <code>bass-recorder.ini</code> v tej mapi.</li>
+        <li>Posnetek se normalizira na izbrani nivo in shrani kot WAV (24-bit) v trenutno odprto mapo.</li>
+        <li>Metronom: označi polje Metronom. Klika le med odštevanjem in snemanjem; posnetek dobi mrežo dob in taktov. Odštevanje je privzeto izklopljeno.</li>
+        <li>Latenca: prazno = samodejno. Če mreža ne sovpada z udarci, vpiši vrednost v ms.</li>
+      </ul>
+      <h3>Posnetki in urejanje</h3>
+      <ul>
+        <li>Klik na posnetek ga odpre in predvaja v zanki; ponovni klik ga ustavi. Svinčnik = preimenuj, koš = izbriši datoteko.</li>
+        <li>Na valu: povleci za A–B, primi A ali B za premik, klik skoči na to mesto. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse.</li>
+        <li>Snap na takt pripne A in B na takte (le pri posnetkih z metronomom). Najdi zanko išče ponavljajoči se vzorec, znotraj A–B, če je izbran.</li>
+        <li>Izreži A–B (Del) odstrani del, Obreži na A–B obdrži samo del. Oboje takoj prepiše datoteko; razveljaviš s Ctrl+Z, dokler je posnetek odprt.</li>
+      </ul>
+    </div>
+  </details>
+  <p class="opts" style="margin-top:12px"><span><kbd>R</kbd> snemaj</span><span><kbd>Space</kbd> zanka / stop</span><span><kbd>Del</kbd> izreži A–B</span><span><kbd>Ctrl</kbd>+<kbd>Z</kbd> razveljavi</span><span id="ver" class="ver" style="margin-left:auto"></span></p>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.13';   // bump on every release; shown bottom right
+const VERSION = '1.14';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -239,7 +274,7 @@ const ICON = {
 };
 
 // ================= settings (mirrored to localStorage, persisted to bass-recorder.ini in the app folder)
-const DEF = { snap: true, scopeMax: 0.05, met: false, bpm: 100, beats: 4, countin: 1, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '' };
+const DEF = { snap: true, scopeMax: 0.05, met: false, bpm: 100, beats: 4, countin: 0, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '' };
 let S = { ...DEF }, META = {};   // META: per-file beat grid {bpm, beats, offset}
 const ls = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
 try { const j = JSON.parse(ls.get('br-settings') || '{}'); S = { ...DEF, ...j.S }; META = j.META || {}; } catch {}
@@ -701,11 +736,11 @@ function render(){
   const dirRow = (label, fn) => { const li = document.createElement('li'); li.className = 'dir'; li.innerHTML = FOLDER; const s = document.createElement('span'); s.textContent = label; li.append(s); li.onclick = fn; ul.append(li); };
   if (curPath.length) dirRow('..', () => goTo(curPath.slice(0, -1)));
   folders.forEach(n => dirRow(n, () => goTo([...curPath, n])));
-  if (!takes.length) { if (!folders.length) ul.insertAdjacentHTML('beforeend', '<li class="none">Še ni posnetkov. Pritisni Space in zaigraj.</li>'); return; }
+  if (!takes.length) { if (!folders.length) ul.insertAdjacentHTML('beforeend', '<li class="none">Še ni posnetkov. Pritisni R in zaigraj.</li>'); return; }
   takes.forEach(t => {
     const open = !!(ed && ed.t === t), active = open && !!ed.src;
     const li = document.createElement('li'); if (active) li.classList.add('playing'); else if (open) li.classList.add('editing');
-    li.onclick = e => { if (e.target.closest('button') || e.target.closest('input')) return; if (!open) play(t, true); else if (!ed.src) edPlay(true, ed.cursor); };
+    li.onclick = e => { if (e.target.closest('button') || e.target.closest('input')) return; if (!open) play(t, true); else if (ed.src) edStop(); else edPlay(true, ed.cursor); };
     const info = document.createElement('div');
     const nm = document.createElement('div'); nm.className = 'tname'; nm.textContent = t.name;
     const ren = document.createElement('button'); ren.className = 'ren'; ren.title = 'Preimenuj'; ren.setAttribute('aria-label', 'Preimenuj');
@@ -789,7 +824,8 @@ function edUpdate(){
   if (!ed) return;
   const z = dur() / (ed.view.e - ed.view.s);
   $('edsel').textContent = (hasSel() ? `A ${fmtS(ed.a)}   B ${fmtS(ed.b)}   dolžina ${fmtS(ed.b - ed.a)}` : `Dolžina ${fmtS(dur())}`) + (z > 1.05 ? `   povečava ${z.toFixed(1)}×` : '');
-  $('edcrop').disabled = !hasSel();
+  $('edcrop').disabled = $('edcut').disabled = !hasSel();
+  $('edundo').disabled = !(ed.hist && ed.hist.length);
   $('edloop').title = hasSel() ? 'Predvajaj zanko A–B' : 'Predvajaj v zanki';
   drawWave();
 }
@@ -983,40 +1019,65 @@ $('edauto').onclick = () => {
   edUpdate(); edPlay(true);
 };
 
-$('edcrop').onclick = async () => {
-  if (!hasSel()) return;
-  const t = ed.t, sr = ed.buf.sr, i0 = Math.round(ed.a * sr), i1 = Math.round(ed.b * sr);
-  const isWav = /\.wav$/i.test(t.name), target = isWav ? t.name : t.name.replace(/\.[^.]+$/, '') + '.wav';
-  const msg = t.inFolder && isWav ? `Prepišem ${t.name} z izsekom A–B (${fmtS(ed.b - ed.a)})? Tega ni mogoče razveljaviti.`
-            : `Shranim izsek A–B (${fmtS(ed.b - ed.a)}) kot ${target}?`;
-  if (!confirm(msg)) return;
-  edStop();
-  const ch = ed.buf.ch.map(d => d.slice(i0, i1));
+// Destructive edits write the file immediately; each one pushes the previous audio so Ctrl+Z can restore it.
+async function writeTake(t, ch, sr){
   const blob = encodeWav(ch, sr);
-  try {
-    if (t.inFolder && await folderReady(true)) {
-      const fh = await t.dir.getFileHandle(target, { create: true });
-      const w = await fh.createWritable(); await w.write(blob); await w.close();
-      $('edmsg').textContent = 'Obrezano in shranjeno: ' + target;
-    } else {
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = target; document.body.appendChild(a); a.click(); a.remove();
-      $('edmsg').textContent = 'Obrezan posnetek je v Prenosih (izvirnika tam ni mogoče prepisati).';
-    }
-  } catch (e) { $('edmsg').textContent = 'Shranjevanje ni uspelo: ' + e.message; return; }
-  const oldKey = keyOf(t), g = META[oldKey];
-  takes = takes.filter(x => x === t || x.name !== target);
+  if (t.inFolder && await folderReady(true)) {
+    const target = /\.wav$/i.test(t.name) ? t.name : t.name.replace(/\.[^.]+$/, '') + '.wav';
+    const fh = await t.dir.getFileHandle(target, { create: true });
+    const w = await fh.createWritable(); await w.write(blob); await w.close();
+    if (target !== t.name) { const k = keyOf(t); t.name = target; if (META[k]) { META[keyOf(t)] = META[k]; delete META[k]; } }
+  } else t.saved = null;   // not in a folder: keep in the app, the save icon appears
   URL.revokeObjectURL(t.url);
-  if (g) { delete META[oldKey]; META[(t.path ? t.path + '/' : '') + target] = { ...g, offset: g.offset - ed.a }; saveSettings(); }
-  Object.assign(t, { name: target, blob, url: URL.createObjectURL(blob), secs: ch[0].length / sr, peaks: peaksOf(ch[0]), mtime: Date.now(), rawDb: undefined, gainDb: undefined });
-  ed.buf = { sr, ch, len: ch[0].length }; ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.view = { s: 0, e: ch[0].length / sr };
-  $('edname').textContent = target; edUpdate(); render();
-};
+  Object.assign(t, { blob, url: URL.createObjectURL(blob), secs: ch[0].length / sr, peaks: peaksOf(ch[0]), mtime: Date.now(), rawDb: undefined, gainDb: undefined });
+}
+async function applyEdit(ch, label, gridShift){
+  if (!ed) return;
+  edStop();
+  const t = ed.t, sr = ed.buf.sr, g = META[keyOf(t)];
+  const snap = { ch: ed.buf.ch, grid: g ? { ...g } : null };
+  try { await writeTake(t, ch, sr); } catch (e) { $('edmsg').textContent = 'Shranjevanje ni uspelo: ' + e.message; return; }
+  (ed.hist = ed.hist || []).push(snap);
+  if (g && gridShift) { META[keyOf(t)].offset = g.offset - gridShift; }
+  saveSettings();
+  ed.buf = { sr, ch, len: ch[0].length }; ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.cursor = 0; ed.view = { s: 0, e: ch[0].length / sr };
+  $('edname').textContent = t.name; $('edmsg').textContent = label + (t.inFolder ? ', shranjeno' : '') + '. Ctrl+Z razveljavi.';
+  edUpdate(); render();
+}
+function selIdx(){ const sr = ed.buf.sr; return [Math.round(ed.a * sr), Math.round(ed.b * sr)]; }
+$('edcrop').onclick = () => { if (!hasSel()) return; const [i0, i1] = selIdx(); applyEdit(ed.buf.ch.map(d => d.slice(i0, i1)), 'Obrezano na A–B', ed.a); };
+function cutSel(){
+  if (!hasSel()) return;
+  const [i0, i1] = selIdx(), n = ed.buf.len - (i1 - i0);
+  if (n < ed.buf.sr * 0.05) { $('edmsg').textContent = 'Izrezal bi skoraj ves posnetek. Za brisanje datoteke uporabi koš.'; return; }
+  applyEdit(ed.buf.ch.map(d => { const o = new Float32Array(n); o.set(d.subarray(0, i0)); o.set(d.subarray(i1), i0); return o; }), 'Izrezano A–B', 0);
+}
+$('edcut').onclick = cutSel;
+async function undo(){
+  if (!ed || !ed.hist || !ed.hist.length) return;
+  edStop();
+  const h = ed.hist.pop(), t = ed.t, sr = ed.buf.sr;
+  try { await writeTake(t, h.ch, sr); } catch (e) { ed.hist.push(h); $('edmsg').textContent = 'Razveljavitev ni uspela: ' + e.message; return; }
+  if (h.grid) META[keyOf(t)] = h.grid; else delete META[keyOf(t)];
+  saveSettings();
+  ed.buf = { sr, ch: h.ch, len: h.ch[0].length }; ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.cursor = 0; ed.view = { s: 0, e: h.ch[0].length / sr };
+  $('edmsg').textContent = 'Razveljavljeno' + (t.inFolder ? ', datoteka obnovljena' : '') + '.';
+  edUpdate(); render();
+}
+$('edundo').onclick = undo;
 
 // ================= keys
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  if (e.code === 'Space') { e.preventDefault(); toggleRec(); }
-  else if (e.code === 'KeyL') { if (ed) edPlay(true); else if (takes[0]) play(takes[0], true); }
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { e.preventDefault(); undo(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.code === 'KeyR') { e.preventDefault(); toggleRec(); }
+  else if (e.code === 'Space' || e.code === 'KeyL') {
+    e.preventDefault();
+    if (ed) { if (ed.src) edStop(); else edPlay(true, ed.cursor); }
+    else if (takes[0]) play(takes[0], true);
+  }
+  else if (e.code === 'Delete') { if (ed && hasSel()) { e.preventDefault(); cutSel(); } }
   else if (e.code === 'Escape') stopPlay();
 });
 // Space must only toggle recording, never also "click" a focused button.
