@@ -254,6 +254,7 @@
     <span id="crumbs" class="crumbs"></span>
     <button id="newdir" class="ghost" hidden>Nova mapa</button>
     <button id="refresh" class="ghost">Osveži</button>
+    <button id="sysopen" class="ghost">Odpri v sistemu</button>
   </div>
   <ul id="list"></ul>
   <details class="help">
@@ -266,6 +267,9 @@
         <li><kbd>Del</kbd> izreži označeni del A–B</li>
         <li><kbd>D</kbd> izbriši odprt posnetek (z diska, vpraša za potrditev), nato se odpre naslednji</li>
         <li><kbd>↑</kbd> / <kbd>↓</kbd> prejšnji / naslednji posnetek (če igra, igra naprej na novem)</li>
+        <li><kbd>←</kbd> / <kbd>→</kbd> skok nazaj / naprej po valu: 1 doba (z mrežo) ali 1 s; s <kbd>Shift</kbd> 1 takt ali 5 s</li>
+        <li><kbd>E</kbd> preimenuj odprt posnetek</li>
+        <li><kbd>C</kbd> obreži na A–B, <kbd>F</kbd> najdi zanko</li>
         <li><kbd>Ctrl</kbd>+<kbd>S</kbd> shrani spremembe odprtega posnetka</li>
         <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo zadnjega rezanja ali obrezovanja</li>
         <li><kbd>Esc</kbd> ustavi predvajanje</li>
@@ -279,6 +283,7 @@
       </ul>
       <h3>Posnetki in urejanje</h3>
       <ul>
+        <li>Odpri v sistemu odpre trenutno mapo v privzetem upravitelju datotek. Brskalnik tega ne zna sam: enkrat prenesi <a href="helper/bassrec-open.ps1" download>bassrec-open.ps1</a> in <a href="helper/install-open-helper.cmd" download>install-open-helper.cmd</a> v isto mapo in zaženi .cmd. Ob prvem kliku vpiši polno pot do mape s posnetki (Shift + klik = spremeni). Za Total Commander, če ni privzet: v .ps1 nastavi $tc.</li>
         <li>Prvi klik na posnetek ga odpre, naslednji ga predvaja v zanki oziroma ustavi. Svinčnik = preimenuj, koš = izbriši datoteko.</li>
         <li>Na valu: povleci za A–B, primi A ali B za premik, klik skoči na to mesto. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse.</li>
         <li>Snap na takt pripne A in B na takte (le pri posnetkih z metronomom). Najdi zanko išče ponavljajoči se vzorec, znotraj A–B, če je izbran.</li>
@@ -287,12 +292,12 @@
       </ul>
     </div>
   </details>
-  <p class="opts" style="margin-top:12px"><span><kbd>R</kbd> snemaj</span><span><kbd>Space</kbd> zanka / stop</span><span><kbd>Del</kbd> izreži A–B</span><span><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo</span><span><kbd>Ctrl</kbd>+<kbd>S</kbd> shrani</span><span><kbd>D</kbd> izbriši posnetek</span><span><kbd>↑</kbd><kbd>↓</kbd> posnetki</span><span id="ver" class="ver" style="margin-left:auto"></span></p>
+  <p class="opts" style="margin-top:12px"><span><kbd>R</kbd> snemaj</span><span><kbd>Space</kbd> zanka / stop</span><span><kbd>Del</kbd> izreži A–B</span><span><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo</span><span><kbd>Ctrl</kbd>+<kbd>S</kbd> shrani</span><span><kbd>D</kbd> izbriši posnetek</span><span><kbd>↑</kbd><kbd>↓</kbd> posnetki</span><span><kbd>←</kbd><kbd>→</kbd> skok</span><span><kbd>E</kbd> preimenuj</span><span id="ver" class="ver" style="margin-left:auto"></span></p>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.17';   // bump on every release; shown bottom right
+const VERSION = '1.18';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -309,7 +314,7 @@ const ICON = {
 };
 
 // ================= settings (mirrored to localStorage, persisted to bass-recorder.ini in the app folder)
-const DEF = { snap: true, scopeMax: 0.05, met: false, bpm: 100, beats: 4, countin: 0, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '', eq80: -6, eq250: 0, eq800: 0, eq2k5: 0, eq6k: 0 };
+const DEF = { snap: true, scopeMax: 0.05, met: false, bpm: 100, beats: 4, countin: 0, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '', eq80: 0, eq250: 0, eq800: 0, eq2k5: 0, eq6k: 0, syspath: '' };
 let S = { ...DEF }, META = {};   // META: per-file beat grid {bpm, beats, offset}
 const ls = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
 try { const j = JSON.parse(ls.get('br-settings') || '{}'); S = { ...DEF, ...j.S }; META = j.META || {}; } catch {}
@@ -792,7 +797,7 @@ function render(){
     li.onclick = e => { if (e.target.closest('button') || e.target.closest('input')) return; if (!open) openEditor(t); else if (ed.src) edStop(); else edPlay(true, ed.cursor); };
     const info = document.createElement('div');
     const nm = document.createElement('div'); nm.className = 'tname'; nm.textContent = t.name;
-    const ren = document.createElement('button'); ren.className = 'ren'; ren.title = 'Preimenuj'; ren.setAttribute('aria-label', 'Preimenuj');
+    const ren = document.createElement('button'); ren.className = 'ren'; ren.title = 'Preimenuj (E)'; ren.setAttribute('aria-label', 'Preimenuj');
     ren.innerHTML = '<svg viewBox="0 0 16 16"><path d="M11.5 1.5l3 3L5 14H2v-3zM10 3l3 3"/></svg>';
     ren.onclick = e => { e.stopPropagation(); startRename(t, nm); };
     const nrow = document.createElement('div'); nrow.className = 'nrow'; nrow.append(ren, nm);
@@ -809,10 +814,10 @@ function render(){
     const acts = document.createElement('div'); acts.className = 'acts';
     const mk = (icon, label, fn, on) => { const b = document.createElement('button'); b.innerHTML = ICON[icon]; b.title = label; b.setAttribute('aria-label', label); if (on) b.classList.add('active'); b.onclick = fn; return b; };
     acts.append(mk('play', 'Predvajaj', () => play(t, false), active && !ed.looping),
-                mk('loop', 'Predvajaj v zanki', () => play(t, true), active && ed.looping),
-                mk('stop', 'Ustavi', stopPlay));
+                mk('loop', 'Predvajaj v zanki (Space)', () => play(t, true), active && ed.looping),
+                mk('stop', 'Ustavi (Space, Esc)', stopPlay));
     if (!t.inFolder && !t.saved) acts.append(mk('save', 'Shrani', () => download(t)));
-    const del = mk('del', 'Izbriši', () => deleteTake(t)); del.classList.add('del'); acts.append(del);
+    const del = mk('del', 'Izbriši (D)', () => deleteTake(t)); del.classList.add('del'); acts.append(del);
     li.append(info, cv, acts); ul.append(li);
     if (!t.peaks) ensurePeaks(t);
   });
@@ -911,7 +916,7 @@ function edUpdate(){
   $('edcrop').disabled = $('edcut').disabled = !hasSel();
   $('edundo').disabled = !(ed.hist && ed.hist.length);
   $('edsave').disabled = !isDirty(); $('eddirty').hidden = !isDirty(); $('edname').textContent = ed.t.name;
-  $('edloop').title = hasSel() ? 'Predvajaj zanko A–B' : 'Predvajaj v zanki';
+  $('edloop').title = (hasSel() ? 'Predvajaj zanko A–B' : 'Predvajaj v zanki') + ' (Space)';
   drawWave();
 }
 function drawWave(){
@@ -1123,7 +1128,7 @@ function setBuf(ch){
 }
 function applyEdit(ch, label, gridShift, keep){
   if (!ed) return;
-  const was = keep && ed.src ? { pos: edPos(), loop: ed.looping } : null, sel = keep ? [ed.a, ed.b, ed.view, ed.cursor] : null;
+  const was = keep && ed.src ? { pos: edPos(), loop: ed.looping } : null, sel = keep === true ? [ed.a, ed.b, ed.view, ed.cursor] : null;
   edStop();
   ed.hist.push({ ch: ed.buf.ch, grid: ed.grid ? { ...ed.grid } : null, rev: ed.rev });
   if (ed.grid && gridShift) ed.grid.offset -= gridShift;
@@ -1131,7 +1136,7 @@ function applyEdit(ch, label, gridShift, keep){
   setBuf(ch); if (sel) [ed.a, ed.b, ed.view, ed.cursor] = sel;
   $('edmsg').textContent = label + '. Shrani = zapiši v datoteko, Ctrl+Z = undo.';
   edUpdate(); render();
-  if (was) edPlay(was.loop, was.pos);
+  if (was) edPlay(was.loop, typeof keep === 'function' ? keep(was.pos) : was.pos);
 }
 async function edSave(){
   if (!ed || !isDirty()) return true;
@@ -1146,12 +1151,13 @@ async function edSave(){
 }
 $('edsave').onclick = edSave;
 function selIdx(){ const sr = ed.buf.sr; return [Math.round(ed.a * sr), Math.round(ed.b * sr)]; }
-$('edcrop').onclick = () => { if (!hasSel()) return; const [i0, i1] = selIdx(); applyEdit(ed.buf.ch.map(d => d.slice(i0, i1)), 'Obrezano na A–B', ed.a); };
+$('edcrop').onclick = () => { if (!hasSel()) return; const [i0, i1] = selIdx(); const a = ed.a, b = ed.b; applyEdit(ed.buf.ch.map(d => d.slice(i0, i1)), 'Obrezano na A–B', ed.a, x => Math.max(0, Math.min(b - a, x - a))); };
 function cutSel(){
   if (!hasSel()) return;
   const [i0, i1] = selIdx(), n = ed.buf.len - (i1 - i0);
   if (n < ed.buf.sr * 0.05) { $('edmsg').textContent = 'Izrezal bi skoraj ves posnetek. Za brisanje datoteke uporabi koš ali D.'; return; }
-  applyEdit(ed.buf.ch.map(d => { const o = new Float32Array(n); o.set(d.subarray(0, i0)); o.set(d.subarray(i1), i0); return o; }), 'Izrezano A–B', 0);
+  const a = ed.a, b = ed.b;
+  applyEdit(ed.buf.ch.map(d => { const o = new Float32Array(n); o.set(d.subarray(0, i0)); o.set(d.subarray(i1), i0); return o; }), 'Izrezano A–B', 0, x => x < a ? x : x < b ? a : x - (b - a));
 }
 $('edcut').onclick = cutSel;
 function undo(){
@@ -1181,6 +1187,31 @@ $('eqbake').onclick = async () => {
 };
 addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
 
+// Arrow left/right: jump along the wave by a beat (grid) or 1 s; Shift = a bar or 5 s.
+function edSeek(dir, big){
+  const g = ed.grid, step = g ? (60 / g.bpm) * (big ? g.beats : 1) : (big ? 5 : 1);
+  const t = Math.max(0, Math.min(dur() - 0.01, edPos() + dir * step));
+  if (ed.src) edPlay(ed.looping, t); else { ed.cursor = t; drawWave(); }
+}
+// Open the current folder in the system file manager via the bassrec-open: helper (see Navodila).
+$('sysopen').onclick = e => {
+  let base = S.syspath;
+  if (!base || e.shiftKey) {
+    const v = prompt(`Polna pot do mape "${rootHandle ? rootHandle.name : ''}" na disku, npr. D:\\Glasba\\recordings\nBrskalnik je ne more ugotoviti sam.`, base || '');
+    if (v == null) return; base = S.syspath = v.trim().replace(/[\\/]+$/, ''); saveSettings(); if (!base) return;
+  }
+  location.href = 'bassrec-open:' + encodeURIComponent([base, ...curPath].join('\\')).replace(/'/g, '%27');
+};
+// Hover help: every command shows its shortcut.
+Object.entries({ enable: 'Ponovno poveži vhod', rec: 'Snemaj / ustavi (R)', pickdir: 'Izberi mapo s posnetki', unlock: 'Dovoli dostop do mape',
+  edclose: 'Zapri urejevalnik', edplay: 'Predvajaj od kurzorja', edstop: 'Ustavi (Space, Esc)', edauto: 'Najdi ponavljajoči se vzorec (F)',
+  edclear: 'Počisti izbor A–B', edfit: 'Prikaži cel posnetek (dvoklik na valu)', edcut: 'Izreži A–B (Del), predvajanje teče naprej',
+  edcrop: 'Obreži na A–B (C)', edundo: 'Razveljavi (Ctrl+Z)', edsave: 'Shrani v datoteko (Ctrl+S)', eqflat: 'Vsi pasovi na 0 dB',
+  eqbake: 'Vgradi EQ v posnetek, predvajanje teče naprej (potem Shrani)', newdir: 'Nova podmapa', refresh: 'Ponovno preberi mapo',
+  sysopen: 'Odpri mapo v upravitelju datotek (Shift + klik = spremeni pot)', lvsave: 'Shrani in odpri drug posnetek (Enter)',
+  lvdrop: 'Zavrzi spremembe in odpri drug posnetek', lvstay: 'Ostani na tem posnetku (Esc)', wavebox: 'Povleci = A–B, klik = skok, kolešček = povečava, ←/→ = skok' })
+  .forEach(([id, t]) => { if ($(id)) $(id).title = t; });
+
 // ================= keys
 document.addEventListener('keydown', e => {
   if ($('leave').open) return;
@@ -1196,6 +1227,10 @@ document.addEventListener('keydown', e => {
   }
   else if (e.code === 'Delete') { if (ed && hasSel()) { e.preventDefault(); cutSel(); } }
   else if ((e.code === 'ArrowUp' || e.code === 'ArrowDown') && ed) { e.preventDefault(); stepTake(e.code === 'ArrowDown' ? 1 : -1); }
+  else if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && ed) { e.preventDefault(); edSeek(e.code === 'ArrowRight' ? 1 : -1, e.shiftKey); }
+  else if (e.code === 'KeyE') { if (ed) { e.preventDefault(); const el = document.querySelector('#list li.playing .tname, #list li.editing .tname'); if (el) startRename(ed.t, el); } }
+  else if (e.code === 'KeyC') { if (ed && hasSel()) { e.preventDefault(); $('edcrop').click(); } }
+  else if (e.code === 'KeyF') { if (ed) { e.preventDefault(); $('edauto').click(); } }
   else if (e.code === 'KeyD') { if (ed) { e.preventDefault(); deleteTake(ed.t); } }
   else if (e.code === 'Escape') stopPlay();
 });
