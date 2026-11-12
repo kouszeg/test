@@ -99,6 +99,7 @@
   .ed-acts .danger{border-color:#7a3036;color:#ff8a8c}
   .ed-acts button:disabled{opacity:.4;cursor:not-allowed}
   #edmsg{font-size:14px;color:var(--dim);margin-left:auto}
+  .editor button:disabled{opacity:.4;cursor:not-allowed}
   .ed-hint{font-size:13px;color:var(--dim);margin:8px 0 0}
   .eq{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;align-items:center;color:var(--dim);font-size:15px}
   .eq label{display:flex;align-items:center;gap:6px}
@@ -127,6 +128,7 @@
   .crumbs{flex:1;color:var(--dim);display:flex;gap:4px;flex-wrap:wrap}
   .crumbs a{color:var(--silk);cursor:pointer;text-decoration:underline;text-decoration-color:var(--rule)}
   #list li.dir{grid-template-columns:auto minmax(0,1fr);font-weight:600}
+  #list li.sel{outline:2px solid var(--led-amber);outline-offset:-2px}
   #list li.dir svg{width:18px;height:18px;fill:var(--led-amber)}
   #list{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
   #list li{display:grid;grid-template-columns:minmax(0,1fr) 180px auto;gap:14px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--rule)}
@@ -210,7 +212,7 @@
     </div>
   </div>
 
-  <section id="editor" class="editor" hidden>
+  <section id="editor" class="editor">
     <div class="ed-head">
       <span id="edname" class="tname"></span><span id="eddirty" class="dirty" hidden>neshranjeno</span>
       <span id="edsel"></span>
@@ -267,7 +269,7 @@
         <li><kbd>Space</kbd> predvajaj v zanki / ustavi odprt posnetek</li>
         <li><kbd>Del</kbd> izreži označeni del A–B</li>
         <li><kbd>D</kbd> izbriši odprt posnetek (z diska, vpraša za potrditev), nato se odpre naslednji</li>
-        <li><kbd>↑</kbd> / <kbd>↓</kbd> prejšnji / naslednji posnetek (če igra, igra naprej na novem)</li>
+        <li><kbd>↑</kbd> / <kbd>↓</kbd> premik po seznamu (mape in posnetki). Posnetek se odpre (če igra, igra naprej na novem), mapo odpreš s <kbd>Space</kbd> ali <kbd>Enter</kbd></li>
         <li><kbd>←</kbd> / <kbd>→</kbd> skok nazaj / naprej po valu: 1 doba (z mrežo) ali 1 s; s <kbd>Shift</kbd> 1 takt ali 5 s</li>
         <li><kbd>E</kbd> preimenuj odprt posnetek</li>
         <li><kbd>C</kbd> obreži na A–B, <kbd>F</kbd> najdi zanko</li>
@@ -298,7 +300,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.20';   // bump on every release; shown bottom right
+const VERSION = '1.22';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -655,7 +657,7 @@ async function loadFolder(){
 async function goTo(path){
   if (!(await folderReady(true))) return;
   let d = recDir; for (const n of path) d = await d.getDirectoryHandle(n);
-  curDir = d; curPath = path; await loadFolder();
+  curDir = d; curPath = path; selDir = null; await loadFolder();
 }
 $('refresh').onclick = async () => { if (await folderReady(true)) loadFolder(); else render(); };
 $('newdir').onclick = async () => {
@@ -753,7 +755,7 @@ async function deleteTake(t){
   }
   if (player && player._t === t) stopPlay();
   const wasOpen = !!(ed && ed.t === t), idx = takes.indexOf(t);
-  if (wasOpen) { edStop(); ed = null; $('editor').hidden = true; }
+  if (wasOpen) { edStop(); ed = null; edEmpty(); }
   if (META[keyOf(t)]) { delete META[keyOf(t)]; saveSettings(); }
   URL.revokeObjectURL(t.url); takes = takes.filter(x => x !== t); render();
   if (wasOpen) { const n = takes[idx] || takes[idx - 1]; if (n) openEditor(n); }
@@ -792,14 +794,14 @@ function render(){
   const ul = $('list'); ul.innerHTML = '';
   renderCrumbs();
   const FOLDER = '<svg viewBox="0 0 16 16"><path d="M1 3h5l1.5 1.5H15V13H1z"/></svg>';
-  const dirRow = (label, fn) => { const li = document.createElement('li'); li.className = 'dir'; li.innerHTML = FOLDER; const s = document.createElement('span'); s.textContent = label; li.append(s); li.onclick = fn; ul.append(li); };
+  const dirRow = (label, fn) => { const li = document.createElement('li'); li.className = 'dir' + (selDir === label ? ' sel' : ''); li.innerHTML = FOLDER; const s = document.createElement('span'); s.textContent = label; li.append(s); li.onclick = fn; ul.append(li); };
   if (curPath.length) dirRow('..', () => goTo(curPath.slice(0, -1)));
   folders.forEach(n => dirRow(n, () => goTo([...curPath, n])));
   if (!takes.length) { if (!folders.length) ul.insertAdjacentHTML('beforeend', '<li class="none">Še ni posnetkov. Pritisni R in zaigraj.</li>'); return; }
   takes.forEach(t => {
     const open = !!(ed && ed.t === t), active = open && !!ed.src;
     const li = document.createElement('li'); if (active) li.classList.add('playing'); else if (open) li.classList.add('editing');
-    li.onclick = e => { if (e.target.closest('button') || e.target.closest('input')) return; if (!open) openEditor(t); else if (ed.src) edStop(); else edPlay(true, ed.cursor); };
+    li.onclick = e => { if (e.target.closest('button') || e.target.closest('input')) return; selDir = null; if (!open) openEditor(t); else if (ed.src) edStop(); else edPlay(true, ed.cursor); };
     const info = document.createElement('div');
     const nm = document.createElement('div'); nm.className = 'tname'; nm.textContent = t.name;
     const ren = document.createElement('button'); ren.className = 'ren'; ren.title = 'Preimenuj (E)'; ren.setAttribute('aria-label', 'Preimenuj');
@@ -893,24 +895,34 @@ async function edLeave(){
   const v = await askLeave();
   return v === 'save' ? await edSave() : v === 'drop';
 }
+// Up/Down walks the list: '..', folders, then takes. A folder is only highlighted (Space/Enter opens it); a take opens in the editor.
+let selDir = null;
+const dirItems = () => [...(curPath.length ? ['..'] : []), ...folders];
 async function stepTake(d){
-  if (!ed) return;
-  const t = takes[takes.indexOf(ed.t) + d]; if (!t) return;
-  const playing = !!ed.src, loop = ed.looping;
-  await openEditor(t);
-  if (playing && ed && ed.t === t) edPlay(loop);
+  const dirs = dirItems(), items = [...dirs.map(n => ({ dir: n })), ...takes.map(t => ({ t }))];
+  const ti = ed ? takes.indexOf(ed.t) : -1;   // -1: nothing open, or the open take is from another folder -> start at the top
+  let i = selDir != null ? dirs.indexOf(selDir) : ti >= 0 ? dirs.length + ti : -1;
+  const n = items[i < 0 ? (d > 0 ? 0 : -1) : i + d]; if (!n) return;
+  if (n.dir != null) { selDir = n.dir; render(); }
+  else {
+    selDir = null;
+    if (ed && ed.t === n.t) { render(); }
+    else { const playing = !!(ed && ed.src), loop = ed ? ed.looping : true; await openEditor(n.t); if (playing && ed && ed.t === n.t) edPlay(loop); }
+  }
+  const el = document.querySelector('#list li.sel, #list li.playing, #list li.editing'); if (el) el.scrollIntoView({ block: 'nearest' });
 }
+function openSelDir(){ const n = selDir; selDir = null; goTo(n === '..' ? curPath.slice(0, -1) : [...curPath, n]); }
 async function openEditor(t){
   if (ed && ed.t !== t && !(await edLeave())) return;
   const tok = ++edTok;
   stopPlay();
-  $('editor').hidden = false; $('edname').textContent = t.name; $('edmsg').textContent = 'Nalagam…';
+  $('edname').textContent = t.name; $('edmsg').textContent = 'Nalagam…';
   try { const buf = await loadBuf(t); if (tok !== edTok) return; const g = META[keyOf(t)]; ed = { t, buf, a: null, b: null, src: null, ab: null, cursor: 0, looping: false, view: { s: 0, e: buf.len / buf.sr }, grid: g ? { ...g } : null, hist: [], rev: 0, savedRev: 0, revSeq: 0 }; }
   catch (e) { $('edmsg').textContent = 'Posnetka ni mogoče prebrati: ' + e.message; return; }
   $('edmsg').textContent = ''; edUpdate(); render();
   $('editor').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
 }
-$('edclose').onclick = async () => { if (!ed || !(await edLeave())) return; edStop(); ed = null; $('editor').hidden = true; render(); };
+$('edclose').onclick = async () => { if (!ed || !(await edLeave())) return; edStop(); ed = null; edEmpty(); render(); };
 
 const fmtS = x => x.toFixed(2) + ' s';
 function hasSel(){ return ed && ed.a != null && ed.b != null && ed.b - ed.a > 0.02; }
@@ -918,14 +930,25 @@ function edUpdate(){
   if (!ed) return;
   const z = dur() / (ed.view.e - ed.view.s);
   $('edsel').textContent = (hasSel() ? `A ${fmtS(ed.a)}   B ${fmtS(ed.b)}   dolžina ${fmtS(ed.b - ed.a)}` : `Dolžina ${fmtS(dur())}`) + (z > 1.05 ? `   povečava ${z.toFixed(1)}×` : '');
+  ED_BTNS.forEach(id => $(id).disabled = false);
   $('edcrop').disabled = $('edcut').disabled = !hasSel();
   $('edundo').disabled = !(ed.hist && ed.hist.length);
   $('edsave').disabled = !isDirty(); $('eddirty').hidden = !isDirty(); $('edname').textContent = ed.t.name;
   $('edloop').title = (hasSel() ? 'Predvajaj zanko A–B' : 'Predvajaj v zanki') + ' (Space)';
   drawWave();
 }
+// No take open: editor stays visible with a flat line and all take commands greyed out.
+const ED_BTNS = ['edclose', 'edplay', 'edloop', 'edstop', 'edauto', 'edclear', 'edfit', 'edcut', 'edcrop', 'edundo', 'edsave', 'eqbake'];
+function edEmpty(){
+  $('edname').textContent = 'Ni izbranega posnetka'; $('eddirty').hidden = true; $('edsel').textContent = ''; $('edmsg').textContent = '';
+  ED_BTNS.forEach(id => $(id).disabled = true); drawWave();
+}
 function drawWave(){
-  if (!ed) return;
+  if (!ed) {
+    const c = $('wave'), dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+    c.width = w * dpr; c.height = h * dpr; const g = c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+    g.fillStyle = '#2c3760'; g.fillRect(0, Math.round(h / 2), w, 1); return;
+  }
   const c = $('wave'), dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
   if (c.width !== w * dpr || c.height !== h * dpr) { c.width = w * dpr; c.height = h * dpr; }
   const g = c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
@@ -969,7 +992,8 @@ function drawWave(){
   if (ed.src) { g.fillStyle = '#ff4d4f'; g.fillRect(X(edPos()) - 1, 0, 2, h); requestAnimationFrame(drawWave); }
   else if (ed.cursor > 0) { g.fillStyle = 'rgba(255,77,79,.5)'; g.fillRect(X(ed.cursor) - 1, 0, 2, h); }
 }
-addEventListener('resize', () => { if (ed) { ed.cols = null; drawWave(); } });
+addEventListener('resize', () => { if (ed) ed.cols = null; drawWave(); });
+edEmpty();
 
 function zeroSnap(sec){
   const d = ed.buf.ch[0], sr = ed.buf.sr, i0 = Math.max(1, Math.min(ed.buf.len - 1, Math.round(sec * sr))), R = Math.round(sr * 0.006);
@@ -1230,13 +1254,14 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') { e.preventDefault(); edSave(); return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.code === 'KeyR') { e.preventDefault(); toggleRec(); }
+  else if ((e.code === 'Space' || e.code === 'Enter') && selDir != null) { e.preventDefault(); openSelDir(); }
   else if (e.code === 'Space' || e.code === 'KeyL') {
     e.preventDefault();
     if (ed) { if (ed.src) edStop(); else edPlay(true, ed.cursor); }
     else if (takes[0]) play(takes[0], true);
   }
   else if (e.code === 'Delete') { if (ed && hasSel()) { e.preventDefault(); cutSel(); } }
-  else if ((e.code === 'ArrowUp' || e.code === 'ArrowDown') && ed) { e.preventDefault(); stepTake(e.code === 'ArrowDown' ? 1 : -1); }
+  else if ((e.code === 'ArrowUp' || e.code === 'ArrowDown')) { e.preventDefault(); stepTake(e.code === 'ArrowDown' ? 1 : -1); }
   else if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && ed) { e.preventDefault(); edSeek(e.code === 'ArrowRight' ? 1 : -1, e.shiftKey); }
   else if (e.code === 'KeyE') { if (ed) { e.preventDefault(); const el = document.querySelector('#list li.playing .tname, #list li.editing .tname'); if (el) startRename(ed.t, el); } }
   else if (e.code === 'KeyC') { if (ed && hasSel()) { e.preventDefault(); $('edcrop').click(); } }
