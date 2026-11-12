@@ -204,6 +204,7 @@
     <label><input type="checkbox" id="autoloop"> Po snemanju vrti v zanki</label>
     <div class="folder">
       <span id="dirinfo">Mapa ni izbrana, shranjuje v Prenose</span>
+      <span id="inistat" class="mut" style="font-size:13px"></span>
       <button id="unlock" class="ghost" hidden>Odpri mapo</button>
       <button id="pickdir" class="ghost">Izberi mapo</button>
     </div>
@@ -297,7 +298,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.18';   // bump on every release; shown bottom right
+const VERSION = '1.19';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -343,16 +344,18 @@ function saveSettings(){
   ls.set('br-settings', JSON.stringify({ S, META }));
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
-    if (!(await folderReady(false))) return;
-    try { const fh = await rootHandle.getFileHandle('bass-recorder.ini', { create: true }); const w = await fh.createWritable(); await w.write(toIni()); await w.close(); }
-    catch (e) { console.warn('ini write failed', e); }
+    const st = $('inistat');
+    if (!(await folderReady(false))) { if (rootHandle) st.textContent = 'ini ni zapisan: mapa je zaklenjena, klikni Odpri mapo'; return; }
+    try { const fh = await rootHandle.getFileHandle('bass-recorder.ini', { create: true }); const w = await fh.createWritable(); await w.write(toIni()); await w.close();
+      st.textContent = `bass-recorder.ini v ${rootHandle.name} zapisan ${new Date().toLocaleTimeString('sl-SI')}`; }
+    catch (e) { st.textContent = 'ini NI zapisan: ' + e.name + ': ' + e.message; console.warn('ini write failed', e); }
   }, 400);
 }
 async function loadIni(){
   try {
     const fh = await rootHandle.getFileHandle('bass-recorder.ini');
     const { s, meta } = fromIni(await (await fh.getFile()).text());
-    S = { ...S, ...s }; META = { ...META, ...meta }; applySettingsToUi(); eqUi(); ls.set('br-settings', JSON.stringify({ S, META }));
+    S = { ...S, ...s }; META = { ...META, ...meta }; applySettingsToUi(); eqUi(); $('inistat').textContent = `bass-recorder.ini v ${rootHandle.name} prebran`; ls.set('br-settings', JSON.stringify({ S, META }));
   } catch { saveSettings(); }   // no ini yet: create it from current settings
 }
 function applySettingsToUi(){
