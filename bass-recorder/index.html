@@ -17,7 +17,11 @@
     --led-red:#ff4d4f; --led-green:#5be39a; --led-amber:#ffb547;
   }
   *{box-sizing:border-box}
-  html,body{background:var(--enclosure)}
+  html,body{background:var(--enclosure);transition:background-color .15s}
+  :root.recording{--enclosure:#3a0d14;--panel:#4a1119;--panel-2:#561520;--rule:#7a2a33}
+  :root.recording .wrap{outline:3px solid var(--led-red);outline-offset:10px;border-radius:14px}
+  :root.counting{--enclosure:#2e2310;--panel:#3a2c12;--rule:#6b5220}
+  @media (prefers-reduced-motion:reduce){html,body{transition:none}}
   body{margin:0;color:var(--silk);font:16px/1.45 Barlow,system-ui,sans-serif;padding:20px 16px 40px}
   .wrap{max-width:860px;margin:0 auto}
   h1,h2,.cond{font-family:"Barlow Condensed",Barlow,sans-serif;letter-spacing:.01em}
@@ -212,7 +216,7 @@
       <label class="snap" title="A in B se blizu takta (ali dobe) pripneta nanj"><input type="checkbox" id="snap"> Snap na takt</label>
       <button id="edcut" class="ghost danger" disabled>Izreži A–B</button>
       <button id="edcrop" class="ghost danger" disabled>Obreži na A–B</button>
-      <button id="edundo" class="ghost" disabled>Razveljavi</button>
+      <button id="edundo" class="ghost" disabled>Undo</button>
       <span id="edmsg"></span>
     </div>
     <p class="ed-hint">Povleci za A–B, primi A ali B za premik. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse.</p>
@@ -233,31 +237,31 @@
         <li><kbd>R</kbd> začni / ustavi snemanje (med odštevanjem prekliče)</li>
         <li><kbd>Space</kbd> predvajaj v zanki / ustavi odprt posnetek</li>
         <li><kbd>Del</kbd> izreži označeni del A–B</li>
-        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> razveljavi zadnje rezanje ali obrezovanje</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo zadnjega rezanja ali obrezovanja</li>
         <li><kbd>Esc</kbd> ustavi predvajanje</li>
       </ul>
       <h3>Snemanje</h3>
       <ul>
         <li>Prvič izberi vhod (ME-90B) in izhod ter mapo s posnetki. Aplikacija si vse zapomni v <code>bass-recorder.ini</code> v tej mapi.</li>
-        <li>Posnetek se normalizira na izbrani nivo in shrani kot WAV (24-bit) v trenutno odprto mapo.</li>
+        <li>Posnetek se normalizira na izbrani nivo in shrani kot mono WAV (24-bit) v trenutno odprto mapo.</li>
         <li>Metronom: označi polje Metronom. Klika le med odštevanjem in snemanjem; posnetek dobi mrežo dob in taktov. Odštevanje je privzeto izklopljeno.</li>
         <li>Latenca: prazno = samodejno. Če mreža ne sovpada z udarci, vpiši vrednost v ms.</li>
       </ul>
       <h3>Posnetki in urejanje</h3>
       <ul>
-        <li>Klik na posnetek ga odpre in predvaja v zanki; ponovni klik ga ustavi. Svinčnik = preimenuj, koš = izbriši datoteko.</li>
+        <li>Prvi klik na posnetek ga odpre, naslednji ga predvaja v zanki oziroma ustavi. Svinčnik = preimenuj, koš = izbriši datoteko.</li>
         <li>Na valu: povleci za A–B, primi A ali B za premik, klik skoči na to mesto. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse.</li>
         <li>Snap na takt pripne A in B na takte (le pri posnetkih z metronomom). Najdi zanko išče ponavljajoči se vzorec, znotraj A–B, če je izbran.</li>
-        <li>Izreži A–B (Del) odstrani del, Obreži na A–B obdrži samo del. Oboje takoj prepiše datoteko; razveljaviš s Ctrl+Z, dokler je posnetek odprt.</li>
+        <li>Izreži A–B (Del) odstrani del, Obreži na A–B obdrži samo del. Oboje takoj prepiše datoteko; Undo (Ctrl+Z) deluje, dokler je posnetek odprt.</li>
       </ul>
     </div>
   </details>
-  <p class="opts" style="margin-top:12px"><span><kbd>R</kbd> snemaj</span><span><kbd>Space</kbd> zanka / stop</span><span><kbd>Del</kbd> izreži A–B</span><span><kbd>Ctrl</kbd>+<kbd>Z</kbd> razveljavi</span><span id="ver" class="ver" style="margin-left:auto"></span></p>
+  <p class="opts" style="margin-top:12px"><span><kbd>R</kbd> snemaj</span><span><kbd>Space</kbd> zanka / stop</span><span><kbd>Del</kbd> izreži A–B</span><span><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo</span><span id="ver" class="ver" style="margin-left:auto"></span></p>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.14';   // bump on every release; shown bottom right
+const VERSION = '1.15';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -485,6 +489,7 @@ function setRecUi(state){
   $('timer').classList.toggle('on', on);
   $('reclabel').textContent = on ? 'Ustavi' : wait ? 'Prekliči' : 'Snemaj';
   $('rec').setAttribute('aria-label', $('reclabel').textContent);
+  document.documentElement.classList.toggle("recording", on); document.documentElement.classList.toggle("counting", wait && recCounting);
 }
 let busy = false;
 async function toggleRec(){
@@ -520,12 +525,23 @@ function peaksOf(d, bins = 180){
     for (let i = Math.floor(b * step); i < e; i++) { const a = d[i] < 0 ? -d[i] : d[i]; if (a > m) m = a; } out[b] = m; }
   return out;
 }
+function toMono(ch){
+  if (ch.length < 2) return ch;
+  const L = ch[0], R = ch[1]; let eL = 0, eR = 0, x = 0;
+  for (let i = 0; i < L.length; i++) { eL += L[i] * L[i]; eR += R[i] * R[i]; x += L[i] * R[i]; }
+  if (eR < eL * 0.01) return [L];
+  if (eL < eR * 0.01) return [R];
+  if (x / Math.sqrt(eL * eR) < 0.3) return [eL >= eR ? L : R];   // inverted/unrelated channels: never sum them
+  const m = new Float32Array(L.length); for (let i = 0; i < L.length; i++) m[i] = (L[i] + R[i]) * 0.5;
+  return [m];
+}
 function finishTake(){
   if (!chunks.length) return;
   const len = chunks.reduce((s, b) => s + b[0].length, 0);
   const ch = [];
   for (let c = 0; c < chCount; c++) { const out = new Float32Array(len); let o = 0; for (const b of chunks) { out.set(b[c], o); o += b[c].length; } ch.push(out); }
   chunks = [];
+  ch.splice(0, ch.length, ...toMono(ch));
   let pk = 0; for (const d of ch) for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > pk) pk = a; }
   const rawDb = pk > 0 ? 20 * Math.log10(pk) : -Infinity;
   let gainDb = 0;
@@ -740,7 +756,7 @@ function render(){
   takes.forEach(t => {
     const open = !!(ed && ed.t === t), active = open && !!ed.src;
     const li = document.createElement('li'); if (active) li.classList.add('playing'); else if (open) li.classList.add('editing');
-    li.onclick = e => { if (e.target.closest('button') || e.target.closest('input')) return; if (!open) play(t, true); else if (ed.src) edStop(); else edPlay(true, ed.cursor); };
+    li.onclick = e => { if (e.target.closest('button') || e.target.closest('input')) return; if (!open) openEditor(t); else if (ed.src) edStop(); else edPlay(true, ed.cursor); };
     const info = document.createElement('div');
     const nm = document.createElement('div'); nm.className = 'tname'; nm.textContent = t.name;
     const ren = document.createElement('button'); ren.className = 'ren'; ren.title = 'Preimenuj'; ren.setAttribute('aria-label', 'Preimenuj');
@@ -801,9 +817,9 @@ function parseWav(ab){
 }
 async function loadBuf(t){
   const ab = await t.blob.arrayBuffer();
-  const w = parseWav(ab); if (w) return w;
+  const w = parseWav(ab); if (w) { w.ch = toMono(w.ch); return w; }
   const d = await getPctx().decodeAudioData(ab.slice(0));
-  return { sr: d.sampleRate, len: d.length, ch: Array.from({ length: d.numberOfChannels }, (_, c) => d.getChannelData(c)) };
+  return { sr: d.sampleRate, len: d.length, ch: toMono(Array.from({ length: d.numberOfChannels }, (_, c) => d.getChannelData(c))) };
 }
 const dur = () => ed.buf.len / ed.buf.sr;
 let edTok = 0;
@@ -1021,6 +1037,7 @@ $('edauto').onclick = () => {
 
 // Destructive edits write the file immediately; each one pushes the previous audio so Ctrl+Z can restore it.
 async function writeTake(t, ch, sr){
+  ch = toMono(ch);
   const blob = encodeWav(ch, sr);
   if (t.inFolder && await folderReady(true)) {
     const target = /\.wav$/i.test(t.name) ? t.name : t.name.replace(/\.[^.]+$/, '') + '.wav';
@@ -1041,7 +1058,7 @@ async function applyEdit(ch, label, gridShift){
   if (g && gridShift) { META[keyOf(t)].offset = g.offset - gridShift; }
   saveSettings();
   ed.buf = { sr, ch, len: ch[0].length }; ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.cursor = 0; ed.view = { s: 0, e: ch[0].length / sr };
-  $('edname').textContent = t.name; $('edmsg').textContent = label + (t.inFolder ? ', shranjeno' : '') + '. Ctrl+Z razveljavi.';
+  $('edname').textContent = t.name; $('edmsg').textContent = label + (t.inFolder ? ', shranjeno' : '') + '. Ctrl+Z = undo.';
   edUpdate(); render();
 }
 function selIdx(){ const sr = ed.buf.sr; return [Math.round(ed.a * sr), Math.round(ed.b * sr)]; }
@@ -1057,11 +1074,11 @@ async function undo(){
   if (!ed || !ed.hist || !ed.hist.length) return;
   edStop();
   const h = ed.hist.pop(), t = ed.t, sr = ed.buf.sr;
-  try { await writeTake(t, h.ch, sr); } catch (e) { ed.hist.push(h); $('edmsg').textContent = 'Razveljavitev ni uspela: ' + e.message; return; }
+  try { await writeTake(t, h.ch, sr); } catch (e) { ed.hist.push(h); $('edmsg').textContent = 'Undo ni uspel: ' + e.message; return; }
   if (h.grid) META[keyOf(t)] = h.grid; else delete META[keyOf(t)];
   saveSettings();
   ed.buf = { sr, ch: h.ch, len: h.ch[0].length }; ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.cursor = 0; ed.view = { s: 0, e: h.ch[0].length / sr };
-  $('edmsg').textContent = 'Razveljavljeno' + (t.inFolder ? ', datoteka obnovljena' : '') + '.';
+  $('edmsg').textContent = 'Undo' + (t.inFolder ? ': datoteka obnovljena' : '') + '.';
   edUpdate(); render();
 }
 $('edundo').onclick = undo;
