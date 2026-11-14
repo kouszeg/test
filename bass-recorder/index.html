@@ -270,6 +270,7 @@
       <ul>
         <li><kbd>R</kbd> začni / ustavi snemanje (med odštevanjem prekliče)</li>
         <li><kbd>Space</kbd> predvajaj v zanki / ustavi odprt posnetek</li>
+        <li><kbd>Ctrl</kbd>+<kbd>A</kbd> označi cel posnetek kot A–B</li>
         <li><kbd>Del</kbd> izreži označeni del A–B</li>
         <li><kbd>D</kbd> izbriši odprt posnetek (z diska, vpraša za potrditev), nato se odpre naslednji</li>
         <li><kbd>↑</kbd> / <kbd>↓</kbd> premik po seznamu (mape in posnetki). Posnetek se odpre (če igra, igra naprej na novem), mapo odpreš s <kbd>Space</kbd> ali <kbd>Enter</kbd></li>
@@ -304,7 +305,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.24';   // bump on every release; shown bottom right
+const VERSION = '1.25';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -1313,6 +1314,7 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { e.preventDefault(); undo(); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') { e.preventDefault(); edSave(); return; }
   if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyC' || e.code === 'KeyX') && ed && hasSel()) { e.preventDefault(); copySel(e.code === 'KeyX'); return; }
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyA' && ed) { e.preventDefault(); ed.a = 0; ed.b = ed.buf.len / ed.buf.sr; edUpdate(); edLoopUpdate(); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV' && ed && clip) { e.preventDefault(); pasteClip(); return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.code === 'KeyR') { e.preventDefault(); toggleRec(); }
