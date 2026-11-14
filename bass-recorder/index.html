@@ -103,6 +103,14 @@
   .ed-hint{font-size:13px;color:var(--dim);margin:8px 0 0}
   .eq{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;align-items:center;color:var(--dim);font-size:15px}
   .eq label{display:flex;align-items:center;gap:6px}
+  .mix{margin-top:12px;display:grid;gap:8px;color:var(--dim);font-size:15px}
+  .mrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+  .mrow label{display:flex;align-items:center;gap:6px}
+  .mrow input[type=range]{width:140px;accent-color:var(--led-amber)}
+  .mrow input[type=number]{width:80px;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:4px 6px}
+  .mrow output{min-width:56px;font-variant-numeric:tabular-nums;color:var(--silk)}
+  .lane{min-width:84px}
+  .lane.act{border-color:var(--led-amber);color:var(--led-amber)}
   .eq input[type=range]{width:110px;accent-color:var(--led-amber)}
   .eq output{min-width:44px;font-variant-numeric:tabular-nums;color:var(--silk)}
   .dirty{color:var(--led-amber);font-size:14px;margin-left:8px}
@@ -243,6 +251,15 @@
       <button id="eqflat" class="ghost">Flat</button>
       <button id="eqbake" class="ghost" title="Vgradi EQ v zvok posnetka (potem Shrani)">Apply</button>
     </div>
+    <div id="mixbox" class="mix" hidden>
+      <div class="mrow"><button id="ml0" class="lane ghost">L loop</button>
+        <label>Glasnost <input type="range" id="mg0" min="-24" max="12" step="0.5"><output id="mgv0"></output></label>
+        <label>Zamik <input type="number" id="mo0" step="1" min="-2000" max="2000"> ms</label></div>
+      <div class="mrow"><button id="ml1" class="lane ghost">R vhod</button>
+        <label>Glasnost <input type="range" id="mg1" min="-24" max="12" step="0.5"><output id="mgv1"></output></label>
+        <label>Zamik <input type="number" id="mo1" step="1" min="-2000" max="2000"> ms</label></div>
+      <div class="mrow"><button id="mixzero" class="ghost">Ponastavi</button><span id="duodef" class="mut"></span></div>
+    </div>
     <p class="ed-hint">Povleci za A–B, primi A ali B za premik. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse.</p>
   </section>
 
@@ -280,6 +297,7 @@
         <li><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> kopiraj / izreži / prilepi. Prilepi vstavi na kurzor ali zamenja A–B; deluje med posnetki. Nov prazen posnetek: gumb ob seznamu, vanj prilepiš in Shrani.</li>
         <li><kbd>Ctrl</kbd>+<kbd>S</kbd> shrani spremembe odprtega posnetka</li>
         <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo zadnjega rezanja ali obrezovanja</li>
+        <li><kbd>[</kbd> / <kbd>]</kbd> pri L/R posnetku premakni izbrano sled za 1 ms (s <kbd>Shift</kbd> 10 ms)</li>
         <li><kbd>Esc</kbd> ustavi predvajanje</li>
       </ul>
       <h3>Snemanje</h3>
@@ -288,6 +306,8 @@
         <li>Posnetek se normalizira na izbrani nivo in shrani kot mono WAV (24-bit) v trenutno odprto mapo, ime LLLL-MM-DD-HH-MM.wav.</li>
         <li>Metronom: označi polje Metronom. Klika le med odštevanjem in snemanjem; posnetek dobi mrežo dob in taktov. Odštevanje je privzeto izklopljeno.</li>
         <li>Latenca: prazno = samodejno. Če mreža ne sovpada z udarci, vpiši vrednost v ms.</li>
+        <li><b>Snemanje L/R</b>: če ob pritisku R kak posnetek igra, igra naprej v zanki (A–B, če je izbran), aplikacija pa posname stereo WAV: L = to, kar aplikacija predvaja, R = vhod (kitara). Ime dobi <code>-LR</code>; posnetki s <code>-LR</code> v imenu ostanejo stereo, vsi drugi so mono. Ustavitev snemanja ustavi tudi predvajanje.</li>
+        <li>L/R poravnava: v urejevalniku ima vsaka sled glasnost in zamik (ms). <kbd>Alt</kbd> + povleci po sledi jo premakne, <kbd>[</kbd> <kbd>]</kbd> po 1 ms. Spremembe gredo v datoteko šele s Shrani. Ko shraniš popravljen zamik posnetka, posnetega tukaj, postane to privzeti zamik za naslednja L/R snemanja (vrednost je v <code>bass-recorder.ini</code> kot <code>duoOff</code>).</li>
       </ul>
       <h3>Posnetki in urejanje</h3>
       <ul>
@@ -305,12 +325,13 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.25';   // bump on every release; shown bottom right
+const VERSION = '1.26';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
 const RING = 2048; let ring = new Float32Array(RING), ringPos = 0, scopeSave = null;
 // recording state machine: idle -> count (waiting for start frame) -> rec
+let recFirstFrame = 0, duo = null;   // duo: L/R take in progress (L = what the app plays, R = input)
 let recState = 'idle', recStartFrame = 0, recStartTime = 0, chunks = [], recGrid = null, recCounting = false;
 
 const ICON = {
@@ -322,7 +343,7 @@ const ICON = {
 };
 
 // ================= settings (mirrored to localStorage, persisted to bass-recorder.ini in the app folder)
-const DEF = { snap: true, scopeMax: 0.05, met: false, bpm: 100, beats: 4, countin: 0, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '', eq80: 0, eq250: 0, eq800: 0, eq2k5: 0, eq6k: 0, syspath: '' };
+const DEF = { snap: true, scopeMax: 0.05, met: false, bpm: 100, beats: 4, countin: 0, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '', eq80: 0, eq250: 0, eq800: 0, eq2k5: 0, eq6k: 0, syspath: '', duoOff: 0 };
 let S = { ...DEF }, META = {};   // META: per-file beat grid {bpm, beats, offset}
 const ls = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
 try { const j = JSON.parse(ls.get('br-settings') || '{}'); S = { ...DEF, ...j.S }; META = j.META || {}; } catch {}
@@ -451,7 +472,7 @@ function onBlock(data){
   expF = data.f + n;
   if (recState === 'count' && data.f + n > recStartFrame) {
     const off = Math.max(0, recStartFrame - data.f);
-    chunks = [data.bufs.map(b => b.subarray(off))]; recState = 'rec'; setRecUi('rec');
+    chunks = [data.bufs.map(b => b.subarray(off))]; recFirstFrame = data.f + off; recState = 'rec'; setRecUi('rec');
   } else if (recState === 'rec') chunks.push(data.bufs);
   lastBuf = data.bufs[0];
   for (let i = 0; i < lastBuf.length; i++) { ring[ringPos] = lastBuf[i]; ringPos = (ringPos + 1) % RING; }
@@ -543,10 +564,19 @@ function setRecUi(state){
 let busy = false;
 async function toggleRec(){
   if ($('rec').disabled || busy) return;
-  if (recState === 'rec') { recState = 'idle'; setRecUi('idle'); metStop(); finishTake(); return; }
-  if (recState === 'count') { recState = 'idle'; chunks = []; setRecUi('idle'); metStop(); return; }
-  busy = true; stopPlay();
+  if (recState === 'rec') { recState = 'idle'; setRecUi('idle'); metStop(); const d = duo; duo = null; if (d) { d.on = false; edStop(); } finishTake(d); return; }
+  if (recState === 'count') { recState = 'idle'; chunks = []; setRecUi('idle'); metStop(); if (duo) { duo = null; edStop(); } return; }
+  busy = true;
+  const duoMode = !!(ed && ed.src);   // something is playing: keep it looping and record it to L, the input to R
+  if (!duoMode) stopPlay();
   try {
+    if (duoMode) {
+      await ensureTap();
+      if (!ed.looping) { const p = edPos(); edPlay(true, hasSel() && (p < ed.a || p >= ed.b) ? undefined : p); }
+      const ts = ac => (ac.getOutputTimestamp ? ac.getOutputTimestamp() : null) || { contextTime: ac.currentTime, performanceTime: performance.now() };
+      duo = { on: true, pc: [], c: ts(ctx), p: ts(pctx), cOut: ctx.outputLatency || ctx.baseLatency || 0, inLat: inputLatency, off: S.duoOff };
+      $('edmsg').textContent = 'Snemam L/R: L = to, kar igra, R = vhod.';
+    }
     const useMet = S.met || S.countin > 0;
     if (useMet) await openInput();   // fresh input stream per take: no buffered latency creep
     $('timer').textContent = '0:00'; chunks = [];
@@ -584,7 +614,7 @@ function toMono(ch){
   const m = new Float32Array(L.length); for (let i = 0; i < L.length; i++) m[i] = (L[i] + R[i]) * 0.5;
   return [m];
 }
-function finishTake(){
+function finishTake(d){
   if (!chunks.length) return;
   const len = chunks.reduce((s, b) => s + b[0].length, 0);
   const ch = [];
@@ -599,8 +629,16 @@ function finishTake(){
   const stem = `${ts.getFullYear()}-${p(ts.getMonth()+1)}-${p(ts.getDate())}-${p(ts.getHours())}-${p(ts.getMinutes())}`, here = curPath.join('/');
   let name = stem + '.wav';   // two takes in the same minute: -2, -3, ...
   for (let k = 2; takes.some(x => (x.path || '') === here && x.name.toLowerCase() === name.toLowerCase()); k++) name = `${stem}-${k}.wav`;
-  const blob = encodeWav(ch, ctx.sampleRate), drops = findDrops(ch[0], ctx.sampleRate);
-  const take = { drops, name, blob, url: URL.createObjectURL(blob), secs: len / ctx.sampleRate, rawDb, gainDb, mtime: Date.now(), peaks: peaksOf(ch[0]) };
+  const drops = findDrops(ch[0], ctx.sampleRate);
+  let peaks = peaksOf(ch[0]);
+  if (d && d.pc.length) {
+    ch.unshift(duoLeft(d, len)); peaks = peaksMax(ch);
+    name = name.replace(/\.wav$/, '-LR.wav');
+    for (let k = 2; takes.some(x => (x.path || '') === here && x.name.toLowerCase() === name.toLowerCase()); k++) name = `${stem}-${k}-LR.wav`;
+  }
+  const blob = encodeWav(ch, ctx.sampleRate);
+  const take = { drops, name, blob, url: URL.createObjectURL(blob), secs: len / ctx.sampleRate, rawDb, gainDb, mtime: Date.now(), peaks };
+  if (d && d.pc.length) take.duoOff = d.off;
   if (curDir) take.path = curPath.join('/');
   if (recGrid) { META[keyOf(take)] = recGrid; saveSettings(); }
   takes.unshift(take); render();
@@ -608,6 +646,19 @@ function finishTake(){
   if (S.autoloop) play(take, true);
 }
 // Dropouts: runs of exact digital zeros (1.3–400 ms) that cut into sound. Sound on both sides = dropout; a noise gate has quiet on at least one side.
+// L channel of a duo take: the player's output, mapped onto capture frames through the two output timestamps
+// (performance.now() as common clock). Capture frame f was played at f/sr - output - input latency; duoOff = learned extra delay (ms).
+function duoLeft(d, len){
+  const sr = ctx.sampleRate, psr = pctx.sampleRate, g0 = d.pc[0][0];
+  const last = d.pc[d.pc.length - 1], P = new Float32Array(last[0] + last[1].length - g0);
+  for (const [f, b] of d.pc) if (f >= g0) P.set(b, f - g0);
+  const perf0 = d.c.performanceTime + (recFirstFrame / sr - d.c.contextTime - d.cOut - d.inLat) * 1000 - d.off;
+  const gA = (d.p.contextTime + (perf0 - d.p.performanceTime) / 1000) * psr - g0, step = psr / sr;
+  const L = new Float32Array(len);
+  for (let i = 0; i < len; i++) { const x = gA + i * step, k = Math.floor(x); if (k < 0 || k + 1 >= P.length) continue; const fr = x - k; L[i] = P[k] * (1 - fr) + P[k + 1] * fr; }
+  return L;
+}
+function peaksMax(ch){ const ps = ch.map(c => peaksOf(c)); return ps[0].map((v, i) => Math.max(...ps.map(p => p[i]))); }
 function findDrops(d, sr){
   const out = [], lvl = 0.003, edge = 32; let run = 0;
   const near = (a, b) => { let m = 0; for (let i = Math.max(0, a); i < Math.min(d.length, b); i++) { const v = d[i] < 0 ? -d[i] : d[i]; if (v > m) m = v; } return m; };
@@ -795,7 +846,7 @@ async function ensurePeaks(t){
   try {
     decodeCtx = decodeCtx || new OfflineAudioContext(1, 1, 44100);
     const ab = await decodeCtx.decodeAudioData(await t.blob.arrayBuffer());
-    t.peaks = peaksOf(ab.getChannelData(0)); t.secs = ab.duration; render();
+    t.peaks = peaksMax(Array.from({ length: ab.numberOfChannels }, (_, c) => ab.getChannelData(c))); t.secs = ab.duration; render();
   } catch { t.peaks = new Float32Array(0); }
 }
 function drawThumb(cv, t, active){
@@ -860,6 +911,18 @@ function mkEq(ac){   // 5 bands, used for live playback and for baking into the 
   const n = EQF.map(([k, type, f]) => { const b = ac.createBiquadFilter(); b.type = type; b.frequency.value = f; if (type === 'peaking') b.Q.value = 1.0; b.gain.value = S[k]; return b; });
   for (let i = 1; i < n.length; i++) n[i-1].connect(n[i]); return n;
 }
+let ptap = null, ptapP = null;
+// Records exactly what the player outputs (post-EQ, mono) while a duo take is being recorded.
+function ensureTap(){
+  const ac = getPctx();
+  return ptapP || (ptapP = (async () => {
+    await ac.audioWorklet.addModule('data:text/javascript;charset=utf-8,' + encodeURIComponent(WORKLET));
+    ptap = new AudioWorkletNode(ac, 'cap', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 1, channelCountMode: 'explicit', channelInterpretation: 'speakers', processorOptions: { nc: 1 } });
+    const z = ac.createGain(); z.gain.value = 0;
+    eqN[eqN.length - 1].connect(ptap); ptap.connect(z); z.connect(ac.destination);
+    ptap.port.onmessage = ({ data }) => { if (duo && duo.on) duo.pc.push([data.f, data.bufs[0]]); };
+  })());
+}
 const getPctx = () => { if (!pctx) { pctx = new AudioContext(); applySink(); eqN = mkEq(pctx); eqN[eqN.length-1].connect(pctx.destination); } return pctx; };
 $('eqbands').innerHTML = EQF.map(([k, , , lab]) => `<label>${lab} Hz<input type="range" id="${k.toLowerCase()}" min="-15" max="15" step="1"><output id="${k.toLowerCase()}v"></output></label>`).join('');
 function eqUi(){ EQF.forEach(([k]) => { const id = k.toLowerCase(); $(id).value = S[k]; $(id + 'v').textContent = (S[k] > 0 ? '+' : '') + S[k] + ' dB'; if (eqN) eqN[EQF.findIndex(f => f[0] === k)].gain.value = S[k]; }); }
@@ -892,11 +955,13 @@ function parseWav(ab){
   }
   return { sr: fmt.sr, ch, len: n };
 }
+const isLR = n => /-LR(?=[-.]|$)/i.test(n);
+const chFor = (ch, name) => ch.length >= 2 && isLR(name) ? ch.slice(0, 2) : toMono(ch);
 async function loadBuf(t){
   const ab = await t.blob.arrayBuffer();
-  const w = parseWav(ab); if (w) { w.ch = toMono(w.ch); return w; }
+  const w = parseWav(ab); if (w) { w.ch = chFor(w.ch, t.name); return w; }
   const d = await getPctx().decodeAudioData(ab.slice(0));
-  return { sr: d.sampleRate, len: d.length, ch: toMono(Array.from({ length: d.numberOfChannels }, (_, c) => d.getChannelData(c))) };
+  return { sr: d.sampleRate, len: d.length, ch: chFor(Array.from({ length: d.numberOfChannels }, (_, c) => d.getChannelData(c)), t.name) };
 }
 const dur = () => ed.buf.len / ed.buf.sr;
 let edTok = 0;
@@ -938,11 +1003,11 @@ async function openEditor(t){
   const tok = ++edTok;
   stopPlay();
   $('edname').textContent = t.name; $('edmsg').textContent = 'Nalagam…';
-  try { const buf = await loadBuf(t); if (tok !== edTok) return; const g = META[keyOf(t)]; ed = { t, buf, a: null, b: null, src: null, ab: null, cursor: 0, looping: false, view: { s: 0, e: buf.len / buf.sr }, grid: g ? { ...g } : null, hist: [], rev: 0, savedRev: 0, revSeq: 0 }; }
+  try { const buf = await loadBuf(t); if (tok !== edTok) return; const g = META[keyOf(t)]; ed = { t, buf, a: null, b: null, src: null, ab: null, cursor: 0, looping: false, view: { s: 0, e: buf.len / buf.sr }, grid: g ? { ...g } : null, hist: [], rev: 0, savedRev: 0, revSeq: 0, raw: buf.ch, mix: zeroMix(), lane: 1 }; }
   catch (e) { $('edmsg').textContent = 'Posnetka ni mogoče prebrati: ' + e.message; return; }
   ed.drops = findDrops(ed.buf.ch[0], ed.buf.sr); t.drops = ed.drops;
   $('edmsg').textContent = ed.drops.length ? `⚠ ${ed.drops.length} izpad(ov) signala (rdeče črte): ` + ed.drops.slice(0, 6).map(x => `${fmtMs(x.t)} (${x.ms.toFixed(0)} ms)`).join(', ') : '';
-  edUpdate(); render();
+  mixUi(); edUpdate(); render();
   $('editor').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
 }
 $('edclose').onclick = async () => { if (!ed || !(await edLeave())) return; edStop(); ed = null; edEmpty(); render(); };
@@ -964,7 +1029,7 @@ function edUpdate(){
 const ED_BTNS = ['edcopy', 'edpaste', 'edclose', 'edplay', 'edloop', 'edstop', 'edauto', 'edclear', 'edfit', 'edcut', 'edcrop', 'edundo', 'edsave', 'eqbake'];
 function edEmpty(){
   $('edname').textContent = 'Ni izbranega posnetka'; $('eddirty').hidden = true; $('edsel').textContent = ''; $('edmsg').textContent = '';
-  ED_BTNS.forEach(id => $(id).disabled = true); drawWave();
+  ED_BTNS.forEach(id => $(id).disabled = true); $('mixbox').hidden = true; drawWave();
 }
 function drawWave(){
   if (!ed) {
@@ -975,17 +1040,21 @@ function drawWave(){
   const c = $('wave'), dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
   if (c.width !== w * dpr || c.height !== h * dpr) { c.width = w * dpr; c.height = h * dpr; }
   const g = c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
-  const { s: vs, e: ve } = ed.view, sr = ed.buf.sr, d = ed.buf.ch[0], X = t => (t - vs) / (ve - vs) * w;
+  const { s: vs, e: ve } = ed.view, sr = ed.buf.sr, X = t => (t - vs) / (ve - vs) * w;
   const key = w + ':' + vs + ':' + ve;
   if (!ed.cols || ed.cols.key !== key) {
-    const mn = new Float32Array(w), mx = new Float32Array(w), i0 = vs * sr, span = (ve - vs) * sr;
-    for (let x = 0; x < w; x++) {
-      const s0 = Math.floor(i0 + x / w * span), s1 = Math.max(s0 + 1, Math.floor(i0 + (x + 1) / w * span));
-      let lo = 0, hi = 0; for (let i = Math.max(0, s0); i < Math.min(ed.buf.len, s1); i++) { const v = d[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
-      mn[x] = lo; mx[x] = hi;
-    }
-    if (!ed.pk) { let pk = 0; for (let i = 0; i < ed.buf.len; i++) { const a = d[i] < 0 ? -d[i] : d[i]; if (a > pk) pk = a; } ed.pk = pk || 1; }
-    ed.cols = { key, mn, mx };
+    const i0 = vs * sr, span = (ve - vs) * sr;
+    const lanes = ed.buf.ch.map(d => {
+      const mn = new Float32Array(w), mx = new Float32Array(w);
+      for (let x = 0; x < w; x++) {
+        const s0 = Math.floor(i0 + x / w * span), s1 = Math.max(s0 + 1, Math.floor(i0 + (x + 1) / w * span));
+        let lo = 0, hi = 0; for (let i = Math.max(0, s0); i < Math.min(d.length, s1); i++) { const v = d[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+        mn[x] = lo; mx[x] = hi;
+      }
+      return { mn, mx };
+    });
+    if (!ed.pk) { let pk = 0; for (const d of (isStereo() ? ed.raw : ed.buf.ch)) for (let i = 0; i < d.length; i++) { const a = d[i] < 0 ? -d[i] : d[i]; if (a > pk) pk = a; } ed.pk = pk || 1; }   // L/R: scale from raw, so volume changes are visible
+    ed.cols = { key, lanes };
   }
   // beat grid (only for takes recorded with the metronome)
   const grid = ed.grid;
@@ -1001,12 +1070,20 @@ function drawWave(){
     }
   }
   if (hasSel()) { g.fillStyle = 'rgba(91,227,154,.13)'; g.fillRect(X(ed.a), 0, X(ed.b) - X(ed.a), h); }
-  const { mn, mx } = ed.cols, pk = ed.pk, xa = hasSel() ? X(ed.a) : -1, xb = hasSel() ? X(ed.b) : -1;
-  for (let x = 0; x < w; x++) {
-    g.fillStyle = x >= xa && x <= xb ? '#5be39a' : '#8b93a7';
-    const y0 = h/2 - mx[x] / pk * h * .46, y1 = h/2 - mn[x] / pk * h * .46;
-    g.fillRect(x, y0, 1, Math.max(1, y1 - y0));
-  }
+  const pk = ed.pk, xa = hasSel() ? X(ed.a) : -1, xb = hasSel() ? X(ed.b) : -1, nl = ed.cols.lanes.length, lh = h / nl;
+  ed.cols.lanes.forEach(({ mn, mx }, c) => {
+    const yc = lh * (c + 0.5);
+    for (let x = 0; x < w; x++) {
+      g.fillStyle = x >= xa && x <= xb ? '#5be39a' : '#8b93a7';
+      const y0 = yc - Math.min(1.05, mx[x] / pk) * lh * .46, y1 = yc - Math.max(-1.05, mn[x] / pk) * lh * .46;
+      g.fillRect(x, y0, 1, Math.max(1, y1 - y0));
+    }
+    if (nl === 2) {
+      if (c) { g.fillStyle = '#2c3760'; g.fillRect(0, Math.round(lh), w, 1); }
+      const m = ed.mix[c]; g.font = '600 12px Barlow,sans-serif'; g.fillStyle = ed.lane === c ? '#ffb547' : '#8b93a7';
+      g.fillText((c ? 'R vhod' : 'L loop') + (m.g ? `  ${m.g > 0 ? '+' : ''}${m.g} dB` : '') + (m.o ? `  ${m.o > 0 ? '+' : ''}${m.o} ms` : ''), 6, lh * c + 30);
+    }
+  });
   for (const [t, lab] of [[ed.a, 'A'], [ed.b, 'B']]) {
     if (t == null || !hasSel()) continue;
     g.fillStyle = '#ffb547'; g.fillRect(X(t) - 1, 0, 2, h);
@@ -1045,16 +1122,31 @@ function setView(s, e){
   const box = $('wavebox'); let drag = null, prev = null, x0 = 0, fresh = false;
   const tAt = e => { const r = box.getBoundingClientRect(); return ed.view.s + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (ed.view.e - ed.view.s); };
   const xOf = t => (t - ed.view.s) / (ed.view.e - ed.view.s) * box.clientWidth;
+  let shift = null, shiftRaf = 0;
   box.addEventListener('pointerdown', e => {
-    if (!ed || e.button !== 0) return; box.setPointerCapture(e.pointerId); prev = null; fresh = false;
+    if (!ed || e.button !== 0) return;
+    if (e.altKey && isStereo()) {   // Alt + drag = move this lane in time
+      e.preventDefault(); box.setPointerCapture(e.pointerId);
+      const r = box.getBoundingClientRect(), c = e.clientY - r.top < r.height / 2 ? 0 : 1;
+      ed.lane = c; shift = { c, x0: e.clientX, o0: ed.mix[c].o, was: ed.src ? ed.looping : null }; if (ed.src) edStop(); mixUi(); drawWave(); return;
+    }
+    box.setPointerCapture(e.pointerId); prev = null; fresh = false;
     const t = tAt(e), x = e.clientX - box.getBoundingClientRect().left; x0 = e.clientX;
     if (hasSel() && Math.abs(x - xOf(ed.a)) < 10) drag = 'a';
     else if (hasSel() && Math.abs(x - xOf(ed.b)) < 10) drag = 'b';
     else { prev = hasSel() ? [ed.a, ed.b] : null; ed.a = t; ed.b = t; drag = 'b'; fresh = true; }
     edUpdate();
   });
-  box.addEventListener('pointermove', e => { if (!drag) return; ed[drag] = snapT(tAt(e), true); edUpdate(); if (hasSel() && ed.a < ed.b) edLoopUpdate(); });
+  box.addEventListener('pointermove', e => {
+    if (shift) {
+      const msPerPx = (ed.view.e - ed.view.s) / box.clientWidth * 1000;
+      ed.mix[shift.c].o = Math.max(-2000, Math.min(2000, Math.round(shift.o0 + (e.clientX - shift.x0) * msPerPx)));
+      if (!shiftRaf) shiftRaf = requestAnimationFrame(() => { shiftRaf = 0; if (ed) applyMix(false); });
+      return;
+    }
+    if (!drag) return; ed[drag] = snapT(tAt(e), true); edUpdate(); if (hasSel() && ed.a < ed.b) edLoopUpdate(); });
   box.addEventListener('pointerup', e => {
+    if (shift) { const w = shift.was; shift = null; applyMix(false); if (w != null) edPlay(w, ed.cursor); return; }
     if (!drag) return; drag = null;
     if (fresh && Math.abs(e.clientX - x0) < 4) {        // plain click: keep A–B, jump playback/cursor there
       const t = ed.a; [ed.a, ed.b] = prev || [null, null]; edUpdate();
@@ -1163,6 +1255,39 @@ $('edauto').onclick = () => {
 };
 
 // Edits change only the in-app audio. Shrani writes a new copy <base>-edit-<i>.wav; the original is never overwritten.
+// L/R takes: each channel has volume (dB) and offset (ms). Non-destructive: ed.raw is the audio, ed.buf.ch = raw with mix applied.
+// Cut/crop/paste/EQ work on what you see and hear, then that becomes the new raw with the mix reset to 0.
+const zeroMix = () => [{ g: 0, o: 0 }, { g: 0, o: 0 }];
+const isStereo = () => !!(ed && ed.buf.ch.length === 2);
+const mixOn = m => m.some(x => x.g || x.o);
+function applyMix(restart){
+  if (!isStereo()) return;
+  const sr = ed.buf.sr;
+  ed.buf.ch = ed.raw.map((d, c) => {
+    const { g, o } = ed.mix[c]; if (!g && !o) return d;
+    const k = Math.pow(10, g / 20), n = Math.round(o / 1000 * sr), out = new Float32Array(d.length);
+    for (let i = Math.max(0, n); i < Math.min(d.length, d.length + n); i++) out[i] = d[i - n] * k;
+    return out;
+  });
+  ed.ab = null; ed.cols = null; ed.pk = 0; ed.rev = ++ed.revSeq;
+  if (restart && ed.src) edPlay(ed.looping, edPos());
+  mixUi(); edUpdate();
+}
+function mixUi(){
+  $('mixbox').hidden = !isStereo();
+  $('duodef').textContent = `Privzeti zamik pri snemanju L/R: ${S.duoOff} ms`;
+  if (!isStereo()) return;
+  ed.mix.forEach((m, c) => { $('mg' + c).value = m.g; $('mgv' + c).textContent = (m.g > 0 ? '+' : '') + m.g + ' dB'; $('mo' + c).value = m.o; $('ml' + c).classList.toggle('act', ed.lane === c); });
+}
+function nudge(c, ms){ ed.lane = c; ed.mix[c].o = Math.max(-2000, Math.min(2000, Math.round(ed.mix[c].o + ms))); applyMix(true); }
+let mixT = null;
+[0, 1].forEach(c => {
+  $('mg' + c).addEventListener('input', () => { if (!ed) return; ed.lane = c; ed.mix[c].g = +$('mg' + c).value; clearTimeout(mixT); mixT = setTimeout(() => applyMix(false), 60); mixUi(); });
+  $('mg' + c).addEventListener('change', () => { clearTimeout(mixT); $('mg' + c).blur(); if (ed) applyMix(true); });
+  $('mo' + c).addEventListener('change', () => { if (!ed) return; ed.lane = c; const v = parseFloat($('mo' + c).value); ed.mix[c].o = isNaN(v) ? 0 : Math.max(-2000, Math.min(2000, Math.round(v))); $('mo' + c).blur(); applyMix(true); });
+  $('ml' + c).onclick = () => { if (ed) { ed.lane = c; mixUi(); drawWave(); } };
+});
+$('mixzero').onclick = () => { if (!ed || !isStereo()) return; ed.mix = zeroMix(); applyMix(true); };
 function setBuf(ch){
   const sr = ed.buf.sr;
   ed.buf = { sr, ch, len: ch[0].length }; ed.drops = findDrops(ch[0], sr); ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.cursor = 0; ed.view = { s: 0, e: ch[0].length / sr };
@@ -1171,10 +1296,10 @@ function applyEdit(ch, label, gridShift, keep){
   if (!ed) return;
   const was = keep && ed.src ? { pos: edPos(), loop: ed.looping } : null, sel = keep === true ? [ed.a, ed.b, ed.view, ed.cursor] : null;
   edStop();
-  ed.hist.push({ ch: ed.buf.ch, grid: ed.grid ? { ...ed.grid } : null, rev: ed.rev });
+  ed.hist.push({ ch: ed.buf.ch, raw: ed.raw, mix: ed.mix.map(m => ({ ...m })), grid: ed.grid ? { ...ed.grid } : null, rev: ed.rev });
   if (ed.grid && gridShift) ed.grid.offset -= gridShift;
   ed.rev = ++ed.revSeq;
-  setBuf(ch); if (sel) [ed.a, ed.b, ed.view, ed.cursor] = sel;
+  setBuf(ch); ed.raw = ch; ed.mix = zeroMix(); mixUi(); if (sel) [ed.a, ed.b, ed.view, ed.cursor] = sel;
   $('edmsg').textContent = label + '. Shrani = zapiši v datoteko, Ctrl+Z = undo.';
   edUpdate(); render();
   if (was) edPlay(was.loop, typeof keep === 'function' ? keep(was.pos) : was.pos);
@@ -1183,10 +1308,10 @@ async function edSave(){
   if (!ed || !isDirty()) return true;
   const e0 = ed, t = e0.t, sr = e0.buf.sr; edStop();
   $('edmsg').textContent = 'Shranjujem…';
-  const ch = toMono(e0.buf.ch), blob = encodeWav(ch, sr);
+  const st = e0.buf.ch.length === 2, ch = st ? e0.buf.ch : toMono(e0.buf.ch), blob = encodeWav(ch, sr);
   const base = t.name.replace(/\.[^.]+$/, '').replace(/-edit-\d+$/, ''), fresh = !!t.fresh;
   const taken = n => takes.some(x => x !== t && x.dir === t.dir && (x.path || '') === (t.path || '') && x.name.toLowerCase() === n.toLowerCase());
-  const nt = { blob, secs: ch[0].length / sr, peaks: peaksOf(ch[0]), mtime: Date.now(), path: t.path, dir: t.dir, inFolder: false };
+  const nt = { blob, secs: ch[0].length / sr, peaks: peaksMax(ch), mtime: Date.now(), path: t.path, dir: t.dir, inFolder: false };
   try {
     const inFolder = (t.inFolder || (fresh && !!t.dir)) && await folderReady(true);
     for (let i = 1; ; i++) {
@@ -1204,7 +1329,13 @@ async function edSave(){
   if (e0.grid) { META[keyOf(nt)] = { ...e0.grid }; saveSettings(); }
   const i = takes.indexOf(t); takes.splice(i < 0 ? 0 : i, fresh ? 1 : 0, nt);   // fresh: replace the unsaved placeholder
   e0.savedRev = e0.rev;
-  if (ed === e0) { e0.t = nt; $('edmsg').textContent = 'Shranjeno kot ' + nt.name + (nt.inFolder ? '' : ' (samo v aplikaciji, za disk klikni ikono za prenos)') + (fresh ? '.' : '. Original ostane.'); edUpdate(); }
+  let learned = '';
+  if (st && t.duoOff != null) {   // offset fixed by hand on a take recorded here -> becomes the default for the next L/R takes
+    const dm = e0.mix[1].o - e0.mix[0].o; nt.duoOff = t.duoOff - dm;
+    if (dm) { S.duoOff = nt.duoOff; saveSettings(); learned = ` Privzeti zamik L/R je zdaj ${S.duoOff} ms.`; }
+  }
+  e0.raw = e0.buf.ch; e0.mix = zeroMix(); e0.ab = null;
+  if (ed === e0) { e0.t = nt; $('edmsg').textContent = 'Shranjeno kot ' + nt.name + (nt.inFolder ? '' : ' (samo v aplikaciji, za disk klikni ikono za prenos)') + (fresh ? '.' : '. Original ostane.') + learned; mixUi(); edUpdate(); }
   render(); return true;
 }
 $('edsave').onclick = edSave;
@@ -1227,19 +1358,21 @@ function resample(d, from, to){
 }
 function copySel(cut){
   if (!ed || !hasSel()) return;
-  const [i0, i1] = selIdx(); clip = { d: ed.buf.ch[0].slice(i0, i1), sr: ed.buf.sr };
+  const [i0, i1] = selIdx(); clip = { ch: ed.buf.ch.map(d => d.slice(i0, i1)), sr: ed.buf.sr };
   if (cut) cutSel(); else { $('edmsg').textContent = `Kopirano ${((i1 - i0) / ed.buf.sr).toFixed(2)} s. Ctrl+V = prilepi (tudi v drug posnetek).`; edUpdate(); }
 }
 const isBlank = () => !!(ed && ed.t.fresh && ed.rev === 0);
 function pasteClip(){
   if (!ed || !clip) return;
-  const sr = ed.buf.sr, c = clip.sr === sr ? clip.d : resample(clip.d, clip.sr, sr), d = ed.buf.ch[0];
+  const sr = ed.buf.sr, nc = ed.buf.ch.length, d = ed.buf.ch[0];
+  let cc = clip.ch.map(x => clip.sr === sr ? x : resample(x, clip.sr, sr));
+  if (cc.length !== nc) cc = nc === 1 ? toMono(cc) : [cc[0], cc[0]];
+  const c = cc[0];
   let i0, i1;
   if (isBlank()) { i0 = 0; i1 = d.length; } else if (hasSel()) [i0, i1] = selIdx(); else i0 = i1 = Math.min(d.length, Math.round(ed.cursor * sr));
-  const o = new Float32Array(d.length - (i1 - i0) + c.length);
-  o.set(d.subarray(0, i0)); o.set(c, i0); o.set(d.subarray(i1), i0 + c.length);
+  const outs = ed.buf.ch.map((dd, k) => { const o = new Float32Array(dd.length - (i1 - i0) + c.length); o.set(dd.subarray(0, i0)); o.set(cc[k], i0); o.set(dd.subarray(i1), i0 + c.length); return o; });
   const at = i0 / sr, pl = c.length / sr, rm = (i1 - i0) / sr;
-  applyEdit([o], `Prilepljeno ${pl.toFixed(2)} s na ${fmtMs(at)}`, 0, x => x < at ? x : x < at + rm ? at : x - rm + pl);
+  applyEdit(outs, `Prilepljeno ${pl.toFixed(2)} s na ${fmtMs(at)}`, 0, x => x < at ? x : x < at + rm ? at : x - rm + pl);
   ed.cursor = at + pl; edUpdate(); drawWave();   // cursor after the paste: repeated Ctrl+V appends back to back
 }
 $('edcopy').onclick = () => copySel(false);
@@ -1259,7 +1392,7 @@ function undo(){
   if (!ed || !ed.hist.length) return;
   edStop();
   const h = ed.hist.pop();
-  ed.grid = h.grid; ed.rev = h.rev; setBuf(h.ch);
+  ed.grid = h.grid; ed.rev = h.rev; setBuf(h.ch); ed.raw = h.raw; ed.mix = h.mix; mixUi();
   $('edmsg').textContent = 'Undo' + (isDirty() ? ' (še ni shranjeno)' : '') + '.';
   edUpdate(); render();
 }
@@ -1268,17 +1401,17 @@ $('edundo').onclick = undo;
 $('eqbake').onclick = async () => {
   if (!ed) return;
   if (EQF.every(([k]) => !S[k])) { $('edmsg').textContent = 'EQ je Flat, ni kaj uporabiti.'; return; }
-  const e0 = ed, { sr, len, ch } = ed.buf, oc = new OfflineAudioContext(1, len, sr);
-  const b = oc.createBuffer(1, len, sr); b.copyToChannel(ch[0], 0);
+  const e0 = ed, { sr, len, ch } = ed.buf, nc = ch.length, oc = new OfflineAudioContext(nc, len, sr);
+  const b = oc.createBuffer(nc, len, sr); ch.forEach((d, c) => b.copyToChannel(d, c));
   const s = oc.createBufferSource(); s.buffer = b; const n = mkEq(oc); s.connect(n[0]); n[n.length-1].connect(oc.destination); s.start();
-  const out = (await oc.startRendering()).getChannelData(0).slice();
+  const rb = await oc.startRendering(), outs = ch.map((_, c) => rb.getChannelData(c).slice());
   if (ed !== e0) return;
-  let pk = 0; for (let i = 0; i < out.length; i++) { const a = out[i] < 0 ? -out[i] : out[i]; if (a > pk) pk = a; }
+  let pk = 0; for (const out of outs) for (let i = 0; i < out.length; i++) { const a = out[i] < 0 ? -out[i] : out[i]; if (a > pk) pk = a; }
   const tg = S.norm ? Math.pow(10, S.tgt / 20) : Math.min(1, pk) * 0.999;   // renormalize (cutting bass lowers the peak)
-  if (pk > 0) { const g = tg / pk; for (let i = 0; i < out.length; i++) out[i] *= g; }
+  if (pk > 0) { const g = tg / pk; for (const out of outs) for (let i = 0; i < out.length; i++) out[i] *= g; }
   const lab = EQF.filter(([k]) => S[k]).map(([k, , , l]) => l + ' ' + (S[k] > 0 ? '+' : '') + S[k]).join(', ');
   EQF.forEach(([k]) => S[k] = 0); eqUi(); saveSettings();
-  applyEdit([out], 'EQ uporabljen (' + lab + ' dB), EQ na Flat', 0, true);
+  applyEdit(outs, 'EQ uporabljen (' + lab + ' dB), EQ na Flat', 0, true);
 };
 addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
 
@@ -1317,7 +1450,8 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyA' && ed) { e.preventDefault(); ed.a = 0; ed.b = ed.buf.len / ed.buf.sr; edUpdate(); edLoopUpdate(); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV' && ed && clip) { e.preventDefault(); pasteClip(); return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
-  if (e.code === 'KeyR') { e.preventDefault(); toggleRec(); }
+  if ((e.code === 'BracketLeft' || e.code === 'BracketRight') && isStereo()) { e.preventDefault(); nudge(ed.lane, (e.code === 'BracketRight' ? 1 : -1) * (e.shiftKey ? 10 : 1)); }
+  else if (e.code === 'KeyR') { e.preventDefault(); toggleRec(); }
   else if ((e.code === 'Space' || e.code === 'Enter') && selDir != null) { e.preventDefault(); openSelDir(); }
   else if (e.code === 'Space' || e.code === 'KeyL') {
     e.preventDefault();
