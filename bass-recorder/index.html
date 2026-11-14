@@ -326,7 +326,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.27';   // bump on every release; shown bottom right
+const VERSION = '1.28';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -1457,7 +1457,7 @@ function edSeek(dir, big){
 }
 // Open the current folder in the system file manager via the bassrec-open: helper (see Navodila).
 $('sysopen').onclick = e => {
-  let base = S.syspath;
+  let base = S.syspath || 'D:\\6_personal\\3_mProj\\audio\\_recordings';   // default for Kouszeg's PC; Shift+click changes it
   if (!base || e.shiftKey) {
     const v = prompt(`Polna pot do mape "${rootHandle ? rootHandle.name : ''}" na disku, npr. D:\\Glasba\\recordings\nBrskalnik je ne more ugotoviti sam.`, base || '');
     if (v == null) return; base = S.syspath = v.trim().replace(/[\\/]+$/, ''); saveSettings(); if (!base) return;
