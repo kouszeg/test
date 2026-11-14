@@ -300,7 +300,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.22';   // bump on every release; shown bottom right
+const VERSION = '1.23';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -402,7 +402,7 @@ $('out').onchange = async () => { const o = $('out').selectedOptions[0]; S.out =
 // Capture runs on the audio thread; each block carries its frame index so takes can start sample-exactly.
 const WORKLET = `class Cap extends AudioWorkletProcessor{
   constructor(o){super();this.nc=o.processorOptions.nc;}
-  process(inp){const i=inp[0];if(!i||!i.length)return true;
+  process(inp){const i=inp[0];if(!i||!i.length){const z=[];for(let c=0;c<this.nc;c++)z.push(new Float32Array(128));this.port.postMessage({bufs:z,pk:0,f:currentFrame,e:1},z.map(b=>b.buffer));return true;}
     const bufs=[];let pk=0;
     for(let c=0;c<this.nc;c++){const d=i[Math.min(c,i.length-1)];bufs.push(d.slice());
       for(let k=0;k<d.length;k++){const a=d[k]<0?-d[k]:d[k];if(a>pk)pk=a;}}
@@ -413,7 +413,7 @@ async function ensureCtx(rate){
   if (ctx && (!rate || ctx.sampleRate === rate)) return;
   const wasMet = met.on; metStop();
   if (ctx) await ctx.close();
-  ctx = new AudioContext(rate ? { sampleRate: rate, latencyHint: 'interactive' } : { latencyHint: 'interactive' });
+  ctx = new AudioContext(rate ? { sampleRate: rate, latencyHint: 'playback' } : { latencyHint: 'playback' });   // bigger buffers = fewer input dropouts; latency is compensated
   await ctx.audioWorklet.addModule('data:text/javascript;charset=utf-8,' + encodeURIComponent(WORKLET));
   await applySink();
   if (wasMet) metStart();
@@ -439,8 +439,11 @@ async function openInput(){
   $('rec').disabled = false; $('empty').hidden = true; $('enable').textContent = 'Znova poveži';
   $('lat').placeholder = 'auto ' + Math.round(autoLatency() * 1000);
 }
+let expF = null;
 function onBlock(data){
   const n = data.bufs[0].length;
+  if (recState === 'rec' && expF != null && data.f > expF) { const gap = data.f - expF; chunks.push(data.bufs.map(() => new Float32Array(gap))); }
+  expF = data.f + n;
   if (recState === 'count' && data.f + n > recStartFrame) {
     const off = Math.max(0, recStartFrame - data.f);
     chunks = [data.bufs.map(b => b.subarray(off))]; recState = 'rec'; setRecUi('rec');
@@ -591,14 +594,26 @@ function finishTake(){
   const stem = `${ts.getFullYear()}-${p(ts.getMonth()+1)}-${p(ts.getDate())}-${p(ts.getHours())}-${p(ts.getMinutes())}`, here = curPath.join('/');
   let name = stem + '.wav';   // two takes in the same minute: -2, -3, ...
   for (let k = 2; takes.some(x => (x.path || '') === here && x.name.toLowerCase() === name.toLowerCase()); k++) name = `${stem}-${k}.wav`;
-  const blob = encodeWav(ch, ctx.sampleRate);
-  const take = { name, blob, url: URL.createObjectURL(blob), secs: len / ctx.sampleRate, rawDb, gainDb, mtime: Date.now(), peaks: peaksOf(ch[0]) };
+  const blob = encodeWav(ch, ctx.sampleRate), drops = findDrops(ch[0], ctx.sampleRate);
+  const take = { drops, name, blob, url: URL.createObjectURL(blob), secs: len / ctx.sampleRate, rawDb, gainDb, mtime: Date.now(), peaks: peaksOf(ch[0]) };
   if (curDir) take.path = curPath.join('/');
   if (recGrid) { META[keyOf(take)] = recGrid; saveSettings(); }
   takes.unshift(take); render();
   if (S.autosave) download(take);
   if (S.autoloop) play(take, true);
 }
+// Dropouts: runs of exact digital zeros (1.3–400 ms) that cut into sound. Sound on both sides = dropout; a noise gate has quiet on at least one side.
+function findDrops(d, sr){
+  const out = [], lvl = 0.003, edge = 32; let run = 0;
+  const near = (a, b) => { let m = 0; for (let i = Math.max(0, a); i < Math.min(d.length, b); i++) { const v = d[i] < 0 ? -d[i] : d[i]; if (v > m) m = v; } return m; };
+  for (let i = 0; i <= d.length; i++) {
+    if (i < d.length && d[i] === 0) { run++; continue; }
+    if (run >= 64 && run <= 0.4 * sr && i < d.length && near(i - run - edge, i - run) > lvl && near(i, i + edge) > lvl) out.push({ t: (i - run) / sr, ms: run / sr * 1000 });
+    run = 0;
+  }
+  return out;
+}
+const fmtMs = t => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
 function encodeWav(ch, sr){
   const n = ch[0].length, nc = ch.length, bps = 3, buf = new ArrayBuffer(44 + n * nc * bps), v = new DataView(buf);
   const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
@@ -812,6 +827,7 @@ function render(){
     const add = (txt, cls) => { const s = document.createElement('span'); s.textContent = txt; if (cls) s.className = cls; meta.append(s); };
     if (t.mtime) add(fmtTime(t.mtime));
     if (t.secs != null) add(t.secs.toFixed(1) + ' s');
+    if (t.drops && t.drops.length) add(`⚠ izpad ×${t.drops.length} (${t.drops.slice(0, 4).map(x => fmtMs(x.t)).join(', ')}${t.drops.length > 4 ? ', …' : ''})`, 'warn');
     const g = META[keyOf(t)]; if (g) add(`${g.bpm} BPM, ${g.beats}/4`);
     if (t.rawDb != null) add('vrh ' + (isFinite(t.rawDb) ? t.rawDb.toFixed(1) : '−∞') + ' dB' + (t.gainDb ? `, normalizirano ${t.gainDb >= 0 ? '+' : ''}${t.gainDb.toFixed(1)} dB` : ''));
     if (t.rawDb > -0.3) add('Vhod je clippal', 'warn');
@@ -919,7 +935,9 @@ async function openEditor(t){
   $('edname').textContent = t.name; $('edmsg').textContent = 'Nalagam…';
   try { const buf = await loadBuf(t); if (tok !== edTok) return; const g = META[keyOf(t)]; ed = { t, buf, a: null, b: null, src: null, ab: null, cursor: 0, looping: false, view: { s: 0, e: buf.len / buf.sr }, grid: g ? { ...g } : null, hist: [], rev: 0, savedRev: 0, revSeq: 0 }; }
   catch (e) { $('edmsg').textContent = 'Posnetka ni mogoče prebrati: ' + e.message; return; }
-  $('edmsg').textContent = ''; edUpdate(); render();
+  ed.drops = findDrops(ed.buf.ch[0], ed.buf.sr); t.drops = ed.drops;
+  $('edmsg').textContent = ed.drops.length ? `⚠ ${ed.drops.length} izpad(ov) signala (rdeče črte): ` + ed.drops.slice(0, 6).map(x => `${fmtMs(x.t)} (${x.ms.toFixed(0)} ms)`).join(', ') : '';
+  edUpdate(); render();
   $('editor').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
 }
 $('edclose').onclick = async () => { if (!ed || !(await edLeave())) return; edStop(); ed = null; edEmpty(); render(); };
@@ -989,6 +1007,7 @@ function drawWave(){
     g.fillStyle = '#ffb547'; g.fillRect(X(t) - 1, 0, 2, h);
     g.font = '700 14px "Barlow Condensed",sans-serif'; g.fillText(lab, X(t) + (lab === 'A' ? 4 : -12), 14);
   }
+  if (ed.drops) { g.fillStyle = 'rgba(255,77,79,.85)'; for (const x of ed.drops) { const xa = X(x.t); if (xa >= -2 && xa <= w + 2) g.fillRect(Math.round(xa) - 1, 0, Math.max(2, X(x.t + x.ms / 1000) - xa), 8); } }
   if (ed.src) { g.fillStyle = '#ff4d4f'; g.fillRect(X(edPos()) - 1, 0, 2, h); requestAnimationFrame(drawWave); }
   else if (ed.cursor > 0) { g.fillStyle = 'rgba(255,77,79,.5)'; g.fillRect(X(ed.cursor) - 1, 0, 2, h); }
 }
@@ -1141,7 +1160,7 @@ $('edauto').onclick = () => {
 // Edits change only the in-app audio. Shrani writes a new copy <base>-edit-<i>.wav; the original is never overwritten.
 function setBuf(ch){
   const sr = ed.buf.sr;
-  ed.buf = { sr, ch, len: ch[0].length }; ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.cursor = 0; ed.view = { s: 0, e: ch[0].length / sr };
+  ed.buf = { sr, ch, len: ch[0].length }; ed.drops = findDrops(ch[0], sr); ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.cursor = 0; ed.view = { s: 0, e: ch[0].length / sr };
 }
 function applyEdit(ch, label, gridShift, keep){
   if (!ed) return;
