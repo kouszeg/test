@@ -258,7 +258,7 @@
       <div class="mrow"><button id="ml1" class="lane ghost">R vhod</button>
         <label>Glasnost <input type="range" id="mg1" min="-24" max="12" step="0.5"><output id="mgv1"></output></label>
         <label>Zamik <input type="number" id="mo1" step="1" min="-2000" max="2000"> ms</label></div>
-      <div class="mrow"><button id="mixzero" class="ghost">Ponastavi</button><span id="duodef" class="mut"></span></div>
+      <div class="mrow"><button id="mixsync" class="ghost go" title="Predlagaj zamik R glede na L (S)">Auto sync</button><button id="mixzero" class="ghost">Ponastavi</button><span id="duodef" class="mut"></span></div>
     </div>
     <p class="ed-hint">Povleci za A–B, primi A ali B za premik. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse.</p>
   </section>
@@ -297,6 +297,7 @@
         <li><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> kopiraj / izreži / prilepi. Prilepi vstavi na kurzor ali zamenja A–B; deluje med posnetki. Nov prazen posnetek: gumb ob seznamu, vanj prilepiš in Shrani.</li>
         <li><kbd>Ctrl</kbd>+<kbd>S</kbd> shrani spremembe odprtega posnetka</li>
         <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo zadnjega rezanja ali obrezovanja</li>
+        <li><kbd>S</kbd> pri L/R posnetku Auto sync: predlaga zamik R glede na L (znotraj A–B, če je izbran)</li>
         <li><kbd>[</kbd> / <kbd>]</kbd> pri L/R posnetku premakni izbrano sled za 1 ms (s <kbd>Shift</kbd> 10 ms)</li>
         <li><kbd>Esc</kbd> ustavi predvajanje</li>
       </ul>
@@ -325,7 +326,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.26';   // bump on every release; shown bottom right
+const VERSION = '1.27';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -1287,6 +1288,39 @@ let mixT = null;
   $('mo' + c).addEventListener('change', () => { if (!ed) return; ed.lane = c; const v = parseFloat($('mo' + c).value); ed.mix[c].o = isNaN(v) ? 0 : Math.max(-2000, Math.min(2000, Math.round(v))); $('mo' + c).blur(); applyMix(true); });
   $('ml' + c).onclick = () => { if (ed) { ed.lane = c; mixUi(); drawWave(); } };
 });
+// Auto sync: onset envelopes (1 ms frames) of L and R, cross-correlated over ±80 ms around the current alignment.
+// Works on what you hear now (mix applied), within A–B if selected; the result is added to R's offset.
+function syncEst(){
+  const sr = ed.buf.sr, hop = Math.max(1, Math.round(sr / 1000));
+  let i0 = 0, i1 = ed.buf.len; if (hasSel()) [i0, i1] = selIdx();
+  i1 = Math.min(i1, i0 + sr * 90);
+  const F = Math.floor((i1 - i0) / hop); if (F < 500) return null;
+  const onset = d => {   // envelope of the first difference: attacks count, low fundamentals don't smear the onset
+    const e = new Float32Array(F); let mx = 0;
+    for (let f = 0; f < F; f++) { let q = 0; for (let i = i0 + f * hop, n = i + hop; i < n; i++) { const x = i ? d[i] - d[i - 1] : 0; q += x * x; } e[f] = Math.sqrt(q / hop); if (e[f] > mx) mx = e[f]; }
+    const eps = mx * 0.003 + 1e-7, o = new Float32Array(F);
+    for (let f = 6; f < F; f++) { let m = 0; for (let k = 1; k <= 6; k++) m += e[f - k]; o[f] = Math.max(0, Math.log(e[f] + eps) - Math.log(m / 6 + eps)); }
+    let mean = 0; for (const v of o) mean += v; mean /= F; for (let f = 0; f < F; f++) o[f] -= mean;
+    return o;
+  };
+  const a = onset(ed.buf.ch[0]), b = onset(ed.buf.ch[1]), M = 80, c = new Float64Array(2 * M + 1);
+  for (let L = -M; L <= M; L++) { let s = 0, n = 0; for (let f = Math.max(0, -L); f < F && f + L < F; f++) { s += a[f] * b[f + L]; n++; } c[L + M] = n ? s / n : 0; }
+  let best = 0; for (let k = 1; k < c.length; k++) if (c[k] > c[best]) best = k;
+  if (!(c[best] > 0)) return null;
+  let second = -Infinity, alt = null;
+  for (let k = 1; k < c.length - 1; k++) if (Math.abs(k - best) > 15 && c[k] >= c[k-1] && c[k] >= c[k+1] && c[k] > second) { second = c[k]; alt = k - M; }
+  return { lag: best - M, conf: second > 0 ? c[best] / second : 9, alt };
+}
+function autoSync(){
+  if (!isStereo()) return;
+  const r = syncEst();
+  if (!r) { $('edmsg').textContent = 'Auto sync: premalo signala (potrebnih vsaj 0,5 s z udarci na obeh sledeh).'; return; }
+  if (r.lag === 80 || r.lag === -80) { $('edmsg').textContent = 'Auto sync: zamik je izven ±80 ms, poravnaj ročno (Alt + vleci).'; return; }
+  ed.lane = 1; ed.mix[1].o -= r.lag; applyMix(true);
+  const sure = r.conf >= 1.25, alt = r.alt != null ? ` Druga možnost: ${ed.mix[1].o + r.lag - r.alt} ms.` : '';
+  $('edmsg').textContent = `Auto sync: R ${r.lag ? (r.lag > 0 ? 'je zamujal' : 'je prehiteval') + ' ' + Math.abs(r.lag) + ' ms' : 'je že poravnan'}, zamik R = ${ed.mix[1].o} ms. Zanesljivost ${sure ? 'dobra' : 'NIZKA, preveri na uho'}.` + (sure ? '' : alt);
+}
+$('mixsync').onclick = autoSync;
 $('mixzero').onclick = () => { if (!ed || !isStereo()) return; ed.mix = zeroMix(); applyMix(true); };
 function setBuf(ch){
   const sr = ed.buf.sr;
@@ -1463,6 +1497,7 @@ document.addEventListener('keydown', e => {
   else if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && ed) { e.preventDefault(); edSeek(e.code === 'ArrowRight' ? 1 : -1, e.shiftKey); }
   else if (e.code === 'KeyE') { if (ed) { e.preventDefault(); const el = document.querySelector('#list li.playing .tname, #list li.editing .tname'); if (el) startRename(ed.t, el); } }
   else if (e.code === 'KeyC') { if (ed && hasSel()) { e.preventDefault(); $('edcrop').click(); } }
+  else if (e.code === 'KeyS') { if (isStereo()) { e.preventDefault(); autoSync(); } }
   else if (e.code === 'KeyF') { if (ed) { e.preventDefault(); $('edauto').click(); } }
   else if (e.code === 'KeyD') { if (ed) { e.preventDefault(); deleteTake(ed.t); } }
   else if (e.code === 'Escape') stopPlay();
