@@ -94,6 +94,9 @@
   #edsel{font-size:14px;color:var(--dim)}
   .wave{position:relative;height:160px;border-radius:10px;background:#0b1124;border:1px solid var(--rule);touch-action:none;cursor:crosshair}
   #wave{position:absolute;inset:0;width:100%;height:100%}
+  .wavenav{position:relative;height:28px;margin-top:6px;border-radius:6px;background:#0b1124;border:1px solid var(--rule);touch-action:none;cursor:grab}
+  .wavenav.drag{cursor:grabbing}
+  #nav{position:absolute;inset:0;width:100%;height:100%}
   .ed-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
   .ed-acts .go{border-color:var(--led-green);color:var(--led-green)}
   .ed-acts .danger{border-color:#7a3036;color:#ff8a8c}
@@ -219,6 +222,7 @@
       <button id="edclose" class="ghost">Zapri</button>
     </div>
     <div class="wave" id="wavebox"><canvas id="wave"></canvas></div>
+    <div class="wavenav" id="navbox" title="Celoten posnetek: okvir = prikazani del. Povleci okvir ali klikni drugam za premik."><canvas id="nav"></canvas></div>
     <div class="ed-acts">
       <span class="acts">
         <button id="edplay" title="Predvajaj" aria-label="Predvajaj"></button>
@@ -242,7 +246,7 @@
       <button id="eqflat" class="ghost">Flat</button>
       <button id="eqbake" class="ghost" title="Vgradi EQ v zvok posnetka (potem Shrani)">Apply</button>
     </div>
-    <p class="ed-hint">Povleci za A–B, primi A ali B za premik. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse.</p>
+    <p class="ed-hint">Povleci za A–B, primi A ali B za premik. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse. Spodnji trak = cel posnetek: povleci okvir za premik.</p>
   </section>
 
   <dialog id="leave">
@@ -306,7 +310,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.33';   // bump on every release; shown bottom right
+const VERSION = '1.34';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -1017,6 +1021,7 @@ function drawWave(){
   if (ed.src) { g.fillStyle = '#ff4d4f'; g.fillRect(X(edPos()) - 1, 0, 2, h); requestAnimationFrame(drawWave); }
   else if (ed.cursor > 0) { g.fillStyle = 'rgba(255,77,79,.5)'; g.fillRect(X(ed.cursor) - 1, 0, 2, h); }
 }
+{ const dw = drawWave; drawWave = function(){ dw(); drawNav(); }; }
 addEventListener('resize', () => { if (ed) ed.cols = null; drawWave(); });
 edEmpty();
 
@@ -1038,6 +1043,41 @@ function snapT(t, live){
   }
   return live ? t : zeroSnap(t);
 }
+// Overview strip under the wave: whole take, frame = visible part, red = playhead. Drag the frame or click to jump there.
+function drawNav(){
+  const c = $('nav'), dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  if (!w) return;
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  if (!ed) { g.fillStyle = '#2c3760'; g.fillRect(0, Math.round(h / 2), w, 1); return; }
+  const d = ed.buf.ch[0], D = dur(), X = t => t / D * w;
+  if (!ed.nav || ed.nav.w !== w || ed.nav.d !== d) {
+    const pk = new Float32Array(w); let mx = 0;
+    for (let x = 0; x < w; x++) { let m = 0; for (let i = Math.floor(x / w * d.length), n = Math.floor((x + 1) / w * d.length); i < n; i++) { const a = d[i] < 0 ? -d[i] : d[i]; if (a > m) m = a; } pk[x] = m; if (m > mx) mx = m; }
+    ed.nav = { w, d, pk, mx: mx || 1 };
+  }
+  if (hasSel()) { g.fillStyle = 'rgba(91,227,154,.18)'; g.fillRect(X(ed.a), 0, X(ed.b) - X(ed.a), h); }
+  g.fillStyle = '#5a6380';
+  for (let x = 0; x < w; x++) { const a = ed.nav.pk[x] / ed.nav.mx * h * 0.45; g.fillRect(x, h / 2 - a, 1, Math.max(1, 2 * a)); }
+  const vx = X(ed.view.s), vw = Math.max(3, X(ed.view.e) - vx);
+  g.fillStyle = 'rgba(255,181,71,.14)'; g.fillRect(vx, 0, vw, h);
+  g.strokeStyle = '#ffb547'; g.lineWidth = 1.5; g.strokeRect(vx + 0.75, 0.75, vw - 1.5, h - 1.5);
+  g.fillStyle = '#ff4d4f'; g.fillRect(Math.round(X(ed.src ? edPos() : ed.cursor)) - 1, 0, 2, h);
+}
+(() => {
+  const box = $('navbox'); let grab = null;
+  const tAtN = e => { const r = box.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * dur(); };
+  box.addEventListener('pointerdown', e => {
+    if (!ed || e.button !== 0) return;
+    box.setPointerCapture(e.pointerId); box.classList.add('drag');
+    const t = tAtN(e), { s, e: en } = ed.view, span = en - s;
+    if (t < s || t > en) { setView(t - span / 2, t + span / 2); grab = span / 2; } else grab = t - s;
+  });
+  box.addEventListener('pointermove', e => { if (grab == null || !ed) return; const t = tAtN(e), span = ed.view.e - ed.view.s; setView(t - grab, t - grab + span); });
+  const end = () => { grab = null; box.classList.remove('drag'); };
+  box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
+  box.addEventListener('wheel', e => { if (!ed) return; e.preventDefault(); const { s, e: en } = ed.view, span = en - s, d = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) / box.clientWidth * dur(); setView(s + d, en + d); }, { passive: false });
+})();
 function setView(s, e){
   const D = dur(), span = Math.max(0.05, Math.min(D, e - s));
   s = Math.max(0, Math.min(D - span, s)); ed.view = { s, e: s + span }; edUpdate();
