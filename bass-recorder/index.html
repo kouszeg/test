@@ -237,6 +237,7 @@
       <button id="edclear" class="ghost">Počisti A–B</button>
       <button id="edfit" class="ghost">Prikaži vse</button>
       <label class="snap" title="A in B se blizu takta (ali dobe) pripneta nanj"><input type="checkbox" id="snap"> Snap na takt</label>
+      <button id="edmp3" class="ghost" disabled>MP3</button>
       <button id="edcopy" class="ghost" disabled>Kopiraj</button>
       <button id="edpaste" class="ghost" disabled>Prilepi</button>
       <button id="edcut" class="ghost danger" disabled>Izreži A–B</button>
@@ -294,6 +295,7 @@
         <li><kbd>←</kbd> / <kbd>→</kbd> skok nazaj / naprej po valu: 1 doba (z mrežo) ali 1 s; s <kbd>Shift</kbd> 1 takt ali 5 s</li>
         <li><kbd>E</kbd> preimenuj odprt posnetek</li>
         <li><kbd>C</kbd> obreži na A–B, <kbd>F</kbd> najdi zanko</li>
+        <li><kbd>M</kbd> / gumb MP3: shrani odprt posnetek (tako kot je v urejevalniku, brez EQ predvajanja) kot ime.mp3 v isto mapo. Bitna hitrost: mp3kbps v bass-recorder.ini (96–320, privzeto 192). Aplikacija bere WAV, MP3, M4A, FLAC, OGG; urejeni posnetki se vedno shranijo kot WAV.</li>
         <li><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> kopiraj / izreži / prilepi. Prilepi vstavi na kurzor ali zamenja A–B; deluje med posnetki. Nov prazen posnetek: gumb ob seznamu, vanj prilepiš in Shrani.</li>
         <li><kbd>Ctrl</kbd>+<kbd>S</kbd> shrani spremembe odprtega posnetka</li>
         <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo zadnjega rezanja ali obrezovanja</li>
@@ -325,7 +327,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.29';   // bump on every release; shown bottom right
+const VERSION = '1.30';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -343,7 +345,7 @@ const ICON = {
 };
 
 // ================= settings (mirrored to localStorage, persisted to bass-recorder.ini in the app folder)
-const DEF = { snap: true, scopeMax: 0.05, met: false, bpm: 100, beats: 4, countin: 0, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '', eq80: 0, eq250: 0, eq800: 0, eq2k5: 0, eq6k: 0, syspath: '', duoOff: 0 };
+const DEF = { snap: true, scopeMax: 0.05, met: false, bpm: 100, beats: 4, countin: 0, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '', eq80: 0, eq250: 0, eq800: 0, eq2k5: 0, eq6k: 0, syspath: '', duoOff: 0, mp3kbps: 192 };
 let S = { ...DEF }, META = {};   // META: per-file beat grid {bpm, beats, offset}
 const ls = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
 try { const j = JSON.parse(ls.get('br-settings') || '{}'); S = { ...DEF, ...j.S }; META = j.META || {}; } catch {}
@@ -1026,7 +1028,7 @@ function edUpdate(){
   drawWave();
 }
 // No take open: editor stays visible with a flat line and all take commands greyed out.
-const ED_BTNS = ['edcopy', 'edpaste', 'edclose', 'edplay', 'edloop', 'edstop', 'edauto', 'edclear', 'edfit', 'edcut', 'edcrop', 'edundo', 'edsave', 'eqbake'];
+const ED_BTNS = ['edmp3', 'edcopy', 'edpaste', 'edclose', 'edplay', 'edloop', 'edstop', 'edauto', 'edclear', 'edfit', 'edcut', 'edcrop', 'edundo', 'edsave', 'eqbake'];
 function edEmpty(){
   $('edname').textContent = 'Ni izbranega posnetka'; $('eddirty').hidden = true; $('edsel').textContent = ''; $('edmsg').textContent = '';
   ED_BTNS.forEach(id => $(id).disabled = true); $('mixbox').hidden = true; drawWave();
@@ -1376,6 +1378,35 @@ function pasteClip(){
   ed.cursor = at + pl; edUpdate(); drawWave();   // cursor after the paste: repeated Ctrl+V appends back to back
 }
 $('edcopy').onclick = () => copySel(false);
+// MP3 export (LAME via lamejs, loaded on first use): encodes what the editor holds (incl. unsaved edits) next to the source as <name>.mp3.
+let lameP = null;
+const loadLame = () => lameP || (lameP = new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'lib-lame.min.js'; sc.onload = () => res(window.lamejs); sc.onerror = () => { lameP = null; rej(new Error('MP3 knjižnice ni mogoče naložiti')); }; document.head.append(sc); }));
+async function toMp3(){
+  if (!ed) return;
+  const e0 = ed, t = e0.t, { sr } = e0.buf, ch = e0.buf.ch.slice(0, 2), nc = ch.length, kbps = [96, 128, 160, 192, 256, 320].includes(+S.mp3kbps) ? +S.mp3kbps : 192;
+  $('edmsg').textContent = `Pretvarjam v MP3 (${kbps} kbps)…`;
+  try {
+    const lame = await loadLame(), enc = new lame.Mp3Encoder(nc, sr, kbps), len = ch[0].length, out = [], B = 1152;
+    const i16 = (d, i, n) => { const p = new Int16Array(n); for (let k = 0; k < n; k++) { const v = Math.max(-1, Math.min(1, d[i + k])); p[k] = v < 0 ? v * 0x8000 : v * 0x7FFF; } return p; };
+    for (let i = 0; i < len; i += B) {
+      const n = Math.min(B, len - i), m = nc === 2 ? enc.encodeBuffer(i16(ch[0], i, n), i16(ch[1], i, n)) : enc.encodeBuffer(i16(ch[0], i, n));
+      if (m.length) out.push(new Uint8Array(m));
+      if ((i / B) % 400 === 399) await new Promise(r => setTimeout(r));   // keep the UI alive on long takes
+    }
+    const f = enc.flush(); if (f.length) out.push(new Uint8Array(f));
+    const blob = new Blob(out, { type: 'audio/mpeg' }), stem = t.name.replace(/\.[^.]+$/, '');
+    const inFolder = !!t.dir && (t.inFolder || t.fresh) && await folderReady(true);
+    const exists = async n => takes.some(x => x.dir === t.dir && x.name.toLowerCase() === n.toLowerCase()) || (inFolder && await t.dir.getFileHandle(n).then(() => true, () => false));
+    let name = stem + '.mp3'; for (let k = 2; await exists(name); k++) name = `${stem}-${k}.mp3`;
+    const nt = { name, blob, url: URL.createObjectURL(blob), secs: len / sr, peaks: peaksOf(ch[0]), mtime: Date.now(), dir: t.dir, path: t.path, inFolder: false };
+    if (inFolder) { const fh = await t.dir.getFileHandle(name, { create: true }); const w = await fh.createWritable(); await w.write(blob); await w.close(); const fl = await fh.getFile(); nt.blob = fl; nt.mtime = fl.lastModified; nt.inFolder = true; }
+    else { const a = document.createElement('a'); a.href = nt.url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); nt.saved = 'Prenosi'; }
+    const i = takes.indexOf(t); takes.splice(i < 0 ? 0 : i, 0, nt);
+    if (ed === e0) $('edmsg').textContent = `MP3 shranjen: ${name} (${kbps} kbps${nc === 2 ? ', stereo L/R' : ''}, ${(blob.size / 1048576).toFixed(1)} MB)` + (isDirty() ? '. Vsebuje neshranjene spremembe.' : '.');
+    render();
+  } catch (e) { if (ed === e0) $('edmsg').textContent = 'MP3 ni uspel: ' + e.message; }
+}
+$('edmp3').onclick = toMp3;
 $('edpaste').onclick = pasteClip;
 // New blank take: 1 s of silence placeholder, the first paste replaces it; Shrani writes it under its own name.
 $('newblank').onclick = async () => {
@@ -1436,7 +1467,7 @@ $('sysopen').onclick = e => {
 Object.entries({ enable: 'Ponovno poveži vhod', rec: 'Snemaj / ustavi (R)', pickdir: 'Izberi mapo s posnetki', unlock: 'Dovoli dostop do mape',
   edclose: 'Zapri urejevalnik', edplay: 'Predvajaj od kurzorja', edstop: 'Ustavi (Space, Esc)', edauto: 'Najdi ponavljajoči se vzorec (F)',
   edclear: 'Počisti izbor A–B', edfit: 'Prikaži cel posnetek (dvoklik na valu)', edcut: 'Izreži A–B (Del), predvajanje teče naprej',
-  edcrop: 'Obreži na A–B (C)', edcopy: 'Kopiraj A–B (Ctrl+C, Ctrl+X = izreži in kopiraj)', edpaste: 'Prilepi na kurzor ali čez A–B (Ctrl+V)', newblank: 'Nov prazen posnetek za lepljenje (potem Shrani)', edundo: 'Razveljavi (Ctrl+Z)', edsave: 'Shrani v datoteko (Ctrl+S)', eqflat: 'Vsi pasovi na 0 dB',
+  edcrop: 'Obreži na A–B (C)', edmp3: 'Shrani kopijo kot MP3 poleg originala (M); kakovost: mp3kbps v ini, privzeto 192', edcopy: 'Kopiraj A–B (Ctrl+C, Ctrl+X = izreži in kopiraj)', edpaste: 'Prilepi na kurzor ali čez A–B (Ctrl+V)', newblank: 'Nov prazen posnetek za lepljenje (potem Shrani)', edundo: 'Razveljavi (Ctrl+Z)', edsave: 'Shrani v datoteko (Ctrl+S)', eqflat: 'Vsi pasovi na 0 dB',
   eqbake: 'Vgradi EQ v posnetek, predvajanje teče naprej (potem Shrani)', newdir: 'Nova podmapa', refresh: 'Ponovno preberi mapo',
   sysopen: 'Odpri mapo v upravitelju datotek (Shift + klik = spremeni pot)', lvsave: 'Shrani in odpri drug posnetek (Enter)',
   lvdrop: 'Zavrzi spremembe in odpri drug posnetek', lvstay: 'Ostani na tem posnetku (Esc)', wavebox: 'Povleci = A–B, klik = skok, kolešček = povečava, ←/→ = skok' })
@@ -1464,6 +1495,7 @@ document.addEventListener('keydown', e => {
   else if ((e.code === 'ArrowUp' || e.code === 'ArrowDown')) { e.preventDefault(); stepTake(e.code === 'ArrowDown' ? 1 : -1); }
   else if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && ed) { e.preventDefault(); edSeek(e.code === 'ArrowRight' ? 1 : -1, e.shiftKey); }
   else if (e.code === 'KeyE') { if (ed) { e.preventDefault(); const el = document.querySelector('#list li.playing .tname, #list li.editing .tname'); if (el) startRename(ed.t, el); } }
+  else if (e.code === 'KeyM') { if (ed) { e.preventDefault(); toMp3(); } }
   else if (e.code === 'KeyC') { if (ed && hasSel()) { e.preventDefault(); $('edcrop').click(); } }
   else if (e.code === 'KeyF') { if (ed) { e.preventDefault(); $('edauto').click(); } }
   else if (e.code === 'KeyD') { if (ed) { e.preventDefault(); deleteTake(ed.t); } }
