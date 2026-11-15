@@ -231,9 +231,6 @@
       <label class="snap" title="A in B se blizu takta (ali dobe) pripneta nanj"><input type="checkbox" id="snap"> Snap na takt</label>
       <button id="ednorm" class="ghost" disabled>Normaliziraj</button>
       <button id="edmp3" class="ghost" disabled>MP3</button>
-      <button id="edcopy" class="ghost" disabled>Kopiraj</button>
-      <button id="edpaste" class="ghost" disabled>Prilepi</button>
-      <button id="edcut" class="ghost danger" disabled>Izreži A–B</button>
       <button id="edcrop" class="ghost danger" disabled>Obreži na A–B</button>
       <button id="edundo" class="ghost" disabled>Undo</button>
       <button id="edsave" class="ghost go" disabled title="Ctrl+S">Shrani</button>
@@ -309,7 +306,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.32';   // bump on every release; shown bottom right
+const VERSION = '1.33';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -958,14 +955,14 @@ function edUpdate(){
   const z = dur() / (ed.view.e - ed.view.s);
   $('edsel').textContent = (hasSel() ? `A ${fmtS(ed.a)}   B ${fmtS(ed.b)}   dolžina ${fmtS(ed.b - ed.a)}` : `Dolžina ${fmtS(dur())}`) + (z > 1.05 ? `   povečava ${z.toFixed(1)}×` : '');
   ED_BTNS.forEach(id => $(id).disabled = false);
-  $('edcrop').disabled = $('edcut').disabled = $('edcopy').disabled = !hasSel(); $('edpaste').disabled = !clip;
+  $('edcrop').disabled = !hasSel();
   $('edundo').disabled = !(ed.hist && ed.hist.length);
   $('edsave').disabled = !isDirty(); $('eddirty').hidden = !isDirty(); $('edname').textContent = ed.t.name;
   $('edloop').title = (hasSel() ? 'Predvajaj zanko A–B' : 'Predvajaj v zanki') + ' (Space)';
   drawWave();
 }
 // No take open: editor stays visible with a flat line and all take commands greyed out.
-const ED_BTNS = ['ednorm', 'edmp3', 'edcopy', 'edpaste', 'edclose', 'edplay', 'edloop', 'edstop', 'edauto', 'edclear', 'edfit', 'edcut', 'edcrop', 'edundo', 'edsave', 'eqbake'];
+const ED_BTNS = ['ednorm', 'edmp3', 'edclose', 'edplay', 'edloop', 'edstop', 'edauto', 'edclear', 'edfit', 'edcrop', 'edundo', 'edsave', 'eqbake'];
 function edEmpty(){
   $('edname').textContent = 'Ni izbranega posnetka'; $('eddirty').hidden = true; $('edsel').textContent = ''; $('edmsg').textContent = '';
   ED_BTNS.forEach(id => $(id).disabled = true); drawWave();
@@ -1073,7 +1070,7 @@ function setView(s, e){
   box.addEventListener('wheel', e => {
     if (!ed) return; e.preventDefault();
     const { s, e: en } = ed.view, span = en - s;
-    if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { const d = (e.shiftKey ? e.deltaY : e.deltaX) / box.clientWidth * span; setView(s + d, en + d); return; }
+    if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { const d = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) / box.clientWidth * span; setView(s + d, en + d); return; }   // Shift+wheel arrives as deltaX on Windows
     const t = tAt(e), f = Math.pow(1.0015, e.deltaY), ns = Math.max(0.05, Math.min(dur(), span * f)), r = (t - s) / span;
     setView(t - r * ns, t - r * ns + ns);
   }, { passive: false });
@@ -1221,7 +1218,6 @@ function cutSel(){
   const a = ed.a, b = ed.b;
   applyEdit(ed.buf.ch.map(d => { const o = new Float32Array(n); o.set(d.subarray(0, i0)); o.set(d.subarray(i1), i0); return o; }), 'Izrezano A–B', 0, x => x < a ? x : x < b ? a : x - (b - a));
 }
-$('edcut').onclick = cutSel;
 // App clipboard: Kopiraj (Ctrl+C) A–B, Prilepi (Ctrl+V) at the cursor or over A–B; works across takes.
 let clip = null;
 function resample(d, from, to){
@@ -1246,7 +1242,6 @@ function pasteClip(){
   applyEdit([o], `Prilepljeno ${pl.toFixed(2)} s na ${fmtMs(at)}`, 0, x => x < at ? x : x < at + rm ? at : x - rm + pl);
   ed.cursor = at + pl; edUpdate(); drawWave();   // cursor after the paste: repeated Ctrl+V appends back to back
 }
-$('edcopy').onclick = () => copySel(false);
 // MP3 export (LAME via lamejs, loaded on first use): encodes what the editor holds (incl. unsaved edits) next to the source as <name>.mp3.
 let lameP = null;
 const loadLame = () => lameP || (lameP = new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'lib-lame.min.js'; sc.onload = () => res(window.lamejs); sc.onerror = () => { lameP = null; rej(new Error('MP3 knjižnice ni mogoče naložiti')); }; document.head.append(sc); }));
@@ -1287,7 +1282,6 @@ function normTake(){
     `Normalizirano na ${tgDb} dBFS (${gDb >= 0 ? '+' : ''}${gDb.toFixed(1)} dB)`, 0, true);
 }
 $('ednorm').onclick = normTake;
-$('edpaste').onclick = pasteClip;
 // New blank take: 1 s of silence placeholder, the first paste replaces it; Shrani writes it under its own name.
 $('newblank').onclick = async () => {
   const sr = clip ? clip.sr : (ctx ? ctx.sampleRate : 48000), ts = new Date(), p = n => String(n).padStart(2, '0');
