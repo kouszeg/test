@@ -279,6 +279,7 @@
         <li><kbd>↑</kbd> / <kbd>↓</kbd> premik po seznamu (mape in posnetki). Posnetek se odpre (če igra, igra naprej na novem), mapo odpreš s <kbd>Space</kbd> ali <kbd>Enter</kbd></li>
         <li><kbd>←</kbd> / <kbd>→</kbd> skok nazaj / naprej po valu: 1 doba (z mrežo) ali 1 s; s <kbd>Shift</kbd> 1 takt ali 5 s</li>
         <li><kbd>E</kbd> preimenuj odprt posnetek</li>
+        <li><kbd>A</kbd> / <kbd>B</kbd> postavi marker A / B na mesto, ki ga slišiš (med predvajanjem) ali na kurzor. Ko postaviš B med predvajanjem v zanki, zanka takoj teče med A in B.</li>
         <li><kbd>C</kbd> obreži na A–B, <kbd>F</kbd> najdi zanko</li>
         <li><kbd>N</kbd> / Normaliziraj: dvigne ali zniža posnetek, da je vrh na nivoju »Normaliziraj na … dBFS« (privzeto −1). Val v urejevalniku je vedno prikazan raztegnjen na višino, zvok pa se spremeni šele s tem ukazom; zapiše ga Shrani (kot ime-edit-N.wav, tudi za MP3, nato po želji M).</li>
         <li><kbd>M</kbd> / gumb MP3: shrani odprt posnetek (tako kot je v urejevalniku, brez EQ predvajanja) kot ime.mp3 v isto mapo. Bitna hitrost: mp3kbps v bass-recorder.ini (96–320, privzeto 192). Aplikacija bere WAV, MP3, M4A, FLAC, OGG; urejeni posnetki se vedno shranijo kot WAV.</li>
@@ -310,7 +311,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.35';   // bump on every release; shown bottom right
+const VERSION = '1.36';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -1152,6 +1153,17 @@ function edPlay(loop, from){
   ed.src = s; ed.off = from; ed.t0 = ac.currentTime;
   render(); drawWave(); edBtns();
 }
+// A / B keys: set the marker at what you hear now (playhead minus output latency) or at the cursor when stopped.
+function markAt(which){
+  if (!ed) return;
+  const lat = ed.src && pctx ? (pctx.outputLatency || pctx.baseLatency || 0) : 0;
+  let t = ed.src ? edPos() - lat : ed.cursor;
+  if (ed.src && ed.looping && t < ed.la) t += ed.lb - ed.la;   // latency reached back across the loop seam
+  t = snapT(Math.max(0, Math.min(dur(), t)));
+  if (which === 'a') { ed.a = t; if (ed.b != null && ed.b <= t) ed.b = null; }
+  else { if (ed.a == null) ed.a = 0; if (t <= ed.a) return; ed.b = t; }
+  edUpdate(); edLoopUpdate(); drawWave();
+}
 // A/B moved while looping: retarget the running source without stopping it.
 function edLoopUpdate(){
   if (!ed || !ed.src || !ed.looping) return;
@@ -1414,6 +1426,7 @@ document.addEventListener('keydown', e => {
   else if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && ed) { e.preventDefault(); edSeek(e.code === 'ArrowRight' ? 1 : -1, e.shiftKey); }
   else if (e.code === 'KeyE') { if (ed) { e.preventDefault(); const el = document.querySelector('#list li.playing .tname, #list li.editing .tname'); if (el) startRename(ed.t, el); } }
   else if (e.code === 'KeyN') { if (ed) { e.preventDefault(); normTake(); } }
+  else if (e.code === 'KeyA' || e.code === 'KeyB') { if (ed) { e.preventDefault(); markAt(e.code === 'KeyA' ? 'a' : 'b'); } }
   else if (e.code === 'KeyM') { if (ed) { e.preventDefault(); toMp3(); } }
   else if (e.code === 'KeyC') { if (ed && hasSel()) { e.preventDefault(); $('edcrop').click(); } }
   else if (e.code === 'KeyF') { if (ed) { e.preventDefault(); $('edauto').click(); } }
