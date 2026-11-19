@@ -37,23 +37,26 @@
   .ghost:hover{background:var(--panel)}
 
   /* deck: footswitch + scope */
-  .deck{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;
-        background:var(--panel);border:1px solid var(--rule);border-radius:18px 18px 0 0;padding:18px}
-  .switch{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:130px}
+  .deck{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch;
+        background:var(--panel);border:1px solid var(--rule);border-radius:18px;padding:14px;margin-bottom:22px}
+  .recside{display:flex;gap:14px;align-items:center;min-width:0}
+  .recside .scope{flex:1;min-width:0}
+  .setside{display:flex;flex-direction:column;gap:10px;justify-content:center;border-left:1px solid var(--rule);padding-left:16px;min-width:0}
+  .switch{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:84px}
   .led{width:12px;height:12px;border-radius:50%;background:#3a1d24;box-shadow:inset 0 0 2px #000}
   .led.on{background:var(--led-red);box-shadow:0 0 10px var(--led-red),0 0 2px #fff inset}
   .led.wait{background:var(--led-amber);box-shadow:0 0 10px var(--led-amber)}
-  #rec{width:92px;height:92px;border-radius:50%;cursor:pointer;border:0;
+  #rec{width:60px;height:60px;border-radius:50%;cursor:pointer;border:0;
        background:radial-gradient(circle at 50% 38%,#eef1f6 0,#b9c0cd 38%,#7d8597 70%,#4d5466 100%);
        box-shadow:0 6px 0 #0a0f20,0 10px 18px rgba(0,0,0,.45),inset 0 -3px 6px rgba(0,0,0,.35);
        transition:transform .06s,box-shadow .06s}
   #rec:active,#rec.on{transform:translateY(4px);box-shadow:0 2px 0 #0a0f20,0 4px 10px rgba(0,0,0,.45),inset 0 -2px 5px rgba(0,0,0,.35)}
   #rec:disabled{opacity:.45;cursor:not-allowed}
-  .switch .cond{font-size:20px;font-weight:700}
+  .switch .cond{font-size:16px;font-weight:700}
   .switch .hint{font-size:13px;color:var(--dim)}
   kbd{font:600 12px Barlow,sans-serif;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--panel-2)}
 
-  .scope{position:relative;height:96px;min-height:96px;border-radius:12px;background:#0b1124;border:1px solid var(--rule);overflow:hidden}
+  .scope{position:relative;height:84px;min-height:84px;border-radius:12px;background:#0b1124;border:1px solid var(--rule);overflow:hidden}
   #scope{position:absolute;inset:0;width:100%;height:100%}
   .readout{position:absolute;right:10px;top:4px;font:700 22px "Barlow Condensed",sans-serif;color:var(--led-green)}
   .readout.hot{color:var(--led-red)}
@@ -66,8 +69,7 @@
   .empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--dim);text-align:center;padding:16px}
 
   /* metronome strip, attached under the deck */
-  .metro{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:var(--panel-2);border:1px solid var(--rule);border-top:0;
-         border-radius:0 0 18px 18px;padding:10px 18px;font-size:15px}
+  .metro{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:14px}
   .metro label{display:flex;align-items:center;gap:6px;color:var(--dim)}
   .metro input[type=number]{width:66px;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:4px 6px}
   .metro select{padding:4px 6px}
@@ -78,14 +80,12 @@
   .beats{display:flex;gap:5px}
   .beats i{width:9px;height:9px;border-radius:50%;background:#2c3760}
   .beats i.on{background:var(--led-amber)}
-  .beats i.on.one{background:var(--led-red)}
 
-  .opts{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin:14px 2px 26px;color:var(--dim);font-size:15px}
+  .opts{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;color:var(--dim);font-size:14px}
   .opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
   .opts input[type=number]{width:62px;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:4px 6px}
   input[type=checkbox]{accent-color:var(--led-green);width:16px;height:16px}
-  .folder{margin-left:auto;display:flex;gap:8px;align-items:center}
-  #dirinfo{color:var(--silk)}
+  .inistat{color:var(--led-amber);font-size:13px}
 
   /* A–B editor */
   .editor{background:var(--panel);border:1px solid var(--rule);border-radius:18px;padding:14px 16px 16px;margin:0 0 26px}
@@ -159,6 +159,7 @@
 
   @media (max-width:620px){
     .deck{grid-template-columns:1fr}
+    .setside{border-left:0;padding-left:0;border-top:1px solid var(--rule);padding-top:10px}
     .scope{min-height:90px}
     #list li{grid-template-columns:minmax(0,1fr) auto}
     .thumb{display:none}
@@ -179,42 +180,39 @@
   </header>
 
   <section class="deck">
-    <div class="switch">
-      <span id="led" class="led" aria-hidden="true"></span>
-      <button id="rec" disabled aria-label="Snemaj"></button>
-      <span id="reclabel" class="cond">Snemaj</span>
-      <span class="hint"><kbd>R</kbd> začni / ustavi</span>
+    <div class="recside">
+      <div class="switch">
+        <span id="led" class="led" aria-hidden="true"></span>
+        <button id="rec" disabled aria-label="Snemaj"></button>
+        <span id="reclabel" class="cond">Snemaj</span>
+        <span class="hint"><kbd>R</kbd> začni / ustavi</span>
+      </div>
+      <div class="scope">
+        <canvas id="scope"></canvas>
+        <span id="timer" class="timer">0:00</span>
+        <span id="db" class="readout">−∞ dB</span>
+        <div id="count" class="count" hidden></div>
+        <div class="bar"><i id="m"></i></div>
+        <div id="empty" class="empty">Poveži vhod (ME-90B), potem pritisni R.</div>
+      </div>
     </div>
-    <div class="scope">
-      <canvas id="scope"></canvas>
-      <span id="timer" class="timer">0:00</span>
-      <span id="db" class="readout">−∞ dB</span>
-      <div id="count" class="count" hidden></div>
-      <div class="bar"><i id="m"></i></div>
-      <div id="empty" class="empty">Poveži vhod (ME-90B), potem pritisni R.</div>
+    <div class="setside">
+      <div class="metro">
+        <label class="meton"><input type="checkbox" id="meton"> Metronom</label>
+        <label>Tempo <input type="number" id="bpm" min="30" max="300" step="1"> BPM</label>
+        <span class="beats" id="beatleds" aria-hidden="true"></span>
+        <label>Odštevanje <select id="countin"><option value="0">brez</option><option value="1">4 udarci</option><option value="2">8 udarcev</option></select></label>
+        <label>Glasnost <input type="range" id="vol" min="0" max="1" step="0.05"></label>
+        <label title="Zamik med klikom in posnetim zvokom. Prazno = samodejno.">Latenca <input type="number" id="lat" step="1" placeholder="auto"> ms</label>
+      </div>
+      <div class="opts">
+        <label><input type="checkbox" id="norm"> Normaliziraj na <input type="number" id="tgt" step="0.5" aria-label="Cilj v dBFS"> dBFS</label>
+        <label><input type="checkbox" id="autosave"> Shrani samodejno</label>
+        <label><input type="checkbox" id="autoloop"> Po snemanju vrti v zanki</label>
+      </div>
+      <span id="dirinfo" hidden></span>
     </div>
   </section>
-  <div class="metro">
-    <label class="meton"><input type="checkbox" id="meton"> Metronom</label>
-    <label>Tempo <input type="number" id="bpm" min="30" max="300" step="1"> BPM</label>
-    <label>Takt <select id="beats"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>/4</label>
-    <label>Odštevanje <select id="countin"><option value="0">brez</option><option value="1">1 takt</option><option value="2">2 takta</option></select></label>
-    <label>Glasnost <input type="range" id="vol" min="0" max="1" step="0.05"></label>
-    <label title="Zamik med klikom in posnetim zvokom. Prazno = samodejno.">Latenca <input type="number" id="lat" step="1" placeholder="auto"> ms</label>
-    <span class="beats" id="beatleds" aria-hidden="true"></span>
-  </div>
-
-  <div class="opts">
-    <label><input type="checkbox" id="norm"> Normaliziraj na <input type="number" id="tgt" step="0.5" aria-label="Cilj v dBFS"> dBFS</label>
-    <label><input type="checkbox" id="autosave"> Shrani samodejno</label>
-    <label><input type="checkbox" id="autoloop"> Po snemanju vrti v zanki</label>
-    <div class="folder">
-      <span id="dirinfo">Mapa ni izbrana, shranjuje v Prenose</span>
-      <span id="inistat" class="mut" style="font-size:13px"></span>
-      <button id="unlock" class="ghost" hidden>Odpri mapo</button>
-      <button id="pickdir" class="ghost">Izberi mapo</button>
-    </div>
-  </div>
 
   <section id="editor" class="editor">
     <div class="ed-head">
@@ -262,6 +260,9 @@
   <div class="listhead">
     <h2>Posnetki</h2>
     <span id="crumbs" class="crumbs"></span>
+    <span id="inistat" class="inistat"></span>
+    <button id="unlock" class="ghost" hidden>Odpri mapo</button>
+    <button id="pickdir" class="ghost" title="Izberi mapo s posnetki">Izberi mapo</button>
     <button id="newdir" class="ghost" hidden>Nova mapa</button>
     <button id="newblank" class="ghost">Nov prazen posnetek</button>
     <button id="refresh" class="ghost">Osveži</button>
@@ -284,7 +285,7 @@
         <li><kbd>A</kbd> / <kbd>B</kbd> postavi marker A / B na mesto, ki ga slišiš (med predvajanjem) ali na kurzor. Ko postaviš B med predvajanjem v zanki, zanka takoj teče med A in B.</li>
         <li><kbd>C</kbd> obreži na A–B, <kbd>F</kbd> najdi zanko</li>
         <li><kbd>N</kbd> / Normaliziraj: dvigne ali zniža posnetek, da je vrh na nivoju »Normaliziraj na … dBFS« (privzeto −1). Val v urejevalniku je vedno prikazan raztegnjen na višino, zvok pa se spremeni šele s tem ukazom; zapiše ga Shrani (kot ime-edit-N.wav, tudi za MP3, nato po želji M).</li>
-        <li><kbd>M</kbd> / gumb MP3: shrani odprt posnetek (tako kot je v urejevalniku, brez EQ predvajanja) kot ime.mp3 v isto mapo. Bitna hitrost: mp3kbps v bass-recorder.ini (96–320, privzeto 192). Aplikacija bere WAV, MP3, M4A, FLAC, OGG; urejeni posnetki se vedno shranijo kot WAV.</li>
+        <li><kbd>M</kbd> / gumb MP3: shrani odprt posnetek (tako kot je v urejevalniku, brez EQ predvajanja) kot ime.mp3 v isto mapo. Bitna hitrost: mp3kbps v bass-recorder-settings.txt (96–320, privzeto 192). Aplikacija bere WAV, MP3, M4A, FLAC, OGG; urejeni posnetki se vedno shranijo kot WAV.</li>
         <li><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> kopiraj / izreži / prilepi. Prilepi vstavi na kurzor ali zamenja A–B; deluje med posnetki. Nov prazen posnetek: gumb ob seznamu, vanj prilepiš in Shrani.</li>
         <li><kbd>Ctrl</kbd>+<kbd>S</kbd> shrani spremembe odprtega posnetka</li>
         <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo zadnjega rezanja ali obrezovanja</li>
@@ -292,7 +293,7 @@
       </ul>
       <h3>Snemanje</h3>
       <ul>
-        <li>Prvič izberi vhod (ME-90B) in izhod ter mapo s posnetki. Aplikacija si vse zapomni v <code>bass-recorder.ini</code> v tej mapi.</li>
+        <li>Prvič izberi vhod (ME-90B) in izhod ter mapo s posnetki. Aplikacija si vse zapomni v <code>bass-recorder-settings.txt</code> v tej mapi.</li>
         <li>Posnetek se normalizira na izbrani nivo in shrani kot mono WAV (24-bit) v trenutno odprto mapo, ime LLLL-MM-DD-HH-MM.wav.</li>
         <li>Metronom: označi polje Metronom. Klika le med odštevanjem in snemanjem; posnetek dobi mrežo dob in taktov. Odštevanje je privzeto izklopljeno.</li>
         <li>Latenca: prazno = samodejno. Če mreža ne sovpada z udarci, vpiši vrednost v ms.</li>
@@ -313,7 +314,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.40';   // bump on every release; shown bottom right
+const VERSION = '1.41';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -329,7 +330,8 @@ const ICON = {
   del:'<svg viewBox="0 0 16 16"><path d="M6 1h4l1 1h3v2H2V2h3zM3 5h10l-1 10H4z"/></svg>'
 };
 
-// ================= settings (mirrored to localStorage, persisted to bass-recorder.ini in the app folder)
+// ================= settings (mirrored to localStorage, persisted to bass-recorder-settings.txt (INI format) in the app folder)
+const CFG = 'bass-recorder-settings.txt';   // Chrome on Windows refuses to create *.ini files ('Name is not allowed')
 const DEF = { snap: true, scopeMax: 0.05, met: false, bpm: 100, beats: 4, countin: 0, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '', eq80: 0, eq250: 0, eq800: 0, eq2k5: 0, eq6k: 0, syspath: '', mp3kbps: 192 };
 let S = { ...DEF }, META = {};   // META: per-file beat grid {bpm, beats, offset}
 const ls = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
@@ -360,21 +362,21 @@ function saveSettings(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     const st = $('inistat');
-    if (!(await folderReady(false))) { if (rootHandle) st.textContent = 'ini ni zapisan: mapa je zaklenjena, klikni Odpri mapo'; return; }
-    try { const fh = await rootHandle.getFileHandle('bass-recorder.ini', { create: true }); const w = await fh.createWritable(); await w.write(toIni()); await w.close();
-      st.textContent = `bass-recorder.ini v ${rootHandle.name} zapisan ${new Date().toLocaleTimeString('sl-SI')}`; }
-    catch (e) { st.textContent = 'ini NI zapisan: ' + e.name + ': ' + e.message; console.warn('ini write failed', e); }
+    if (!(await folderReady(false))) { if (rootHandle) st.textContent = 'Mapa je zaklenjena, klikni Odpri mapo'; return; }
+    try { const fh = await rootHandle.getFileHandle(CFG, { create: true }); const w = await fh.createWritable(); await w.write(toIni()); await w.close();
+      st.textContent = ''; }
+    catch (e) { st.textContent = 'Nastavitve niso zapisane: ' + e.message; console.warn('ini write failed', e); }
   }, 400);
 }
 async function loadIni(){
   try {
-    const fh = await rootHandle.getFileHandle('bass-recorder.ini');
+    const fh = await rootHandle.getFileHandle(CFG);
     const { s, meta } = fromIni(await (await fh.getFile()).text());
-    S = { ...S, ...s }; META = { ...META, ...meta }; applySettingsToUi(); eqUi(); $('inistat').textContent = `bass-recorder.ini v ${rootHandle.name} prebran`; ls.set('br-settings', JSON.stringify({ S, META }));
+    S = { ...S, ...s }; META = { ...META, ...meta }; applySettingsToUi(); eqUi(); $('inistat').textContent = ''; ls.set('br-settings', JSON.stringify({ S, META }));
   } catch { saveSettings(); }   // no ini yet: create it from current settings
 }
 function applySettingsToUi(){
-  $('bpm').value = S.bpm; $('beats').value = String(S.beats); $('countin').value = String(S.countin); $('vol').value = S.vol;
+  $('bpm').value = S.bpm; S.beats = 4; $('countin').value = String(S.countin); $('vol').value = S.vol;
   $('lat').value = S.lat === '' || S.lat == null || isNaN(S.lat) ? '' : S.lat;
   $('norm').checked = S.norm; $('tgt').value = S.tgt; $('autosave').checked = S.autosave; $('autoloop').checked = S.autoloop;
   $('meton').checked = S.met; $('snap').checked = S.snap;
@@ -384,7 +386,6 @@ applySettingsToUi();
 const bindNum = (id, k, lo, hi) => $(id).addEventListener('change', () => { let v = parseFloat($(id).value); if (isNaN(v)) v = DEF[k]; S[k] = Math.max(lo, Math.min(hi, v)); $(id).value = S[k]; saveSettings(); });
 bindNum('bpm', 'bpm', 30, 300); bindNum('tgt', 'tgt', -24, 0); bindNum('vol', 'vol', 0, 1);
 $('vol').addEventListener('input', () => { S.vol = +$('vol').value; });
-$('beats').onchange = () => { S.beats = +$('beats').value; buildBeatLeds(); saveSettings(); };
 $('countin').onchange = () => { S.countin = +$('countin').value; saveSettings(); };
 $('lat').onchange = () => { const v = $('lat').value.trim(); S.lat = v === '' ? '' : Math.max(0, Math.min(1000, +v)); $('lat').value = S.lat; saveSettings(); };
 for (const k of ['norm', 'autosave', 'autoloop', 'snap']) $(k).onchange = () => { S[k] = $(k).checked; saveSettings(); };
@@ -488,7 +489,7 @@ function metTick(){
   while (met.t0 + met.k * beatSec() < now + 0.3) {
     const t = met.t0 + met.k * beatSec();
     // beats that are already late (page stalled) are skipped, never played late
-    if (t >= now + 0.005 && t < met.stopAt - 0.001) click(t, met.k % S.beats === 0);
+    if (t >= now + 0.005 && t < met.stopAt - 0.001) click(t, false);   // plain metronome: every beat the same
     met.k++;
     if (met.temp && t >= met.stopAt) { metStop(); return; }
   }
@@ -504,7 +505,7 @@ function nextBeat(){ const b = beatSec(), k = Math.ceil((ctx.currentTime + 0.05 
 function nextBar(){ const bar = beatSec() * S.beats, k = Math.ceil((ctx.currentTime + 0.05 - met.t0) / bar); return met.t0 + k * bar; }
 function metUi(){}
 $('meton').onchange = () => { S.met = $('meton').checked; saveSettings(); };   // clicks play only during count-in + recording
-function buildBeatLeds(){ $('beatleds').innerHTML = Array.from({ length: S.beats }, (_, i) => `<i${i ? '' : ' class="one"'}></i>`).join(''); }
+function buildBeatLeds(){ $('beatleds').innerHTML = Array.from({ length: S.beats }, (_, i) => '<i></i>').join(''); }
 
 // ================= scope, meter, count-in, beat LEDs (one animation loop)
 function drawScope(){
@@ -641,7 +642,7 @@ function encodeWav(ch, sr){
   return new Blob([buf], { type: 'audio/wav' });
 }
 
-// ================= app folder: <folder>/bass-recorder.ini + <folder>/recordings/
+// ================= app folder: <folder>/bass-recorder-settings.txt + <folder>/recordings/
 let rootHandle = null, recDir = null, curDir = null, curPath = [], folders = [];
 const keyOf = t => (t.path ? t.path + '/' : '') + t.name;
 const idb = (mode, fn) => new Promise((res, rej) => {
