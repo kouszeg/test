@@ -311,7 +311,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.36';   // bump on every release; shown bottom right
+const VERSION = '1.37';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -963,7 +963,7 @@ function hasSel(){ return ed && ed.a != null && ed.b != null && ed.b - ed.a > 0.
 function edUpdate(){
   if (!ed) return;
   const z = dur() / (ed.view.e - ed.view.s);
-  $('edsel').textContent = (hasSel() ? `A ${fmtS(ed.a)}   B ${fmtS(ed.b)}   dolžina ${fmtS(ed.b - ed.a)}` : `Dolžina ${fmtS(dur())}`) + (z > 1.05 ? `   povečava ${z.toFixed(1)}×` : '');
+  $('edsel').textContent = (hasSel() ? `A ${fmtS(ed.a)}   B ${fmtS(ed.b)}   dolžina ${fmtS(ed.b - ed.a)}` : ed.a != null && ed.b == null ? `A ${fmtS(ed.a)}   (B še ni)` : `Dolžina ${fmtS(dur())}`) + (z > 1.05 ? `   povečava ${z.toFixed(1)}×` : '');
   ED_BTNS.forEach(id => $(id).disabled = false);
   $('edcrop').disabled = !hasSel();
   $('edundo').disabled = !(ed.hist && ed.hist.length);
@@ -1019,7 +1019,7 @@ function drawWave(){
     g.fillRect(x, y0, 1, Math.max(1, y1 - y0));
   }
   for (const [t, lab] of [[ed.a, 'A'], [ed.b, 'B']]) {
-    if (t == null || !hasSel()) continue;
+    if (t == null || !(hasSel() || (lab === 'A' && ed.b == null))) continue;   // a lone A (set with the A key) is shown too
     g.fillStyle = '#ffb547'; g.fillRect(X(t) - 1, 0, 2, h);
     g.font = '700 14px "Barlow Condensed",sans-serif'; g.fillText(lab, X(t) + (lab === 'A' ? 4 : -12), 14);
   }
@@ -1160,7 +1160,7 @@ function markAt(which){
   let t = ed.src ? edPos() - lat : ed.cursor;
   if (ed.src && ed.looping && t < ed.la) t += ed.lb - ed.la;   // latency reached back across the loop seam
   t = snapT(Math.max(0, Math.min(dur(), t)));
-  if (which === 'a') { ed.a = t; if (ed.b != null && ed.b <= t) ed.b = null; }
+  if (which === 'a') { const had = hasSel(); ed.a = t; if (ed.b != null && (!had || ed.b <= t)) ed.b = null; }
   else { if (ed.a == null) ed.a = 0; if (t <= ed.a) return; ed.b = t; }
   edUpdate(); edLoopUpdate(); drawWave();
 }
