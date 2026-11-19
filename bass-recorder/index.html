@@ -23,7 +23,7 @@
   :root.counting{--enclosure:#2e2310;--panel:#3a2c12;--rule:#6b5220}
   @media (prefers-reduced-motion:reduce){html,body{transition:none}}
   body{margin:0;color:var(--silk);font:16px/1.45 Barlow,system-ui,sans-serif;padding:20px 16px 40px}
-  .wrap{max-width:860px;margin:0 auto}
+  .wrap{max-width:1200px;margin:0 auto}
   h1,h2,.cond{font-family:"Barlow Condensed",Barlow,sans-serif;letter-spacing:.01em}
   button,select,input{font:inherit;color:inherit}
   :focus-visible{outline:2px solid var(--led-amber);outline-offset:2px}
@@ -135,6 +135,17 @@
   #list li.sel{outline:2px solid var(--led-amber);outline-offset:-2px}
   #list li.dir svg{width:18px;height:18px;fill:var(--led-amber)}
   #list{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+  .browse{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start}
+  .fcol{position:sticky;top:12px}
+  #favlist{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+  #favlist li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--rule);cursor:pointer}
+  #favlist li:hover{background:var(--panel)}
+  #favlist li.editing{background:rgba(255,255,255,.03)}
+  #favlist li.playing{box-shadow:inset 3px 0 0 var(--led-amber)}
+  #favlist .fn{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #favlist .fp{font-size:12px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .favempty{color:var(--dim);font-size:14px}
+  @media (max-width:900px){ .browse{grid-template-columns:1fr} .fcol{position:static;order:-1} }
   #list li{display:grid;grid-template-columns:minmax(0,1fr) 180px auto;gap:14px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--rule)}
   #list li:not(.none){cursor:pointer}
   #list li.playing{background:linear-gradient(90deg,rgba(91,227,154,.08),transparent 60%)}
@@ -260,6 +271,8 @@
       <button id="lvstay" class="ghost">Ostani</button>
     </div>
   </dialog>
+  <div class="browse">
+  <div class="bcol">
   <div class="listhead">
     <h2>Posnetki</h2>
     <span id="crumbs" class="crumbs"></span>
@@ -272,6 +285,13 @@
     <button id="sysopen" class="ghost">Odpri v sistemu</button>
   </div>
   <ul id="list"></ul>
+  </div>
+  <aside class="fcol">
+    <div class="listhead"><h2>Priljubljeni</h2></div>
+    <ul id="favlist"></ul>
+    <p id="favempty" class="favempty">Ni priljubljenih. Klikni zvezdico ob posnetku ali pritisni S.</p>
+  </aside>
+  </div>
   <details class="help">
     <summary>Navodila</summary>
     <div class="helpbody">
@@ -288,7 +308,7 @@
         <li><kbd>A</kbd> / <kbd>B</kbd> postavi marker A / B na mesto, ki ga slišiš (med predvajanjem) ali na kurzor. Ko postaviš B med predvajanjem v zanki, zanka takoj teče med A in B.</li>
         <li><kbd>C</kbd> obreži na A–B, <kbd>F</kbd> najdi zanko</li>
         <li><kbd>N</kbd> / Normaliziraj: dvigne ali zniža posnetek, da je vrh na nivoju »Normaliziraj na … dBFS« (privzeto −1). Val v urejevalniku je vedno prikazan raztegnjen na višino, zvok pa se spremeni šele s tem ukazom; zapiše ga Shrani (za MP3 kot ime.wav, nato po želji M).</li>
-        <li><kbd>S</kbd> / zvezdica: priljubljen posnetek, prikazan na vrhu seznama v svoji mapi. Zapomni se v bass-recorder-settings.txt.</li>
+        <li><kbd>S</kbd> / zvezdica: priljubljen posnetek. Priljubljeni iz vseh map so v seznamu Priljubljeni desno (klik ga odpre), v svoji mapi pa so na vrhu. Zapomni se v bass-recorder-settings.txt.</li>
         <li><kbd>M</kbd> / gumb MP3: shrani odprt posnetek (tako kot je v urejevalniku, brez EQ predvajanja) kot ime.mp3 v isto mapo. Bitna hitrost: mp3kbps v bass-recorder-settings.txt (96–320, privzeto 192). Aplikacija bere WAV, MP3, M4A, FLAC, OGG; urejeni posnetki se vedno shranijo kot WAV.</li>
         <li><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> kopiraj / izreži / prilepi. Prilepi vstavi na kurzor ali zamenja A–B; deluje med posnetki. Nov prazen posnetek: gumb ob seznamu, vanj prilepiš in Shrani.</li>
         <li><kbd>Ctrl</kbd>+<kbd>S</kbd> shrani spremembe odprtega posnetka</li>
@@ -318,7 +338,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.42';   // bump on every release; shown bottom right
+const VERSION = '1.43';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -835,8 +855,39 @@ function drawThumb(cv, t, active){
 }
 function fmtTime(ms){ return new Date(ms).toLocaleString('sl-SI', { day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit' }); }
 let renaming = false;
+// Favourites panel: favourites from all folders; click = go to its folder and open it.
+function renderFavs(){
+  const ul = $('favlist'); ul.innerHTML = '';
+  const keys = [...FAV].sort((a, b) => a.split('/').pop().localeCompare(b.split('/').pop(), 'sl'));
+  $('favempty').hidden = keys.length > 0;
+  let e = null; try { e = ed; } catch {}   // render() can run before the editor state is declared
+  const openKey = e ? keyOf(e.t) : null;
+  for (const k of keys) {
+    const parts = k.split('/'), name = parts.pop(), li = document.createElement('li');
+    if (k === openKey) li.classList.add(e.src ? 'playing' : 'editing');
+    const star = document.createElement('button'); star.className = 'ren fav on'; star.title = 'Odstrani iz priljubljenih';
+    star.innerHTML = '<svg viewBox="0 0 16 16"><path d="M8 1.2l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12l-4.2 2.2.8-4.7L1.2 6.2l4.7-.7z"/></svg>';
+    star.onclick = e => { e.stopPropagation(); FAV.delete(k); sortTakes(); saveSettings(); render(); };
+    const info = document.createElement('div');
+    info.innerHTML = '<div class="fn"></div><div class="fp"></div>';
+    info.firstChild.textContent = name; info.lastChild.textContent = parts.length ? parts.join(' / ') : (rootHandle ? rootHandle.name : '');
+    li.append(star, info); li.title = k;
+    li.onclick = () => openFav(k);
+    ul.append(li);
+  }
+}
+async function openFav(k){
+  const parts = k.split('/'), name = parts.pop();
+  if (ed && keyOf(ed.t) === k) { if (ed.src) edStop(); else edPlay(true, ed.cursor); return; }
+  try { if (curPath.join('/') !== parts.join('/')) await goTo(parts); }
+  catch { if (confirm(`Mape ${parts.join('/') || '(koren)'} ni več. Odstranim ${name} iz priljubljenih?`)) { FAV.delete(k); saveSettings(); render(); } return; }
+  const t = takes.find(x => x.name === name && (x.path || '') === parts.join('/'));
+  if (!t) { if (confirm(`${name} ni več v mapi. Odstranim iz priljubljenih?`)) { FAV.delete(k); saveSettings(); render(); } return; }
+  await openEditor(t);
+}
 function render(){
   if (renaming) return;
+  renderFavs();
   const ul = $('list'); ul.innerHTML = '';
   renderCrumbs();
   const FOLDER = '<svg viewBox="0 0 16 16"><path d="M1 3h5l1.5 1.5H15V13H1z"/></svg>';
