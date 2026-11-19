@@ -144,6 +144,9 @@
   .ren{flex:none;width:26px;height:26px;border-radius:6px;border:1px solid transparent;background:transparent;cursor:pointer;display:grid;place-items:center;color:var(--dim)}
   .ren:hover{border-color:var(--rule);color:var(--silk)}
   .ren svg{width:14px;height:14px;fill:currentColor}
+  .ren.fav svg{fill:none;stroke:currentColor;stroke-width:1.3}
+  .ren.fav.on{color:var(--led-amber)}
+  .ren.fav.on svg{fill:currentColor}
   .nrow .tname{flex:1;min-width:0}
   #list li.none{display:block;color:var(--dim);padding:14px 4px}
   .tname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -284,7 +287,8 @@
         <li><kbd>E</kbd> preimenuj odprt posnetek</li>
         <li><kbd>A</kbd> / <kbd>B</kbd> postavi marker A / B na mesto, ki ga slišiš (med predvajanjem) ali na kurzor. Ko postaviš B med predvajanjem v zanki, zanka takoj teče med A in B.</li>
         <li><kbd>C</kbd> obreži na A–B, <kbd>F</kbd> najdi zanko</li>
-        <li><kbd>N</kbd> / Normaliziraj: dvigne ali zniža posnetek, da je vrh na nivoju »Normaliziraj na … dBFS« (privzeto −1). Val v urejevalniku je vedno prikazan raztegnjen na višino, zvok pa se spremeni šele s tem ukazom; zapiše ga Shrani (kot ime-edit-N.wav, tudi za MP3, nato po želji M).</li>
+        <li><kbd>N</kbd> / Normaliziraj: dvigne ali zniža posnetek, da je vrh na nivoju »Normaliziraj na … dBFS« (privzeto −1). Val v urejevalniku je vedno prikazan raztegnjen na višino, zvok pa se spremeni šele s tem ukazom; zapiše ga Shrani (za MP3 kot ime.wav, nato po želji M).</li>
+        <li><kbd>S</kbd> / zvezdica: priljubljen posnetek, prikazan na vrhu seznama v svoji mapi. Zapomni se v bass-recorder-settings.txt.</li>
         <li><kbd>M</kbd> / gumb MP3: shrani odprt posnetek (tako kot je v urejevalniku, brez EQ predvajanja) kot ime.mp3 v isto mapo. Bitna hitrost: mp3kbps v bass-recorder-settings.txt (96–320, privzeto 192). Aplikacija bere WAV, MP3, M4A, FLAC, OGG; urejeni posnetki se vedno shranijo kot WAV.</li>
         <li><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> kopiraj / izreži / prilepi. Prilepi vstavi na kurzor ali zamenja A–B; deluje med posnetki. Nov prazen posnetek: gumb ob seznamu, vanj prilepiš in Shrani.</li>
         <li><kbd>Ctrl</kbd>+<kbd>S</kbd> shrani spremembe odprtega posnetka</li>
@@ -304,7 +308,7 @@
         <li>Prvi klik na posnetek ga odpre, naslednji ga predvaja v zanki oziroma ustavi. Svinčnik = preimenuj, koš = izbriši datoteko.</li>
         <li>Na valu: povleci za A–B, primi A ali B za premik, klik skoči na to mesto. Kolešček = povečava, Shift + kolešček = premik, dvoklik = prikaži vse.</li>
         <li>Snap na takt pripne A in B na takte (le pri posnetkih z metronomom). Najdi zanko išče ponavljajoči se vzorec, znotraj A–B, če je izbran.</li>
-        <li>Izreži A–B (Del) odstrani del, Obreži na A–B obdrži samo del. Spremembe so le v aplikaciji, dokler ne klikneš Shrani (Ctrl+S). Shrani ne prepiše originala, ampak naredi kopijo ime-edit-1.wav, -edit-2 …, in odpre kopijo. Undo (Ctrl+Z) deluje, dokler je posnetek odprt. Ob preklopu na drug posnetek izbereš: Shrani in pojdi, Zavrzi in pojdi ali Ostani.</li>
+        <li>Izreži A–B (Del) odstrani del, Obreži na A–B obdrži samo del. Spremembe so le v aplikaciji, dokler ne klikneš Shrani (Ctrl+S). Shrani prepiše posnetek (MP3 ostane, sprememba se shrani kot ime.wav poleg njega). Undo (Ctrl+Z) deluje, dokler je posnetek odprt. Ob preklopu na drug posnetek izbereš: Shrani in pojdi, Zavrzi in pojdi ali Ostani.</li>
         <li>EQ s 5 pasovi (80 Hz, 250 Hz, 800 Hz, 2,5 kHz, 6 kHz, ±15 dB) velja za predvajanje vseh posnetkov in se zapomni. Apply ga vgradi v zvok (predvajanje teče naprej), EQ vrne na Flat; na disk zapiše Shrani.</li>
       </ul>
     </div>
@@ -314,7 +318,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.41';   // bump on every release; shown bottom right
+const VERSION = '1.42';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -333,32 +337,34 @@ const ICON = {
 // ================= settings (mirrored to localStorage, persisted to bass-recorder-settings.txt (INI format) in the app folder)
 const CFG = 'bass-recorder-settings.txt';   // Chrome on Windows refuses to create *.ini files ('Name is not allowed')
 const DEF = { snap: true, scopeMax: 0.05, met: false, bpm: 100, beats: 4, countin: 0, vol: 0.7, lat: '', norm: true, tgt: -1, autosave: true, autoloop: false, dev: '', out: '', eq80: 0, eq250: 0, eq800: 0, eq2k5: 0, eq6k: 0, syspath: '', mp3kbps: 192 };
-let S = { ...DEF }, META = {};   // META: per-file beat grid {bpm, beats, offset}
+let S = { ...DEF }, META = {}, FAV = new Set();   // META: per-file beat grid {bpm, beats, offset}; FAV: favourite takes (relative paths)
 const ls = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
-try { const j = JSON.parse(ls.get('br-settings') || '{}'); S = { ...DEF, ...j.S }; META = j.META || {}; } catch {}
+try { const j = JSON.parse(ls.get('br-settings') || '{}'); S = { ...DEF, ...j.S }; META = j.META || {}; FAV = new Set(j.FAV || []); } catch {}
 
 function toIni(){
   const L = ['; Bass Recorder settings', '[settings]'];
   for (const k of Object.keys(DEF)) L.push(`${k}=${S[k] === true ? 1 : S[k] === false ? 0 : S[k]}`);
   L.push('', '[takes]');
   for (const [n, g] of Object.entries(META)) L.push(`${n}=bpm:${g.bpm};beats:${g.beats};offset:${(+g.offset).toFixed(4)}`);
+  L.push('', '[favourites]'); for (const n of FAV) L.push(n);
   return L.join('\r\n') + '\r\n';
 }
 function fromIni(txt){
-  let sec = '', s = {}, meta = {};
+  let sec = '', s = {}, meta = {}, fav = [];
   for (const raw of txt.split(/\r?\n/)) {
     const line = raw.trim(); if (!line || line[0] === ';' || line[0] === '#') continue;
     const h = line.match(/^\[(.+)\]$/); if (h) { sec = h[1].toLowerCase(); continue; }
+    if (sec === 'favourites') { fav.push(line); continue; }
     const i = sec === 'takes' ? line.lastIndexOf('=') : line.indexOf('='); if (i < 0) continue;
     const k = line.slice(0, i).trim(), v = line.slice(i + 1).trim();
     if (sec === 'settings' && k in DEF) s[k] = typeof DEF[k] === 'boolean' ? v === '1' || v === 'true' : typeof DEF[k] === 'number' ? +v : v;
     if (sec === 'takes') { const g = {}; v.split(';').forEach(p => { const [a, b] = p.split(':'); g[a] = +b; }); if (g.bpm) meta[k] = g; }
   }
-  return { s, meta };
+  return { s, meta, fav };
 }
 let saveTimer = null;
 function saveSettings(){
-  ls.set('br-settings', JSON.stringify({ S, META }));
+  ls.set('br-settings', JSON.stringify({ S, META, FAV: [...FAV] }));
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     const st = $('inistat');
@@ -371,8 +377,8 @@ function saveSettings(){
 async function loadIni(){
   try {
     const fh = await rootHandle.getFileHandle(CFG);
-    const { s, meta } = fromIni(await (await fh.getFile()).text());
-    S = { ...S, ...s }; META = { ...META, ...meta }; applySettingsToUi(); eqUi(); $('inistat').textContent = ''; ls.set('br-settings', JSON.stringify({ S, META }));
+    const { s, meta, fav } = fromIni(await (await fh.getFile()).text());
+    S = { ...S, ...s }; META = { ...META, ...meta }; fav.forEach(k => FAV.add(k)); sortTakes(); render(); applySettingsToUi(); eqUi(); $('inistat').textContent = ''; ls.set('br-settings', JSON.stringify({ S, META, FAV: [...FAV] }));
   } catch { saveSettings(); }   // no ini yet: create it from current settings
 }
 function applySettingsToUi(){
@@ -645,6 +651,10 @@ function encodeWav(ch, sr){
 // ================= app folder: <folder>/bass-recorder-settings.txt + <folder>/recordings/
 let rootHandle = null, recDir = null, curDir = null, curPath = [], folders = [];
 const keyOf = t => (t.path ? t.path + '/' : '') + t.name;
+const isFav = t => FAV.has(keyOf(t));
+function sortTakes(){ takes.sort((a, b) => (isFav(b) - isFav(a)) || ((b.mtime || 0) - (a.mtime || 0))); }
+function toggleFav(t){ const k = keyOf(t); if (FAV.has(k)) FAV.delete(k); else FAV.add(k); sortTakes(); saveSettings(); render(); }
+function moveFav(oldKey, t){ if (FAV.has(oldKey) && oldKey !== keyOf(t)) { FAV.delete(oldKey); FAV.add(keyOf(t)); saveSettings(); } }
 const idb = (mode, fn) => new Promise((res, rej) => {
   const r = indexedDB.open('bass-recorder', 1);
   r.onupgradeneeded = () => r.result.createObjectStore('kv');
@@ -680,7 +690,7 @@ async function loadFolder(){
   }
   takes.filter(t => t.inFolder && !found.includes(t)).forEach(t => URL.revokeObjectURL(t.url));
   folders = dirs.sort((a, b) => a.localeCompare(b, 'sl'));
-  takes = takes.filter(t => !t.inFolder).concat(found).sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
+  takes = takes.filter(t => !t.inFolder).concat(found); sortTakes();
   render();
 }
 async function goTo(path){
@@ -738,6 +748,7 @@ async function download(t){
       const w = await fh.createWritable(); await w.write(t.blob); await w.close();
       t.inFolder = true; t.saved = null; t.dir = curDir; t.path = curPath.join('/');
       if (META[oldKey] && oldKey !== keyOf(t)) { META[keyOf(t)] = META[oldKey]; delete META[oldKey]; saveSettings(); }
+      moveFav(oldKey, t);
       render(); return;
     }
   } catch (e) { console.warn('folder save failed, falling back to download', e); }
@@ -767,7 +778,7 @@ async function renameTake(t, newName){
   }
   const oldKey = keyOf(t);
   t.name = newName;
-  if (META[oldKey]) { META[keyOf(t)] = META[oldKey]; delete META[oldKey]; saveSettings(); } if (ed && ed.t === t) $('edname').textContent = newName; render();
+  if (META[oldKey]) { META[keyOf(t)] = META[oldKey]; delete META[oldKey]; saveSettings(); } moveFav(oldKey, t); if (ed && ed.t === t) $('edname').textContent = newName; render();
 }
 function startRename(t, el){
   if (renaming) return;
@@ -791,6 +802,7 @@ async function deleteTake(t){
   const wasOpen = !!(ed && ed.t === t), idx = takes.indexOf(t);
   if (wasOpen) { edStop(); ed = null; edEmpty(); }
   if (META[keyOf(t)]) { delete META[keyOf(t)]; saveSettings(); }
+  if (FAV.delete(keyOf(t))) saveSettings();
   URL.revokeObjectURL(t.url); takes = takes.filter(x => x !== t); render();
   if (wasOpen) { const n = takes[idx] || takes[idx - 1]; if (n) openEditor(n); }
 }
@@ -841,7 +853,10 @@ function render(){
     const ren = document.createElement('button'); ren.className = 'ren'; ren.title = 'Preimenuj (E)'; ren.setAttribute('aria-label', 'Preimenuj');
     ren.innerHTML = '<svg viewBox="0 0 16 16"><path d="M11.5 1.5l3 3L5 14H2v-3zM10 3l3 3"/></svg>';
     ren.onclick = e => { e.stopPropagation(); startRename(t, nm); };
-    const nrow = document.createElement('div'); nrow.className = 'nrow'; nrow.append(ren, nm);
+    const fav = document.createElement('button'); fav.className = 'ren fav' + (isFav(t) ? ' on' : ''); fav.title = isFav(t) ? 'Odstrani iz priljubljenih (S)' : 'Priljubljen: prikaži na vrhu (S)';
+    fav.innerHTML = '<svg viewBox="0 0 16 16"><path d="M8 1.2l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12l-4.2 2.2.8-4.7L1.2 6.2l4.7-.7z"/></svg>';
+    fav.onclick = e => { e.stopPropagation(); toggleFav(t); };
+    const nrow = document.createElement('div'); nrow.className = 'nrow'; nrow.append(fav, ren, nm);
     const meta = document.createElement('div'); meta.className = 'tmeta';
     const add = (txt, cls) => { const s = document.createElement('span'); s.textContent = txt; if (cls) s.className = cls; meta.append(s); };
     if (t.mtime) add(fmtTime(t.mtime));
@@ -1226,7 +1241,7 @@ $('edauto').onclick = () => {
   edUpdate(); edPlay(true);
 };
 
-// Edits change only the in-app audio. Shrani writes a new copy <base>-edit-<i>.wav; the original is never overwritten.
+// Edits change only the in-app audio until Shrani (Ctrl+S) writes them.
 function setBuf(ch){
   const sr = ed.buf.sr;
   ed.buf = { sr, ch, len: ch[0].length }; ed.drops = findDrops(ch[0], sr); ed.ab = null; ed.cols = null; ed.pk = 0; ed.a = ed.b = null; ed.cursor = 0; ed.view = { s: 0, e: ch[0].length / sr };
@@ -1243,32 +1258,33 @@ function applyEdit(ch, label, gridShift, keep){
   edUpdate(); render();
   if (was) edPlay(was.loop, typeof keep === 'function' ? keep(was.pos) : was.pos);
 }
+// Shrani overwrites the take itself (WAV). A non-WAV original (MP3, …) gets <name>.wav next to it, the original stays.
 async function edSave(){
   if (!ed || !isDirty()) return true;
   const e0 = ed, t = e0.t, sr = e0.buf.sr; edStop();
   $('edmsg').textContent = 'Shranjujem…';
-  const ch = toMono(e0.buf.ch), blob = encodeWav(ch, sr);
-  const base = t.name.replace(/\.[^.]+$/, '').replace(/-edit-\d+$/, ''), fresh = !!t.fresh;
-  const taken = n => takes.some(x => x !== t && x.dir === t.dir && (x.path || '') === (t.path || '') && x.name.toLowerCase() === n.toLowerCase());
-  const nt = { blob, secs: ch[0].length / sr, peaks: peaksOf(ch[0]), mtime: Date.now(), path: t.path, dir: t.dir, inFolder: false };
+  const ch = toMono(e0.buf.ch), blob = encodeWav(ch, sr), isWav = /\.wav$/i.test(t.name), stem = t.name.replace(/\.[^.]+$/, '');
+  const oldKey = keyOf(t), inFolder = (t.inFolder || (t.fresh && !!t.dir)) && await folderReady(true);
+  let nt = t;
   try {
-    const inFolder = (t.inFolder || (fresh && !!t.dir)) && await folderReady(true);
-    for (let i = 1; ; i++) {
-      nt.name = fresh ? (i === 1 ? `${base}.wav` : `${base}-${i}.wav`) : `${base}-edit-${i}.wav`;   // a new blank take saves under its own name
-      if (taken(nt.name)) continue;
-      if (inFolder) { try { await t.dir.getFileHandle(nt.name); continue; } catch {} }
-      break;
+    if (!isWav) {   // keep the MP3; the edit becomes a WAV beside it
+      const taken = n => takes.some(x => x !== t && x.dir === t.dir && x.name.toLowerCase() === n.toLowerCase());
+      let name = stem + '.wav';
+      for (let k = 2; taken(name) || (inFolder && await t.dir.getFileHandle(name).then(() => true, () => false)); k++) name = `${stem}-${k}.wav`;
+      nt = { name, path: t.path, dir: t.dir, inFolder: false };
     }
     if (inFolder) {
-      const fh = await t.dir.getFileHandle(nt.name, { create: true }); const w = await fh.createWritable(); await w.write(blob); await w.close();
+      const fh = await nt.dir.getFileHandle(nt.name, { create: true }); const w = await fh.createWritable(); await w.write(blob); await w.close();
       const f = await fh.getFile(); nt.blob = f; nt.mtime = f.lastModified; nt.inFolder = true;
-    }
+    } else { nt.blob = blob; nt.mtime = Date.now(); nt.saved = null; }
   } catch (e) { $('edmsg').textContent = 'Shranjevanje ni uspelo: ' + e.message; return false; }
-  nt.url = URL.createObjectURL(nt.blob);
-  if (e0.grid) { META[keyOf(nt)] = { ...e0.grid }; saveSettings(); }
-  const i = takes.indexOf(t); takes.splice(i < 0 ? 0 : i, fresh ? 1 : 0, nt);   // fresh: replace the unsaved placeholder
+  if (nt.url) URL.revokeObjectURL(nt.url);
+  Object.assign(nt, { url: URL.createObjectURL(nt.blob), secs: ch[0].length / sr, peaks: peaksOf(ch[0]), rawDb: undefined, gainDb: undefined, fresh: false, drops: undefined });
+  if (e0.grid) META[keyOf(nt)] = { ...e0.grid }; else delete META[keyOf(nt)];
+  if (nt !== t) { const i = takes.indexOf(t); takes.splice(i < 0 ? 0 : i, 0, nt); if (FAV.has(oldKey)) FAV.add(keyOf(nt)); }
+  saveSettings();
   e0.savedRev = e0.rev;
-  if (ed === e0) { e0.t = nt; $('edmsg').textContent = 'Shranjeno kot ' + nt.name + (nt.inFolder ? '' : ' (samo v aplikaciji, za disk klikni ikono za prenos)') + (fresh ? '.' : '. Original ostane.'); edUpdate(); }
+  if (ed === e0) { e0.t = nt; $('edmsg').textContent = (nt === t ? 'Shranjeno.' : `Shranjeno kot ${nt.name} (original ${t.name} ostane).`) + (nt.inFolder ? '' : ' Samo v aplikaciji, za disk klikni ikono za prenos.'); edUpdate(); }
   render(); return true;
 }
 $('edsave').onclick = edSave;
@@ -1429,6 +1445,7 @@ document.addEventListener('keydown', e => {
   else if (e.code === 'KeyE') { if (ed) { e.preventDefault(); const el = document.querySelector('#list li.playing .tname, #list li.editing .tname'); if (el) startRename(ed.t, el); } }
   else if (e.code === 'KeyN') { if (ed) { e.preventDefault(); normTake(); } }
   else if (e.code === 'KeyA' || e.code === 'KeyB') { if (ed) { e.preventDefault(); markAt(e.code === 'KeyA' ? 'a' : 'b'); } }
+  else if (e.code === 'KeyS' && !e.ctrlKey && !e.metaKey) { if (ed) { e.preventDefault(); toggleFav(ed.t); } }
   else if (e.code === 'KeyM') { if (ed) { e.preventDefault(); toMp3(); } }
   else if (e.code === 'KeyC') { if (ed && hasSel()) { e.preventDefault(); $('edcrop').click(); } }
   else if (e.code === 'KeyF') { if (ed) { e.preventDefault(); $('edauto').click(); } }
