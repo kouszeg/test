@@ -102,6 +102,7 @@
   .ed-acts .danger{border-color:#7a3036;color:#ff8a8c}
   .ed-acts button:disabled{opacity:.4;cursor:not-allowed}
   #edmsg{font-size:14px;color:var(--dim);margin-left:auto}
+  .edtime{font-variant-numeric:tabular-nums;font-size:15px;color:var(--silk);margin:0 6px;white-space:nowrap}
   .editor button:disabled{opacity:.4;cursor:not-allowed}
   .ed-hint{font-size:13px;color:var(--dim);margin:8px 0 0}
   .eq{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;align-items:center;color:var(--dim);font-size:15px}
@@ -228,6 +229,7 @@
         <button id="edplay" title="Predvajaj" aria-label="Predvajaj"></button>
         <button id="edloop" title="Predvajaj v zanki" aria-label="Predvajaj v zanki"></button>
         <button id="edstop" title="Ustavi" aria-label="Ustavi"></button>
+        <span id="edtime" class="edtime" title="Položaj / dolžina (mm:ss:ms)">00:00:000 / 00:00:000</span>
       </span>
       <button id="edauto" class="ghost">Najdi zanko</button>
       <button id="edclear" class="ghost">Počisti A–B</button>
@@ -311,7 +313,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.39';   // bump on every release; shown bottom right
+const VERSION = '1.40';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -1027,7 +1029,10 @@ function drawWave(){
   if (ed.src) { g.fillStyle = '#ff4d4f'; g.fillRect(X(edPos()) - 1, 0, 2, h); requestAnimationFrame(drawWave); }
   else if (ed.cursor > 0) { g.fillStyle = 'rgba(255,77,79,.5)'; g.fillRect(X(ed.cursor) - 1, 0, 2, h); }
 }
-{ const dw = drawWave; drawWave = function(){ dw(); drawNav(); }; }
+const fmtT = t => { t = Math.max(0, t); const m = Math.floor(t / 60), s = Math.floor(t % 60), ms = Math.floor((t % 1) * 1000);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}:${String(ms).padStart(3, '0')}`; };
+function drawTime(){ $('edtime').textContent = ed ? `${fmtT(ed.src ? edPos() : ed.cursor)} / ${fmtT(dur())}` : '00:00:000 / 00:00:000'; }
+{ const dw = drawWave; drawWave = function(){ dw(); drawNav(); drawTime(); }; }
 addEventListener('resize', () => { if (ed) ed.cols = null; drawWave(); });
 edEmpty();
 
