@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pomočnik</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<style>
+:root{color-scheme:light;--page:#f9f9f7;--surf:#fcfcfb;--card:#fff;--ink:#0b0b0b;--ink2:#52514e;--mut:#898781;--grid:#e1e0d9;--base:#c3c2b7;--line:rgba(11,11,11,.10);--acc:#2a78d6;--accSoft:#e6f0fc;--bad:#d03b3b;
+--c0:#2a78d6;--c1:#eb6834;--c2:#1baf7a;--c3:#eda100;--c4:#e87ba4;--c5:#6250d6;--c6:#008300}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--page:#0d0d0d;--surf:#141413;--card:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--mut:#898781;--grid:#2c2c2a;--base:#383835;--line:rgba(255,255,255,.10);--acc:#3987e5;--accSoft:#1b2a3d;--bad:#e66767;
+--c0:#3987e5;--c1:#d95926;--c2:#199e70;--c3:#c98500;--c4:#d55181;--c5:#9085e9;--c6:#0ca30c}}
+*{box-sizing:border-box;margin:0}
+body{font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--page);color:var(--ink);padding-bottom:76px;-webkit-tap-highlight-color:transparent}
+header{position:sticky;top:0;z-index:5;background:var(--page);display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--line)}
+header h1{font-size:17px;font-weight:650}
+main{max-width:560px;margin:0 auto;padding:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.card h2,details summary{font-size:12px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;min-height:24px}
+details summary{cursor:pointer;margin:0}details[open] summary{margin-bottom:8px}
+.nt{text-transform:none;letter-spacing:0;font-weight:400}
+button,.btn{font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;text-align:center;text-decoration:none;display:inline-block}
+button:disabled{opacity:.3}
+.pri{background:var(--acc)!important;color:#fff!important;border-color:transparent!important;font-weight:600}
+.sel{background:var(--accSoft);border-color:var(--acc)}
+button.sm{font-size:12px;padding:3px 10px;text-transform:none;letter-spacing:0;font-weight:500}
+input,textarea{font:inherit;color:inherit;background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%}
+textarea{resize:vertical}
+.mut{color:var(--mut)}p.sm{font-size:12px;margin-top:6px}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:5;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{position:relative;flex:1;border:0;border-radius:0;padding:7px 0 9px;font-size:12px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:1px}
+nav .i{font-size:19px;filter:grayscale(1);opacity:.6}
+nav button.on{color:var(--acc);font-weight:600}nav button.on .i{filter:none;opacity:1}
+.badge{position:absolute;top:3px;left:calc(50% + 7px);background:var(--bad);color:#fff;font-size:10px;font-weight:700;border-radius:999px;padding:0 5px;min-width:16px}
+.daynav{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.daynav>div{flex:1;text-align:center}
+.daynav>button{font-size:20px;padding:2px 14px}
+.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;flex:0 0 10px}
+.sw.s0{background:var(--c0)}.sw.s1{background:var(--c1)}.sw.s2{background:var(--c2)}.sw.s3{background:var(--c3)}.sw.s4{background:var(--c4)}.sw.s5{background:var(--c5)}.sw.s6{background:var(--c6)}
+.cnt{display:flex;align-items:center;gap:8px;padding:6px 0}.cnt+.cnt{border-top:1px solid var(--line)}
+.cnt .sw{margin:0}.kl{font-size:16px;width:28px}
+.big{font-size:32px;font-weight:700;line-height:1;min-width:42px;text-align:right;margin-right:6px;font-variant-numeric:tabular-nums}
+.meta{flex:1;font-size:12px;color:var(--ink2)}
+.plus{font-size:20px;padding:9px 22px;border-radius:12px}
+.tm{display:flex;align-items:center;gap:6px}.tm input{width:auto;padding:3px 6px;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.cnt+.chips,.cnt~.chips{margin-top:10px}
+.chip{display:inline-flex;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:999px;padding:1px 2px 1px 10px;font-size:13px;font-variant-numeric:tabular-nums}
+.chip button{border:0;padding:2px 7px;color:var(--mut);font-size:16px;line-height:1}
+.seg{display:flex;gap:6px}.seg button{flex:1;padding:9px 0;font-size:16px;min-width:0}
+.frow{display:flex;align-items:center;gap:8px;margin-top:6px}.frow>span{flex:0 0 64px;font-size:13px;color:var(--ink2)}.frow .seg{flex:1}.frow .seg button{padding:6px 0}
+.tg{border-radius:999px;padding:7px 13px;font-size:14px}.tg.s2b{font-size:13px;padding:5px 10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label{font-size:13px;color:var(--ink2);display:block}label input{margin-top:3px}
+.lbl{font-size:13px;color:var(--ink2);margin:10px 0 5px}
+.hm{display:flex;align-items:center;gap:6px}.hm input{width:72px}.hm span{color:var(--ink2);font-size:13px}
+.add{display:flex;gap:6px}.add input[name=t]{flex:1;min-width:0}.add input[type=date]{flex:0 0 138px;width:138px}.add button{flex:0 0 46px;font-size:22px;padding:0}
+.quick{display:flex;gap:6px;margin-top:8px}.quick button{font-size:13px;padding:4px 10px}
+.item{display:flex;align-items:flex-start;gap:10px;padding:9px 0}
+.item+.item{border-top:1px solid var(--line)}
+.ck{flex:0 0 26px;height:26px;padding:0;border-radius:8px;border:2px solid var(--base);font-size:15px;line-height:1;color:#fff}
+.ck.on{background:var(--acc);border-color:var(--acc)}
+.txt{flex:1;padding-top:2px;white-space:pre-wrap;word-break:break-word;cursor:pointer;min-width:0}
+.done .txt{color:var(--mut);text-decoration:line-through}
+.x{border:0;color:var(--mut);font-size:20px;padding:0 6px;line-height:1.2}
+.due{font-size:12px;color:var(--ink2);border:1px solid var(--line);border-radius:6px;padding:0 5px;white-space:nowrap}
+.due.over{color:var(--bad);border-color:currentColor}
+.empty{color:var(--mut);font-size:14px;padding:4px 0}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.acts button,.acts .btn{font-size:14px;padding:6px 12px}
+.inb .txt{cursor:default}
+.rng{margin-bottom:10px}.rng button{font-size:14px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}.tiles.t4{grid-template-columns:repeat(4,1fr)}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:9px 10px}
+.tv{font-size:21px;font-weight:650;line-height:1.2}.tl{font-size:11px;color:var(--ink2)}
+.lg{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--ink2);margin:-2px 0 6px}
+.chart{position:relative;min-height:150px}.chart svg{display:block;touch-action:pan-y}
+.chart .b{fill:var(--acc)}.chart .gr{stroke:var(--grid)}.chart .bl{stroke:var(--base)}
+.chart .ax{fill:var(--mut);font-size:10px;font-variant-numeric:tabular-nums}.chart .hl{fill:var(--ink);opacity:.06}
+.chart .ln{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .ln.s0{stroke:var(--c0)}.chart .ln.s1{stroke:var(--c1)}.chart .ln.s2{stroke:var(--c2)}.chart .ln.s3{stroke:var(--c3)}.chart .ln.s4{stroke:var(--c4)}.chart .ln.s5{stroke:var(--c5)}.chart .ln.s6{stroke:var(--c6)}
+.chart .dt{stroke:var(--card);stroke-width:2}.chart .dt.s0{fill:var(--c0)}.chart .dt.s1{fill:var(--c1)}.chart .dt.s2{fill:var(--c2)}.chart .dt.s3{fill:var(--c3)}.chart .dt.s4{fill:var(--c4)}.chart .dt.s5{fill:var(--c5)}.chart .dt.s6{fill:var(--c6)}
+.chart .xh{stroke:var(--base)}.chart .dl{fill:var(--ink2);font-size:10px;font-weight:600}
+.tip{position:absolute;top:-4px;background:var(--ink);color:var(--card);font-size:12px;padding:4px 8px;border-radius:6px;pointer-events:none;white-space:nowrap}
+.tb{width:100%;border-collapse:collapse;font-size:13px}.tb td,.tb th{padding:5px 4px;border-top:1px solid var(--line);text-align:left;font-weight:normal;white-space:nowrap}
+.tb th{color:var(--mut);font-size:12px;border-top:0}.tb .num{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+#sheet{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center}
+#sheet.open{display:flex}
+.sh{background:var(--card);width:100%;max-width:560px;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+.sh h3{font-size:16px;margin-bottom:8px}.sh p{font-size:14px;margin-bottom:6px}
+.stack{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.danger{color:var(--bad)}
+#expOut textarea{margin-top:8px;font-size:12px}
+#toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--card);padding:8px 14px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+.crow{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.ct{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 2px 7px;border-radius:12px;background:var(--surf);min-width:0}
+.ct:active{background:var(--accSoft)}
+.ct b{font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.cl{font-size:13px;font-weight:650;display:flex;align-items:center}.cm{font-size:11px;color:var(--mut);white-space:nowrap}
+.cp{margin-top:5px;font-size:13px;font-weight:700;color:#fff;background:var(--acc);border-radius:8px;padding:2px 10px}
+.crow~.chips{margin-top:10px}
+.sy{border:0;font-size:15px;padding:4px 8px;color:var(--mut)}.sy.ok{color:#0ca30c}.sy.pend{color:#c98500}.sy.err{color:var(--bad)}
+.add input:not([type=date]){flex:1;min-width:0}
+.dts{margin-bottom:10px}.dts button{font-size:14px}
+.cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.chb{display:flex;flex-direction:column;align-items:center;padding:7px 4px;font-size:13px;line-height:1.25}.chb span{font-size:11px;color:var(--ink2);min-height:14px}
+.tiles.t5{grid-template-columns:repeat(5,1fr)}.t5 .tile{padding:8px 6px}.t5 .tv{font-size:18px}.t5 .tl{white-space:nowrap}
+.mini{display:flex;align-items:flex-start;gap:4px}.mini .ml{flex:0 0 36px;font-size:12px;font-weight:600;padding-top:2px;display:flex;align-items:center}.mini .chart{flex:1}
+.chart.auto{min-height:0}
+.chart .b.s0{fill:var(--c0)}.chart .b.s1{fill:var(--c1)}.chart .b.s2{fill:var(--c2)}.chart .b.s3{fill:var(--c3)}.chart .b.s4{fill:var(--c4)}
+.chart .hc{fill:var(--acc)}.chart .hc.z{fill:var(--grid)}.chart .hx{fill:none;stroke:var(--ink);stroke-width:1.5}
+.brk{display:grid;grid-template-columns:auto 1fr auto;gap:4px 8px;align-items:center;font-size:13px;margin-top:10px}.brk i{display:block;height:8px;border-radius:0 4px 4px 0;background:var(--acc)}.brk .num{text-align:right;color:var(--ink2);font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<header><h1>Pomočnik</h1><span><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="font-size:18px;border:0">⚙</button></span></header>
+<main id="main"></main>
+<nav>
+<button data-tab="dnevnik"><span class="i">📓</span>Dnevnik</button>
+<button data-tab="opravila"><span class="i">✅</span>Opravila<span id="badge" class="badge" hidden></span></button>
+<button data-tab="nakupi"><span class="i">🛒</span>Nakupi</button>
+<button data-tab="pregled"><span class="i">📊</span>Pregled</button>
+</nav>
+<div id="sheet"><div class="sh" id="sheetIn"></div></div>
+<div id="toast"></div>
+<script>
+'use strict';
+// ---------- data (every record: id + u = last-modified ms; deletes are tombstones -> merge-ready for later sync)
+const COLS=['log','smokes','todos','shop','inbox','chores'],KEY='pomocnik.v1',
+MOOD=['😫','🙁','😐','🙂','😄'],
+HL=[['ok','OK'],['virus','Virus / prehlad'],['glava','Glavobol'],['inj','Poškodba'],['drugo','Drugo']],
+BODY=['glava','vrat','rama','nadlaket','komolec','zapestje','dlan / prsti','prsni koš','zgornji hrbet','križ','trebuh','kolk','stegno','koleno','meča / golen','gleženj','stopalo'],
+SPORT=[[15,'15'],[30,'30'],[45,'45'],[60,'1 h'],[61,'1 h+']],
+DN=['ned','pon','tor','sre','čet','pet','sob'],
+CATS=[['g','Živila'],['t','Tehnika'],['s','Šport']],CATN={g:'Živila',t:'Tehnika',s:'Šport'},catOf=r=>r.cat||'g',
+DT=[['f','Prosto','🏖'],['d','DOD','🏠'],['i','IJS','🏢']],DTN={f:'Prosto',d:'DOD',i:'IJS'},
+CHORES=['Sesanje','Posoda','Pomivalni stroj','Perilo','Likanje','Kuhanje','Kopalnica','Prah','Smeti','Okolica','Drugo'],
+K=['SM','BO','JO','CF','WD'],OLDK={S:'SM',B:'BO',J:'JO'},kOf=r=>OLDK[r.k]||r.k||'SM';
+const mem={},st={get:k=>{try{return localStorage.getItem(k)}catch(e){return k in mem?mem[k]:null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}};
+const empty=()=>{const d={v:1};COLS.forEach(c=>d[c]={});return d};
+function load(){let d=null;try{d=JSON.parse(st.get(KEY))}catch(e){}const o=empty();if(d&&typeof d==='object')COLS.forEach(c=>{if(d[c]&&typeof d[c]==='object')o[c]=d[c]});return o}
+function merge(a,b){const o=empty();COLS.forEach(c=>{o[c]={...(a[c]||{})};for(const[id,r]of Object.entries(b[c]||{})){const x=o[c][id];if(r&&typeof r==='object'&&(!x||(r.u||0)>(x.u||0)))o[c][id]=r}});return o}
+let S=load(),saveT=0;
+// merge with what is stored before writing, so two open tabs never overwrite each other
+const flush=()=>{clearTimeout(saveT);S=merge(load(),S);st.set(KEY,JSON.stringify(S))};
+const save=()=>{clearTimeout(saveT);saveT=setTimeout(flush,300)};
+const now=()=>Date.now(),uid=()=>now().toString(36)+Math.random().toString(36).slice(2,7);
+function put(c,r){r.u=now();S[c][r.id]=r;save();if(gOK()){SY.dirty=true;schedSync(20000)}return r}
+const live=c=>Object.values(S[c]).filter(r=>!r.del);
+const count=()=>COLS.reduce((s,c)=>s+live(c).length,0);
+// ---------- helpers
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0'),
+dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()),
+pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)},
+addD=(k,n)=>{const d=pd(k);d.setDate(d.getDate()+n);return dk(d)},
+today=()=>dk(new Date()),
+fmtD=k=>{const d=pd(k);return DN[d.getDay()]+', '+d.getDate()+'. '+(d.getMonth()+1)+'.'},
+hm=t=>{const d=new Date(t);return pad(d.getHours())+':'+pad(d.getMinutes())},
+fmtMin=m=>Math.floor(m/60)+' h '+pad(Math.round(m%60))+' min',
+agoS=ms=>{const m=Math.floor(ms/60000);return m<60?m+' min':Math.floor(m/60)+' h '+m%60+' m'},
+fmtM=m=>m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+m%60+' min':''),
+ago=ms=>{const m=Math.floor(ms/60000);return m<60?m+' min':Math.floor(m/60)+' h '+pad(m%60)+' min'},
+f1=v=>v==null?'–':v.toFixed(1).replace('.',','),
+spL=v=>v===61?'60+':v;
+const gf=(d,f)=>{const r=S.log[d+'|'+f];return r?r.v:null};
+const sf=(d,f,v)=>put('log',{id:d+'|'+f,v});
+const hasV=v=>v!=null&&v!==''&&v!==false&&!(Array.isArray(v)&&!v.length);
+const loggedDays=()=>new Set(Object.values(S.log).filter(r=>hasV(r.v)).map(r=>r.id.slice(0,10)));
+const choresOn=d=>live('chores').filter(r=>dk(new Date(r.t))===d).sort((a,b)=>a.t-b.t);
+const smokesOn=d=>live('smokes').filter(r=>dk(new Date(r.t))===d).sort((a,b)=>a.t-b.t);
+const toMin=s=>{const[h,m]=s.split(':').map(Number);return h*60+m};
+function sleepCalc(d){const b=gf(d,'bed'),w=gf(d,'wake');if(!b||!w)return null;let x=toMin(w)-toMin(b);if(x<=0)x+=1440;return x}
+const sleepVal=d=>gf(d,'sw')??sleepCalc(d); // watch value wins over bed->wake
+const avgOf=a=>{a=a.filter(v=>v!=null);return a.length?a.reduce((s,x)=>s+x,0)/a.length:null};
+const psy=d=>avgOf([gf(d,'mP'),gf(d,'eP')]),phy=d=>avgOf([gf(d,'mF'),gf(d,'eF')]);
+const norm=s=>s.trim().toLowerCase();
+// strips bullets / numbering / WhatsApp copy prefix "[22. 11. 26, 16:00] Ime: "
+const clean=s=>s.replace(/^\s*\[[^\]]{4,30}\]\s*[^:\n]{1,40}:\s*/,'').replace(/^\s*(?:[-*•·]|\d+[.)])\s+/,'').trim();
+const lines=(t,split)=>split?t.split(/[\n,;]/).map(clean).filter(Boolean):[clean(t)].filter(Boolean);
+const openShop=cat=>live('shop').filter(r=>!r.done&&catOf(r)===cat).sort((a,b)=>a.c-b.c);
+const byDue=(a,b)=>{const x=a.due||'9',y=b.due||'9';return x<y?-1:x>y?1:a.c-b.c};
+function addTodos(ts,due){ts.forEach(t=>put('todos',{id:uid(),text:t,due:due||null,done:false,c:now()}))}
+function addShop(ts,cat){const have=new Set(openShop(cat).map(r=>norm(r.text)));let n=0;ts.forEach(t=>{t=t.trim();if(t&&!have.has(norm(t))){have.add(norm(t));put('shop',{id:uid(),text:t,done:false,cat,c:now()});n++}});return n}
+function suggestions(cat){const open=new Set(openShop(cat).map(r=>norm(r.text))),m={};Object.values(S.shop).forEach(r=>{const k=norm(r.text);if(!k||open.has(k)||catOf(r)!==cat)return;(m[k]=m[k]||{n:0,t:r.text,u:0}).n++;if(r.u>m[k].u){m[k].u=r.u;m[k].t=r.text}});return Object.values(m).filter(x=>x.n>=2).sort((a,b)=>b.n-a.n||b.u-a.u).slice(0,10).map(x=>x.t)}
+function pearson(p){const n=p.length;if(n<2)return null;let sx=0,sy=0;p.forEach(([x,y])=>{sx+=x;sy+=y});const mx=sx/n,my=sy/n;let a=0,bx=0,by=0;p.forEach(([x,y])=>{a+=(x-mx)*(y-my);bx+=(x-mx)**2;by+=(y-my)**2});return bx&&by?a/Math.sqrt(bx*by):null}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2200)}
+function openSheet(h){$('#sheetIn').innerHTML=h;$('#sheet').classList.add('open')}
+function closeSheet(){$('#sheet').classList.remove('open');$('#sheetIn').innerHTML=''}
+
+// ---------- views
+const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',step:5};
+let CH=[];
+function render(){CH=[];$('#main').innerHTML=({dnevnik:vDnevnik,opravila:vOpravila,nakupi:vNakupi,pregled:vPregled})[V.tab]();
+document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===V.tab));
+const n=live('inbox').length,bd=$('#badge');bd.textContent=n;bd.hidden=!n;drawCharts()}
+
+function vDnevnik(){const d=V.day,isT=d===today(),sm=smokesOn(d),pv=smokesOn(addD(d,-1)),h=gf(d,'health')||[],inj=gf(d,'inj')||[],
+sc=sleepCalc(d),sw=gf(d,'sw'),tb=gf(addD(d,1),'bed'),sp=gf(d,'sp'),dt=gf(d,'dt'),ch=choresOn(d),tot={};ch.forEach(r=>tot[r.c]=(tot[r.c]||0)+r.m);const csum=ch.reduce((s,r)=>s+r.m,0);
+const scale=f=>`<div class="seg">${MOOD.map((e,i)=>`<button data-a="set" data-f="${f}" data-v="${i+1}" class="${gf(d,f)===i+1?'sel':''}" aria-label="${i+1} od 5">${e}</button>`).join('')}</div>`;
+const frow=(f,l)=>`<div class="frow"><span>${l}</span>${scale(f)}</div>`;
+return `<div class="daynav"><button data-a="day" data-n="-1" aria-label="Prejšnji dan">‹</button><div><b>${fmtD(d)}</b> ${isT?'<span class="mut">danes</span>':'<button class="sm" data-a="today">Danes</button>'}</div><button data-a="day" data-n="1" aria-label="Naslednji dan" ${isT?'disabled':''}>›</button></div>
+<div class="seg dts">${DT.map(([k,l,e])=>`<button data-a="setS" data-f="dt" data-v="${k}" class="${dt===k?'sel':''}">${e} ${l}</button>`).join('')}</div>
+<div class="card"><h2>Števci${isT?'':' <label class="tm nt">ura vnosa <input type="time" id="smt" value="12:00"></label>'}</h2>
+<div class="crow">${K.map((k,ix)=>{const a=sm.filter(r=>kOf(r)===k),last=a[a.length-1];return `<button class="ct" data-a="smoke" data-k="${k}" aria-label="${k} +1"><span class="cl"><i class="sw s${ix}"></i>${k}</span><b>${a.length}</b><span class="cm">${isT&&last?agoS(now()-last.t):'&nbsp;'}</span><span class="cm">prej: ${pv.filter(r=>kOf(r)===k).length}</span><span class="cp">+1</span></button>`}).join('')}</div>
+${sm.length?`<div class="chips">${sm.map(r=>`<span class="chip">${kOf(r)} ${hm(r.t)}<button data-a="unsmoke" data-id="${r.id}" aria-label="Izbriši">×</button></span>`).join('')}</div>`:''}</div>
+<div class="card"><h2>Spanje <span class="mut nt">${sc!=null?'po času '+fmtMin(sc):''}</span></h2>
+${isT?`<div class="acts" style="margin:0 0 10px"><button data-a="bedNow">🛏 V posteljo zdaj</button><button data-a="wakeNow">☀️ Vstal sem zdaj</button></div>`:''}
+<div class="row2"><label>V postelji<input type="time" data-f="bed" value="${gf(d,'bed')||''}"></label><label>Vstal<input type="time" data-f="wake" value="${gf(d,'wake')||''}"></label></div>
+<div class="lbl">Spanje po uri (pametna ura)</div><div class="hm"><input type="number" inputmode="numeric" min="0" max="16" id="swH" placeholder="h" value="${sw!=null?Math.floor(sw/60):''}"><span>h</span><input type="number" inputmode="numeric" min="0" max="59" id="swM" placeholder="min" value="${sw!=null?sw%60:''}"><span>min</span></div>
+${isT&&tb?`<p class="mut sm">Nocoj v postelji ob ${tb} (šteje k jutrišnjemu spanju).</p>`:''}</div>
+<div class="card"><h2>Počutje</h2><div class="lbl" style="margin-top:0">Zjutraj (ob zbujenju)</div>${frow('mP','Psihično')}${frow('mF','Fizično')}<div class="lbl">Zvečer</div>${frow('eP','Psihično')}${frow('eF','Fizično')}</div>
+<div class="card"><h2>Zdravje</h2><div class="chips">${HL.map(([k,l])=>`<button class="tg ${h.includes(k)?'sel':''}" data-a="health" data-k="${k}">${l}</button>`).join('')}</div>
+${h.includes('inj')?`<div class="lbl">Del telesa</div><div class="chips">${BODY.map(b=>`<button class="tg s2b ${inj.includes(b)?'sel':''}" data-a="inj" data-b="${b}">${b}</button>`).join('')}</div><input data-f="injC" placeholder="Komentar (npr. levo, pri teku)" value="${esc(gf(d,'injC')||'')}" style="margin-top:8px">`:''}
+${h.includes('drugo')?`<input data-f="hOther" placeholder="Kaj drugo?" value="${esc(gf(d,'hOther')||'')}" style="margin-top:8px">`:''}</div>
+<div class="card"><h2>Aktivnosti</h2><div class="lbl" style="margin-top:0">Šport (min)</div><div class="seg">${SPORT.map(([v,l])=>`<button data-a="set" data-f="sp" data-v="${v}" class="${sp===v?'sel':''}" style="font-size:15px">${l}</button>`).join('')}</div>
+<div class="chips" style="margin-top:10px"><button class="tg ${gf(d,'med')?'sel':''}" data-a="med">🧘 Meditacija</button></div></div>
+<div class="card"><h2>Hišna opravila <span class="mut nt">${csum?fmtM(csum):''}</span></h2>
+<div class="seg" style="margin-bottom:8px">${[5,30].map(m=>`<button data-a="step" data-v="${m}" class="${V.step===m?'sel':''}" style="font-size:14px">+${m} min / klik</button>`).join('')}</div>
+<div class="cgrid">${CHORES.map(c=>`<button class="chb ${tot[c]?'sel':''}" data-a="chore" data-ch="${c}">${c}<span>${tot[c]?fmtM(tot[c]):''}</span></button>`).join('')}</div>
+${ch.length?`<div class="chips" style="margin-top:10px">${ch.map(r=>`<span class="chip">${r.c} +${r.m}<button data-a="unchore" data-id="${r.id}" aria-label="Izbriši">×</button></span>`).join('')}</div>`:''}</div>
+<div class="card"><h2>Zapisek</h2><textarea data-f="note" rows="3" placeholder="…">${esc(gf(d,'note')||'')}</textarea></div>`}
+
+function dueLbl(k,td){return k===td?'danes':k===addD(td,1)?'jutri':k===addD(td,-1)?'včeraj':fmtD(k)}
+function row(c,r,td){const over=c==='todos'&&r.due&&r.due<td&&!r.done;
+return `<div class="item ${r.done?'done':''}"><button class="ck ${r.done?'on':''}" data-a="tg" data-c="${c}" data-id="${r.id}" aria-label="Označi">${r.done?'✓':''}</button><div class="txt" data-a="edit" data-c="${c}" data-id="${r.id}">${esc(r.text)}${r.due?` <span class="due ${over?'over':''}">${dueLbl(r.due,td)}</span>`:''}</div><button class="x" data-a="del" data-c="${c}" data-id="${r.id}" aria-label="Izbriši">×</button></div>`}
+
+function vOpravila(){const td=today(),inb=live('inbox').sort((a,b)=>a.c-b.c),all=live('todos'),open=all.filter(t=>!t.done).sort(byDue),
+done=all.filter(t=>t.done).sort((a,b)=>b.doneAt-a.doneAt).slice(0,30);
+return `${inb.length?`<div class="card inb"><h2>Nabiralnik <span class="mut">${inb.length}</span></h2>${inb.map(r=>`<div class="item" style="display:block"><div class="txt">${esc(r.text)}</div><div class="acts"><button data-a="inb2todo" data-id="${r.id}">→ Opravilo</button>${CATS.map(([k,l])=>`<button data-a="inb2shop" data-cat="${k}" data-id="${r.id}">→ ${l}</button>`).join('')}<button data-a="inbdel" data-id="${r.id}">Zavrzi</button></div></div>`).join('')}</div>`:''}
+<div class="card"><div class="add"><input id="tT" placeholder="Novo opravilo…" autocomplete="off" enterkeyhint="done"><input type="date" id="tD" aria-label="Rok"><button class="pri" data-a="addTodo" aria-label="Dodaj">+</button></div>
+<div class="quick"><button data-a="due" data-n="0">danes</button><button data-a="due" data-n="1">jutri</button><button data-a="due" data-n="">brez roka</button></div></div>
+<div class="card"><h2>Odprto${open.length?` <button class="sm" data-a="shareTodos">Deli</button>`:''}</h2>${open.length?open.map(r=>row('todos',r,td)).join(''):'<div class="empty">Ni odprtih opravil.</div>'}</div>
+${done.length?`<details class="card" id="doneD" ${V.doneOpen?'open':''}><summary>Opravljeno (${done.length})</summary>${done.map(r=>row('todos',r,td)).join('')}</details>`:''}`}
+
+function vNakupi(){const td=today(),c=V.cat,open=openShop(c),got=live('shop').filter(r=>r.done&&catOf(r)===c).sort((a,b)=>b.u-a.u),sug=suggestions(c);
+return `<div class="seg rng">${CATS.map(([k,l])=>{const n=openShop(k).length;return `<button data-a="cat" data-cat="${k}" class="${c===k?'sel':''}">${l}${n?` <span class="mut">${n}</span>`:''}</button>`}).join('')}</div>
+<div class="card"><div class="add"><input id="sT" placeholder="Dodaj (več z vejico)…" autocomplete="off" enterkeyhint="done"><button class="pri" data-a="addShop" aria-label="Dodaj">+</button></div>
+${sug.length?`<div class="lbl">Pogosto</div><div class="chips">${sug.map(x=>`<button class="tg" data-a="sug" data-t="${esc(x)}">+ ${esc(x)}</button>`).join('')}</div>`:''}</div>
+<div class="card"><h2>${CATN[c]}${open.length?` <button class="sm" data-a="shareShop">Deli</button>`:''}</h2>${open.length?open.map(r=>row('shop',r,td)).join(''):'<div class="empty">Seznam je prazen.</div>'}</div>
+${got.length?`<div class="card"><h2>V košarici <button class="sm" data-a="clearShop">Počisti</button></h2>${got.map(r=>row('shop',r,td)).join('')}</div>`:''}`}
+
+function vPregled(){const n=V.range,td=today(),from=addD(td,-(n-1)),ld=loggedDays(),cnt={},hr={},anyC=new Set(),chM={},chBy={};K.forEach(k=>{cnt[k]={};hr[k]=Array(24).fill(0)});
+live('smokes').forEach(r=>{const d=new Date(r.t),k=dk(d),c=kOf(r);if(!cnt[c])return;cnt[c][k]=(cnt[c][k]||0)+1;anyC.add(k);if(k>=from&&k<=td)hr[c][d.getHours()]++});
+live('chores').forEach(r=>{const k=dk(new Date(r.t));chM[k]=(chM[k]||0)+r.m;anyC.add(k);if(k>=from&&k<=td)chBy[r.c]=(chBy[r.c]||0)+r.m});
+const R=[];for(let i=n-1;i>=0;i--){const k=addD(td,-i),tr=anyC.has(k)||ld.has(k),c={};K.forEach(x=>c[x]=tr?(cnt[x][k]||0):null);
+R.push({k,tr,c,sl:sleepVal(k),ps:psy(k),ph:phy(k),f:['mP','mF','eP','eF'].map(f=>gf(k,f)),sp:tr?(gf(k,'sp')||0):null,med:tr?(gf(k,'med')?1:0):null,hw:tr?(chM[k]||0):null,dt:gf(k,'dt'),h:gf(k,'health')||[],inj:gf(k,'inj')||[],ho:gf(k,'hOther')})}
+const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null,nn=f=>R.map(f).filter(v=>v!=null),trk=R.filter(r=>r.tr),av=a=>avg(a.filter(v=>v!=null));
+const aSl=avg(nn(r=>r.sl)),aPs=avg(nn(r=>r.ps)),aPh=avg(nn(r=>r.ph)),aHw=avg(nn(r=>r.hw));
+const xl=R.map((r,i)=>{const back=n-1-i,d=pd(r.k);if(n===7)return DN[d.getDay()];return back%(n===30?7:15)===0?d.getDate()+'.'+(d.getMonth()+1)+'.':''});
+const T=i=>fmtD(R[i].k)+': ',dash=v=>v??'–';
+// counters: small multiples on one shared scale
+const csc=nice(Math.max(0,...K.flatMap(k=>R.map(r=>r.c[k]||0))),1),L=K.length-1;
+K.forEach((k,ix)=>CH.push({id:'cC'+ix,vals:R.map(r=>r.c[k]),xl:ix===L?xl:[],max:csc.max,step:csc.step,mini:1,h:ix===L?62:46,cls:'s'+ix,tip:i=>T(i)+(R[i].tr?k+' '+R[i].c[k]:'ni vnosa')}));
+CH.push({id:'cSl',vals:R.map(r=>r.sl==null?null:r.sl/60),xl,tip:i=>T(i)+(R[i].sl==null?'ni vnosa':fmtMin(R[i].sl))});
+CH.push({id:'cFe',type:'line',max:5,step:1,series:[{k:'Psih.',ix:5,vals:R.map(r=>r.ps)},{k:'Fiz.',ix:6,vals:R.map(r=>r.ph)}],xl,
+tip:i=>{const f=R[i].f;return T(i)+(f.some(v=>v!=null)?`psih. ${dash(f[0])}/${dash(f[2])} · fiz. ${dash(f[1])}/${dash(f[3])} (jutro/večer)`:'ni vnosa')}});
+CH.push({id:'cHw',vals:R.map(r=>r.hw),xl,int:1,h:120,tip:i=>T(i)+(R[i].hw==null?'ni vnosa':fmtM(R[i].hw))});
+CH.push({id:'cHr',type:'heat',rows:K.map(k=>({k,vals:hr[k]})),tip:(k,h,v)=>k+' '+pad(h)+':00–'+pad(h)+':59: '+v});
+const cb=Object.entries(chBy).sort((a,b)=>b[1]-a[1]),cbM=cb.length?cb[0][1]:1;
+const brk=cb.length?`<div class="brk">${cb.map(([c,m])=>`<span>${esc(c)}</span><i style="width:${(m/cbM*100).toFixed(1)}%"></i><span class="num">${fmtM(m)}</span>`).join('')}</div>`:'';
+// correlation matrix
+const cor=(fa,fb)=>{const p=R.filter(r=>fa(r)!=null&&fb(r)!=null).map(r=>[fa(r),fb(r)]);return[pearson(p),p.length]};
+const rowsC=[...K.map(k=>[k,r=>r.c[k]]),['Spanje',r=>r.sl],['Šport',r=>r.sp],['Meditacija',r=>r.med],['Hišna opr.',r=>r.hw]],colsC=[['Psih.',r=>r.ps],['Fiz.',r=>r.ph],['Spanje',r=>r.sl]],ns=[];
+const mat=`<div class="scroll"><table class="tb"><tr><th></th>${colsC.map(c=>`<th class="num">${c[0]}</th>`).join('')}</tr>${rowsC.map(([l,fa])=>`<tr><td>${l}</td>${colsC.map(([cl,fb])=>{if(cl===l)return '<td></td>';const[r,m]=cor(fa,fb);ns.push(m);return `<td class="num" title="n=${m}">${m>=5&&r!=null?(Math.abs(r)<.005?'':r<0?'−':'+')+Math.abs(r).toFixed(2).replace('.',','):'–'}</td>`}).join('')}</tr>`).join('')}</table></div>`;
+const dtT=DT.map(([k,l,e])=>{const rs=trk.filter(r=>r.dt===k);return `<tr><td>${e} ${l}</td><td class="num">${rs.length}</td>${K.map(x=>`<td class="num">${f1(av(rs.map(r=>r.c[x])))}</td>`).join('')}<td class="num">${f1(av(rs.map(r=>r.ps)))}</td><td class="num">${f1(av(rs.map(r=>r.sl==null?null:r.sl/60)))}</td><td class="num">${rs.length?Math.round(av(rs.map(r=>r.hw))):'–'}</td></tr>`}).join('');
+const hLbl=r=>r.h.map(x=>x==='drugo'?(r.ho||'drugo'):x==='inj'?'poškodba'+(r.inj.length?' ('+r.inj.join(', ')+')':''):({ok:'OK',virus:'virus',glava:'glavobol'})[x]).join(', ');
+const lgF=`<div class="lg"><span><i class="sw s5"></i>Psihično</span><span><i class="sw s6"></i>Fizično</span><span class="mut">povprečje jutro + večer</span></div>`;
+const card=(id,t,l)=>`<div class="card"><h2>${t}</h2>${l||''}<div class="chart" id="${id}" role="img" aria-label="${t}"></div></div>`;
+const tile=(v,l)=>`<div class="tile"><div class="tv">${v}</div><div class="tl">${l}</div></div>`;
+return `<div class="seg rng">${[7,30,90].map(x=>`<button data-a="range" data-n="${x}" class="${n===x?'sel':''}">${x} dni</button>`).join('')}</div>
+<div class="tiles t5">${K.map((k,ix)=>tile(f1(avg(nn(r=>r.c[k]))),`<i class="sw s${ix}"></i>${k}`)).join('')}</div>
+<div class="tiles t4">${tile(aSl==null?'–':f1(aSl/60)+' h','spanje')}${tile(f1(aPs),'psihično')}${tile(f1(aPh),'fizično')}${tile(R.filter(r=>r.h.some(x=>x!=='ok')).length,'dni zdr. težav')}</div>
+<div class="tiles">${tile(aHw==null?'–':Math.round(aHw)+' min','hišna opr. / dan')}${tile(R.filter(r=>r.sp>0).length,'dni s športom')}${tile(R.filter(r=>r.med).length,'dni meditacije')}</div>
+<p class="mut sm" style="margin:-2px 2px 10px">Števci: povprečje na dan. Dni z vnosom: ${trk.length} od ${n}. Povprečja samo čez dni z vnosom. Spanje: ura, sicer čas v postelji. Počutje 1–5.</p>
+<div class="card"><h2>Števci na dan</h2>${K.map((k,ix)=>`<div class="mini"><span class="ml"><i class="sw s${ix}"></i>${k}</span><div class="chart auto" id="cC${ix}" role="img" aria-label="${k} na dan"></div></div>`).join('')}</div>
+${card('cSl','Spanje (ure)')}${card('cFe','Počutje',lgF)}
+<div class="card"><h2>Hišna opravila (min / dan)</h2><div class="chart auto" id="cHw" role="img" aria-label="Hišna opravila"></div>${brk}</div>
+<div class="card"><h2>Števci po urah</h2><div class="chart auto" id="cHr" role="img" aria-label="Števci po urah"></div><p class="mut sm">Temneje = več (relativno znotraj vrstice). Dotik pokaže število.</p></div>
+<div class="card"><h2>Po tipu dneva (povprečja)</h2>${trk.some(r=>r.dt)?`<div class="scroll"><table class="tb"><tr><th></th><th class="num">dni</th>${K.map(k=>`<th class="num">${k}</th>`).join('')}<th class="num">psih.</th><th class="num">spanje</th><th class="num">hiš. min</th></tr>${dtT}</table></div>`:'<div class="empty">Označi tip dneva v dnevniku (Prosto / DOD / IJS).</div>'}</div>
+<div class="card"><h2>Povezave (isti dan)</h2>${mat}<p class="mut sm">Pearsonov r, prikazan pri n ≥ 5 (n = ${ns.length?Math.min(...ns)+'–'+Math.max(...ns):0} dni). Pri n &lt; 30 zelo nezanesljivo. Korelacija ni vzročnost.</p></div>
+<details class="card"><summary>Tabela po dnevih</summary>${trk.length?`<div class="scroll"><table class="tb"><tr><th>dan</th><th>tip</th>${K.map(k=>`<th class="num">${k}</th>`).join('')}<th class="num">spanje</th><th class="num">psih.</th><th class="num">fiz.</th><th class="num">šport</th><th>med.</th><th class="num">hiš.</th><th>zdravje</th></tr>${trk.slice().reverse().map(r=>{const d=pd(r.k);return `<tr><td>${d.getDate()}.${d.getMonth()+1}.</td><td>${r.dt?DTN[r.dt]:''}</td>${K.map(k=>`<td class="num">${r.c[k]}</td>`).join('')}<td class="num">${r.sl==null?'':f1(r.sl/60)}</td><td class="num">${r.ps==null?'':f1(r.ps)}</td><td class="num">${r.ph==null?'':f1(r.ph)}</td><td class="num">${r.sp?spL(r.sp):''}</td><td>${r.med?'✓':''}</td><td class="num">${r.hw||''}</td><td>${esc(hLbl(r))}</td></tr>`}).join('')}</table></div>`:'<div class="empty">Ni vnosov.</div>'}</details>`}
+
+// ---------- charts (single-series bars: title names it; multi-series lines: legend + direct end labels; hover/tap tooltip)
+function nice(m,int){if(!(m>0))m=1;const raw=m/4,p=10**Math.floor(Math.log10(raw)),f=raw/p;let s=(f<=1?1:f<=2?2:f<=5?5:10)*p;if(int)s=Math.max(1,s);return{max:Math.ceil(m/s-1e-9)*s,step:s}}
+function drawCharts(){CH.forEach(c=>c.type==='line'?drawLines(c):c.type==='heat'?drawHeat(c):drawChart(c))}
+// heatmap rows x 24 h; one hue, darker = more (relative within the row)
+function drawHeat(c){const el=document.getElementById(c.id);if(!el)return;
+const W=Math.max(240,el.clientWidth),pl=30,pr=2,pt=2,rh=18,g=3,pb=18,nr=c.rows.length,H=pt+nr*(rh+g)+pb,cw=(W-pl-pr)/24;
+let s=`<svg width="${W}" height="${H}" aria-hidden="true">`;
+c.rows.forEach((r,ri)=>{const mx=Math.max(1,...r.vals),y=pt+ri*(rh+g);s+=`<text class="ax" x="${pl-6}" y="${y+rh/2+3.5}" text-anchor="end">${r.k}</text>`;
+r.vals.forEach((v,h)=>{s+=`<rect class="hc${v?'':' z'}" x="${(pl+h*cw+1).toFixed(1)}" y="${y}" width="${(cw-2).toFixed(1)}" height="${rh}" rx="2"${v?` fill-opacity="${(.15+.85*v/mx).toFixed(2)}"`:''}/>`})});
+for(let h=0;h<24;h+=3)s+=`<text class="ax" x="${pl+(h+.5)*cw}" y="${H-5}" text-anchor="middle">${h}</text>`;
+s+=`<rect class="hx" x="0" y="0" width="${cw}" height="${rh}" rx="2" visibility="hidden"/>`;
+el.innerHTML=s+'</svg><div class="tip" hidden></div>';const svg=el.firstChild,hx=svg.querySelector('.hx'),tip=el.lastChild;
+const hide=()=>{tip.hidden=true;hx.setAttribute('visibility','hidden')};
+const mv=e=>{const b=svg.getBoundingClientRect(),h=Math.floor((e.clientX-b.left-pl)/cw),ri=Math.floor((e.clientY-b.top-pt)/(rh+g));if(h<0||h>23||ri<0||ri>=nr)return hide();
+const r=c.rows[ri],y=pt+ri*(rh+g);hx.setAttribute('x',pl+h*cw+1);hx.setAttribute('y',y);hx.setAttribute('width',cw-2);hx.setAttribute('visibility','visible');
+tip.hidden=false;tip.textContent=c.tip(r.k,h,r.vals[h]);const tw=tip.offsetWidth;tip.style.left=Math.min(Math.max(0,pl+(h+.5)*cw-tw/2),W-tw)+'px';tip.style.top=(y-28)+'px'};
+svg.addEventListener('pointermove',mv);svg.addEventListener('pointerdown',mv);svg.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hide()})}
+function yAxis(sc,Y,pl,W,pr,mini){let s='';const vs=[];if(mini)vs.push(0,sc.max);else for(let v=0;v<=sc.max+1e-9;v+=sc.step)vs.push(v);for(const v of vs){const y=Y(v);if(v>0)s+=`<line class="gr" x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}"/>`;s+=`<text class="ax" x="${pl-5}" y="${y+3.5}" text-anchor="end">${String(+v.toFixed(1)).replace('.',',')}</text>`}return s}
+function xLabels(xl,X,W,H){let s='';xl.forEach((t,i)=>{if(!t)return;const x=X(i),w=t.length*5.5,a=x-w/2<0?'start':x+w/2>W?'end':'middle';s+=`<text class="ax" x="${a==='start'?0:a==='end'?W:x}" y="${H-5}" text-anchor="${a}">${t}</text>`});return s}
+function hover(el,svg,n,pl,W,pr,idx,X,show,tipF){const tip=el.lastChild;
+const hide=()=>{tip.hidden=true;show(-1)};
+const mv=e=>{const mx=e.clientX-svg.getBoundingClientRect().left,i=idx(mx);if(i<0||i>=n)return hide();show(i);tip.hidden=false;tip.textContent=tipF(i);
+const tw=tip.offsetWidth;tip.style.left=Math.min(Math.max(0,X(i)-tw/2),W-tw)+'px'};
+svg.addEventListener('pointermove',mv);svg.addEventListener('pointerdown',mv);svg.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hide()})}
+function drawChart(c){const el=document.getElementById(c.id);if(!el)return;
+const W=Math.max(200,el.clientWidth),H=c.h||150,pl=26,pr=2,pt=c.mini?6:10,pb=c.xl.some(Boolean)?20:4,iw=W-pl-pr,ih=H-pt-pb,n=c.vals.length,vs=c.vals.filter(v=>v!=null);
+const sc=c.max?{max:c.max,step:c.step}:nice(Math.max(0,...vs),c.int),bw=iw/n,gap=bw>8?2:bw>3?1:.5,r=Math.min(4,(bw-gap)/2),base=pt+ih,Y=v=>base-v/sc.max*ih,X=i=>pl+(i+.5)*bw;
+let s=`<svg width="${W}" height="${H}" aria-hidden="true">`+yAxis(sc,Y,pl,W,pr,c.mini)+`<rect class="hl" x="0" y="${pt}" width="${bw}" height="${ih}" visibility="hidden"/>`;
+c.vals.forEach((v,i)=>{if(v==null||v<=0)return;const x=pl+i*bw+gap/2,w=bw-gap,h=Math.min(v,sc.max)/sc.max*ih,y=base-h,rr=Math.min(r,h);
+s+=`<path class="b ${c.cls||''}" d="M${x},${base}V${y+rr}Q${x},${y} ${x+rr},${y}H${x+w-rr}Q${x+w},${y} ${x+w},${y+rr}V${base}Z"/>`});
+s+=`<line class="bl" x1="${pl}" x2="${W-pr}" y1="${base}" y2="${base}"/>`+xLabels(c.xl,X,W,H);
+el.innerHTML=s+'</svg><div class="tip" hidden></div>';const svg=el.firstChild,hl=svg.querySelector('.hl');
+hover(el,svg,n,pl,W,pr,mx=>Math.floor((mx-pl)/bw),X,i=>{if(i<0)hl.setAttribute('visibility','hidden');else{hl.setAttribute('x',pl+i*bw);hl.setAttribute('visibility','visible')}},c.tip)}
+function drawLines(c){const el=document.getElementById(c.id);if(!el)return;
+const W=Math.max(240,el.clientWidth),H=160,pl=26,pr=26,pt=10,pb=20,iw=W-pl-pr,ih=H-pt-pb,n=c.xl.length,base=pt+ih,
+sc=c.max?{max:c.max,step:c.step}:nice(Math.max(0,...c.series.flatMap(s=>s.vals).filter(v=>v!=null)),c.int),st=n>1?iw/(n-1):0,X=i=>pl+(n>1?i*st:iw/2),Y=v=>base-Math.min(v,sc.max)/sc.max*ih;
+let s=`<svg width="${W}" height="${H}" aria-hidden="true">`+yAxis(sc,Y,pl,W,pr)+`<line class="bl" x1="${pl}" x2="${W-pr}" y1="${base}" y2="${base}"/><line class="xh" x1="0" x2="0" y1="${pt}" y2="${base}" visibility="hidden"/>`;
+const ends=[];
+c.series.forEach(se=>{let d='',dots='',li=-1;se.vals.forEach((v,i)=>{if(v==null)return;const p=se.vals[i-1],nx=se.vals[i+1];d+=(p==null?'M':'L')+X(i).toFixed(1)+','+Y(v).toFixed(1);
+if(p==null&&nx==null)dots+=`<circle class="dt s${se.ix}" cx="${X(i)}" cy="${Y(v)}" r="4"/>`;li=i});
+if(d)s+=`<path class="ln s${se.ix}" d="${d}"/>`+dots;if(li>=0)ends.push({k:se.k,x:X(li)+7,y:Y(se.vals[li])})});
+ends.sort((a,b)=>a.y-b.y);for(let i=1;i<ends.length;i++)if(ends[i].y-ends[i-1].y<11)ends[i].y=ends[i-1].y+11;
+for(let i=ends.length-1;i>=0;i--){const lim=i===ends.length-1?base-2:ends[i+1].y-11;if(ends[i].y>lim)ends[i].y=lim}
+ends.forEach(e=>s+=`<text class="dl" x="${Math.min(e.x,W-2-e.k.length*6.5)}" y="${e.y+4}">${e.k}</text>`);
+s+=xLabels(c.xl,X,W,H);el.innerHTML=s+'</svg><div class="tip" hidden></div>';const svg=el.firstChild,xh=svg.querySelector('.xh');
+hover(el,svg,n,pl,W,pr,mx=>mx<pl-st/2||mx>W-pr+st/2?-1:Math.max(0,Math.min(n-1,Math.round((mx-pl)/(st||1)))),X,i=>{if(i<0)xh.setAttribute('visibility','hidden');else{xh.setAttribute('x1',X(i));xh.setAttribute('x2',X(i));xh.setAttribute('visibility','visible')}},c.tip)}
+
+// ---------- share / export / import
+async function share(text){if(navigator.share){try{await navigator.share({text});return}catch(e){if(e.name==='AbortError')return}}
+openSheet(`<h3>Deli</h3><textarea rows="8" readonly>${esc(text)}</textarea><div class="acts"><a class="btn pri" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">WhatsApp</a><button data-a="copy">Kopiraj</button><button data-a="closeSheet">Zapri</button></div>`)}
+async function copyTA(){const ta=$('#sheetIn textarea');if(!ta)return;try{await navigator.clipboard.writeText(ta.value)}catch(e){ta.select();document.execCommand('copy')}toast('Kopirano')}
+function exportFile(name,data,type){try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}catch(e){}
+const o=$('#expOut');if(o)o.innerHTML=`<p class="mut sm">Če se prenos ni začel, kopiraj spodnje:</p><textarea rows="5" readonly>${esc(data)}</textarea><div class="acts"><button data-a="copy">Kopiraj</button></div>`}
+function csv(){const days=new Set(loggedDays());live('smokes').concat(live('chores')).forEach(r=>days.add(dk(new Date(r.t))));const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
+const out=['datum,'+K.join(',')+','+K.map(k=>'cas_'+k).join(',')+',tip_dneva,hisna_min,hisna_opis,v_postelji,vstal,spanje_cas_h,spanje_ura_h,psih_jutro,fiz_jutro,psih_vecer,fiz_vecer,zdravje,poskodba,poskodba_opis,zdravje_drugo,sport_min,meditacija,zapisek'];
+[...days].sort().forEach(d=>{const sm=smokesOn(d),sc=sleepCalc(d),sw=gf(d,'sw'),by=k=>sm.filter(r=>kOf(r)===k),sp=gf(d,'sp');
+out.push([d,...K.map(k=>by(k).length),...K.map(k=>q(by(k).map(r=>hm(r.t)).join(' '))),gf(d,'dt')?DTN[gf(d,'dt')]:'',(()=>{const c=choresOn(d);return c.reduce((s,r)=>s+r.m,0)+','+q(Object.entries(c.reduce((o,r)=>(o[r.c]=(o[r.c]||0)+r.m,o),{})).map(([k,v])=>k+' '+v).join('; '))})(),gf(d,'bed')||'',gf(d,'wake')||'',sc==null?'':(sc/60).toFixed(2),sw==null?'':(sw/60).toFixed(2),
+...['mP','mF','eP','eF'].map(f=>gf(d,f)??''),q((gf(d,'health')||[]).join(' ')),q((gf(d,'inj')||[]).join('; ')),q(gf(d,'injC')),q(gf(d,'hOther')),sp?spL(sp):'',gf(d,'med')?1:'',q(gf(d,'note'))].join(','))});
+return '﻿'+out.join('\n')}
+function importFile(f){if(!f)return;f.text().then(t=>{const d=JSON.parse(t);if(!d||!COLS.some(c=>d[c]&&typeof d[c]==='object'))throw 0;const b=count();S=merge(S,d);flush();closeSheet();render();toast('Uvoženo, +'+(count()-b)+' zapisov')}).catch(()=>toast('Ni veljavna datoteka'))}
+const settingsHTML=()=>`<h3>Nastavitve</h3><p class="mut">Podatki so samo v tem brskalniku (${count()} zapisov). Sinhronizacije še ni – redno izvozi kopijo.</p>
+<div class="stack"><button data-a="expJson">Izvozi vse (JSON)</button><button data-a="expCsv">Izvozi dnevnik (CSV)</button><label class="btn">Uvozi JSON (združi z obstoječim)<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="danger" data-a="wipe">Izbriši vse podatke</button></div><div id="expOut"></div>
+<h3 style="margin-top:18px">Sinhronizacija (GitHub)</h3><p class="mut sm" style="margin-bottom:8px">Zasebni repozitorij + fine-grained žeton (samo ta repozitorij, Contents: Read and write). Žeton ostane samo na tej napravi in ni v izvozu.</p>
+<div class="stack"><label>Lastnik<input id="gO" value="${esc(G.owner||'kouszeg')}" autocapitalize="off"></label><label>Repozitorij (zaseben!)<input id="gR" value="${esc(G.repo||'pomocnik-data')}" autocapitalize="off"></label>
+<label>Žeton<input id="gT" type="password" placeholder="${G.token?'(shranjen – pusti prazno)':'github_pat_…'}" autocomplete="off"></label></div>
+<div class="acts"><button class="pri" data-a="gSave">Shrani in sinhroniziraj</button>${gOK()?'<button data-a="gOff">Izklopi</button>':''}</div>
+<p class="mut sm">${gOK()?(SY.state==='err'?'Napaka: '+esc(SY.msg):SY.t?'Zadnja sinhronizacija: '+hm(SY.t):'Še ni sinhronizirano.'):'Izklopljeno – podatki samo na tej napravi.'}</p>
+<div class="acts"><button data-a="closeSheet">Zapri</button></div>`;
+
+// ---------- GitHub sync (optional): one JSON file in a private repo; per-record last-write-wins merge; retries on sha conflict
+const GKEY='pomocnik.gh';
+let G=(()=>{try{return JSON.parse(st.get(GKEY))||{}}catch(e){return{}}})();
+const gOK=()=>!!(G.owner&&G.repo&&G.token);
+const SY={busy:false,again:false,dirty:false,t:0,state:'',msg:'',tm:0};
+const b64enc=s=>{const b=new TextEncoder().encode(s);let x='';for(let i=0;i<b.length;i+=32768)x+=String.fromCharCode.apply(null,b.subarray(i,i+32768));return btoa(x)};
+const b64dec=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+const gUrl=()=>'https://api.github.com/repos/'+encodeURIComponent(G.owner)+'/'+encodeURIComponent(G.repo)+'/contents/'+(G.path||'data.json').split('/').map(encodeURIComponent).join('/');
+const gH=x=>({Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json',...x});
+const gErr=(r,w)=>new Error(r.status===401?'neveljaven ali potekel žeton (401)':r.status===403||(w&&r.status===404)?'žeton nima pravic za ta repozitorij ('+r.status+')':r.status===404?'repozitorij ne obstaja (404)':(w?'pisanje ':'branje ')+r.status);
+async function gGet(){const r=await fetch(gUrl(),{headers:gH(),cache:'no-store'});
+if(r.status===404){const rr=await fetch('https://api.github.com/repos/'+encodeURIComponent(G.owner)+'/'+encodeURIComponent(G.repo),{headers:gH(),cache:'no-store'});if(!rr.ok)throw gErr(rr);return{sha:null,data:null}}
+if(!r.ok)throw gErr(r);const j=await r.json();let t;
+if(j.content&&j.encoding==='base64')t=b64dec(j.content);else{const r2=await fetch(gUrl(),{headers:gH({Accept:'application/vnd.github.raw+json'}),cache:'no-store'});if(!r2.ok)throw gErr(r2);t=await r2.text()}
+return{sha:j.sha,data:t.trim()?JSON.parse(t):null}}
+async function gPut(d,sha){const body={message:'sync '+(/Android/i.test(navigator.userAgent)?'android':'pc')+' '+new Date().toISOString().slice(0,16),content:b64enc(JSON.stringify(d))};if(sha)body.sha=sha;
+const r=await fetch(gUrl(),{method:'PUT',headers:gH({'Content-Type':'application/json'}),body:JSON.stringify(body)});if(r.status===409||r.status===422)return false;if(!r.ok)throw gErr(r,1);return true}
+const differs=(m,d)=>COLS.some(c=>Object.entries(m[c]).some(([id,r])=>!(d[c]&&d[c][id])||(d[c][id].u||0)!==(r.u||0)));
+function sStat(s,m){SY.state=s;SY.msg=m||'';const b=$('#sy');if(!b)return;b.hidden=!gOK();b.className='sy '+s;b.textContent={ok:'✓',pend:'↑',busy:'⟳',err:'⚠'}[s]||'⟳';b.title=s==='err'?'Napaka: '+SY.msg:s==='ok'?'Sinhronizirano '+hm(SY.t):'Sinhronizacija'}
+function schedSync(ms){clearTimeout(SY.tm);SY.tm=setTimeout(sync,ms);if(!SY.busy&&SY.state!=='err')sStat('pend')}
+async function sync(){if(!gOK())return;if(SY.busy){SY.again=true;return}clearTimeout(SY.tm);SY.busy=true;SY.dirty=false;sStat('busy');
+try{let ok=false,changed=false;for(let a=0;a<4&&!ok;a++){const{sha,data}=await gGet(),rem=data&&typeof data==='object'?merge(empty(),data):null,m=rem?merge(rem,S):merge(empty(),S),prev=S;
+S=merge(S,m);if(differs(S,prev))changed=true;ok=rem&&!differs(m,rem)?true:await gPut(m,sha)}
+if(!ok)throw new Error('konflikt, poskusi znova');flush();SY.t=now();sStat('ok');
+if(changed){const a=document.activeElement;if(!a||!/^(INPUT|TEXTAREA)$/.test(a.tagName))render()}}
+catch(e){sStat('err',e.message==='Failed to fetch'?'ni povezave':e.message)}
+finally{SY.busy=false;if(SY.again||SY.dirty){SY.again=false;schedSync(3000)}}}
+
+// ---------- events
+const A={
+day:b=>{const nd=addD(V.day,+b.dataset.n);if(nd<=today()){V.day=nd;render()}},
+today:()=>{V.day=today();render()},
+smoke:b=>{let t=now();if(V.day!==today()){const d=pd(V.day),[h,m]=(($('#smt')||{}).value||'12:00').split(':').map(Number);d.setHours(h,m);t=d.getTime()}put('smokes',{id:uid(),t,k:b.dataset.k});navigator.vibrate&&navigator.vibrate(15);render()},
+unsmoke:(b,id)=>{const r=S.smokes[id];if(r){r.del=1;put('smokes',r);render()}},
+setS:b=>{const f=b.dataset.f,v=b.dataset.v;sf(V.day,f,gf(V.day,f)===v?null:v);render()},
+step:b=>{V.step=+b.dataset.v;render()},
+chore:b=>{put('chores',{id:uid(),t:V.day===today()?now():pd(V.day).setHours(12,0,0,0),c:b.dataset.ch,m:V.step});navigator.vibrate&&navigator.vibrate(15);render()},
+unchore:(b,id)=>{const r=S.chores[id];if(r){r.del=1;put('chores',r);render()}},
+set:b=>{const f=b.dataset.f,v=+b.dataset.v;sf(V.day,f,gf(V.day,f)===v?null:v);render()},
+// bed time after noon belongs to the next day's sleep (sleep is filed under the day you wake up)
+bedNow:()=>{const d=new Date(),t=hm(d.getTime()),day=d.getHours()>=12?addD(today(),1):today();sf(day,'bed',t);toast('V postelji ob '+t+(day!==today()?' (šteje k jutrišnjemu spanju)':''));render()},
+wakeNow:()=>{const t=hm(now());sf(today(),'wake',t);toast('Vstal ob '+t);render()},
+health:b=>{const k=b.dataset.k;let h=[...(gf(V.day,'health')||[])];if(k==='ok')h=h.includes('ok')?[]:['ok'];else{h=h.filter(x=>x!=='ok');h=h.includes(k)?h.filter(x=>x!==k):[...h,k]}sf(V.day,'health',h);render()},
+inj:b=>{const p=b.dataset.b;let a=[...(gf(V.day,'inj')||[])];a=a.includes(p)?a.filter(x=>x!==p):[...a,p];sf(V.day,'inj',a);render()},
+med:()=>{sf(V.day,'med',gf(V.day,'med')?null:true);render()},
+due:b=>{$('#tD').value=b.dataset.n===''?'':addD(today(),+b.dataset.n)},
+addTodo:()=>{const i=$('#tT'),t=i.value.trim();if(!t)return i.focus();addTodos([clean(t)],$('#tD').value);render();$('#tT').focus()},
+addShop:()=>{const i=$('#sT'),t=i.value.trim();if(!t)return i.focus();if(!addShop(lines(t,true),V.cat))toast('Že na seznamu');render();$('#sT').focus()},
+cat:b=>{V.cat=b.dataset.cat;render()},
+eCat:b=>document.querySelectorAll('#sheetIn [data-a=eCat]').forEach(x=>x.classList.toggle('sel',x===b)),
+saveEdit:(b,id)=>{const c=b.dataset.c,r=S[c][id],t=$('#eT').value.trim();if(t)r.text=t;else r.del=1;const d=$('#eD'),k=$('#sheetIn [data-a=eCat].sel');if(d)r.due=d.value||null;if(k)r.cat=k.dataset.cat;put(c,r);closeSheet();render()},
+tg:(b,id)=>{const c=b.dataset.c,r=S[c][id];r.done=!r.done;if(c==='todos')r.doneAt=r.done?now():null;put(c,r);render()},
+del:(b,id)=>{const c=b.dataset.c,r=S[c][id];if(r){r.del=1;put(c,r)}closeSheet();render()},
+edit:(b,id)=>{const c=b.dataset.c,r=S[c][id];openSheet(`<h3>Uredi</h3><textarea id="eT" rows="3">${esc(r.text)}</textarea>${c==='todos'?`<label style="margin-top:8px">Rok<input type="date" id="eD" value="${r.due||''}"></label>`:`<div class="seg" style="margin-top:8px">${CATS.map(([k,l])=>`<button data-a="eCat" data-cat="${k}" class="${catOf(r)===k?'sel':''}" style="font-size:14px">${l}</button>`).join('')}</div>`}<div class="acts"><button class="pri" data-a="saveEdit" data-c="${c}" data-id="${id}">Shrani</button><button data-a="del" data-c="${c}" data-id="${id}" class="danger">Izbriši</button><button data-a="closeSheet">Prekliči</button></div>`)},
+inb2todo:(b,id)=>{const r=S.inbox[id];addTodos(lines(r.text,false));r.del=1;put('inbox',r);toast('Dodano med opravila');render()},
+inb2shop:(b,id)=>{const r=S.inbox[id],c=b.dataset.cat,n=addShop(lines(r.text,true),c);r.del=1;put('inbox',r);toast(CATN[c]+': dodano '+n);render()},
+inbdel:(b,id)=>{const r=S.inbox[id];r.del=1;put('inbox',r);render()},
+sug:b=>{addShop([b.dataset.t],V.cat);render()},
+clearShop:()=>{live('shop').filter(r=>r.done&&catOf(r)===V.cat).forEach(r=>{r.del=1;put('shop',r)});render()},
+shareShop:()=>share('Nakupi – '+CATN[V.cat]+':\n'+openShop(V.cat).map(r=>'• '+r.text).join('\n')),
+shareTodos:()=>{const td=today();share('Opravila:\n'+live('todos').filter(t=>!t.done).sort(byDue).map(t=>'• '+t.text+(t.due?' ('+dueLbl(t.due,td)+')':'')).join('\n'))},
+range:b=>{V.range=+b.dataset.n;render()},
+settings:()=>openSheet(settingsHTML()),
+syncNow:()=>{sync().then(()=>toast(SY.state==='ok'?'Sinhronizirano':'Napaka: '+SY.msg))},
+gSave:()=>{const tok=$('#gT').value.trim()||G.token;G={owner:$('#gO').value.trim(),repo:$('#gR').value.trim(),path:'data.json',token:tok};st.set(GKEY,JSON.stringify(G));
+if(!gOK())return toast('Manjka lastnik, repozitorij ali žeton');sync().then(()=>{toast(SY.state==='ok'?'Sinhronizirano':'Napaka: '+SY.msg);if($('#gO'))openSheet(settingsHTML())})},
+gOff:()=>{G={};st.set(GKEY,'{}');sStat('');closeSheet();toast('Sinhronizacija izklopljena (podatki ostanejo lokalno)')},
+closeSheet:()=>closeSheet(),
+copy:()=>copyTA(),
+expJson:()=>exportFile('pomocnik-'+today()+'.json',JSON.stringify(S),'application/json'),
+expCsv:()=>exportFile('dnevnik-'+today()+'.csv',csv(),'text/csv'),
+wipe:b=>{if(b.dataset.armed){S=empty();clearTimeout(saveT);st.set(KEY,JSON.stringify(S));closeSheet();render();toast('Vsi podatki izbrisani')}else{b.dataset.armed=1;b.textContent='Res izbrišem vse? Tapni še enkrat.'}}
+};
+document.addEventListener('click',e=>{const t=e.target;
+if(t.id==='sheet')return closeSheet();
+const nb=t.closest('nav button[data-tab]');if(nb){V.tab=nb.dataset.tab;render();scrollTo(0,0);return}
+if(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))return;
+const b=t.closest('[data-a]');if(!b)return;
+const f=A[b.dataset.a];if(f){e.preventDefault();f(b,b.dataset.id)}});
+document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.isComposing)return;const id=e.target.id;if(id==='tT'||id==='tD'){e.preventDefault();A.addTodo()}else if(id==='sT'){e.preventDefault();A.addShop()}});
+document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f;if(f&&(t.tagName==='TEXTAREA'||t.type==='text'))sf(V.day,f,t.value)});
+document.addEventListener('change',e=>{const t=e.target;
+if(t.dataset.f&&t.type==='time'){sf(V.day,t.dataset.f,t.value||null);render()}
+else if(t.id==='swH'||t.id==='swM'){const H=$('#swH').value,M=$('#swM').value;sf(V.day,'sw',H===''&&M===''?null:Math.max(0,Math.round((+H||0)*60+(+M||0))))}
+else if(t.id==='imp')importFile(t.files[0])});
+document.addEventListener('toggle',e=>{if(e.target.id==='doneD')V.doneOpen=e.target.open},true);
+addEventListener('visibilitychange',()=>{if(document.hidden){flush();if(SY.dirty)sync()}else{const t=today();if(t!==V.last){if(V.day===V.last)V.day=t;V.last=t;render()}sync()}});
+addEventListener('online',()=>sync());setInterval(()=>{if(!document.hidden)sync()},300000);
+addEventListener('pagehide',flush);
+addEventListener('storage',e=>{if(e.key!==KEY)return;try{const d=JSON.parse(e.newValue);S=d?merge(S,d):empty();const a=document.activeElement;if(!a||!/^(INPUT|TEXTAREA)$/.test(a.tagName))render()}catch(x){}});
+let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(drawCharts,150)});
+
+// ---------- incoming share (?title=&text=&url=) -> inbox. Used later by the PWA share_target on Android.
+try{const q=new URLSearchParams(location.search),sh=[q.get('title'),q.get('text'),q.get('url')].filter(Boolean).join('\n').trim();
+if(sh){put('inbox',{id:uid(),text:sh,c:now()});flush();V.tab='opravila';history.replaceState(null,'',location.pathname)}}catch(e){}
+render();sStat('');sync();
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
