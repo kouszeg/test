@@ -154,6 +154,8 @@ nav{border-top:1px solid var(--line)}nav .i{filter:none;opacity:1;display:block;
 @media (prefers-color-scheme:dark){:root{--plus:#45c445;--plusBg:rgba(12,163,12,.2);--minus:#ef7474;--minusBg:rgba(230,103,103,.16)}}
 .pm .mn,.whs .mn{background:var(--minusBg);color:var(--minus)}.pm .pl,.whs .pl{background:var(--plusBg);color:var(--plus)}
 .chb::before{color:var(--minus)!important}.chb::after{color:var(--plus)!important}
+.grp{display:flex;flex-direction:column;align-items:center;padding:7px 4px;font-size:13px;line-height:1.25}.grp span{font-size:11px;color:var(--acc);min-height:14px}
+.cgrid.sub{margin-top:6px;padding:6px;background:var(--fill);border-radius:12px}.sub .chb{background:var(--card)}
 .dtrow{display:flex;gap:6px;align-items:stretch;margin-bottom:6px}.dtrow .dts{flex:1;margin:0}
 .whs{display:flex;align-items:center;gap:3px}.whs b{min-width:44px;text-align:center;font-size:14px;font-variant-numeric:tabular-nums}.whs button{width:30px;padding:6px 0;font-size:17px;font-weight:700}
 .md button{font-size:13px}
@@ -161,7 +163,7 @@ nav{border-top:1px solid var(--line)}nav .i{filter:none;opacity:1;display:block;
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v2.2</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
+<header><h1>Daily <small class="ver">v2.3</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>Dnevnik</button>
@@ -186,7 +188,7 @@ MODES=[['chill','Chill','😌'],['normal','Normal','🙂'],['busy','Busy','⚡']
 DT=[['f','Fraj','🏖'],['d','DOD','🏠'],['i','IJS','🏢']],DTN={f:'Fraj',d:'DOD',i:'IJS'},
 CHORES=['Sesanje','Posoda','Pomivalni stroj','Perilo','Likanje','Kuhanje','Kopalnica','Prah','Smeti','Okolica','Drugo'],
 K=['SM','BO','JO','CF','WD'],STEPS=[5,30,-5,-30],
-DEFL={chores:['Kuhinja: smeti, sesanje, zajtrk, kosilo, večerja, pult, omare, fronte, generalno','Kopalnica: umivalnik, WC, tuš / kad, ogledalo, tla, generalno','Dnevna soba: sesanje, prah, pospravljanje, generalno','Spalnica: postelja, sesanje, prah, pospravljanje','Perilo: pranje, obešanje, zlaganje, likanje','Zunaj: smeti, okolica','Klet: pospravljanje, drva, sesanje','Podstreha: pospravljanje, sesanje','Avto: servis, pospravljanje, pranje','Popravila: hiša, naprave, kolo, drugo','Ostalo: nakupovanje, drugo'],acts:['Sprehod','Šport','Meditacija','Kitara'],health:['Virus / prehlad','Glavobol'],body:BODY,notecats:['Splošno','Delo','Ideje','Povezave']},
+DEFL={chores:['Kuhinja: smeti, sesanje, zajtrk, kosilo, večerja, pult, omare, fronte, generalno','Kopalnica: umivalnik, WC, tuš / kad, ogledalo, tla, generalno','Dnevna soba: sesanje, prah, pospravljanje, generalno','Spalnica: postelja, sesanje, prah, pospravljanje','Perilo: pranje, obešanje, zlaganje, likanje','Zunaj: smeti, okolica','Klet: pospravljanje, drva, sesanje','Podstreha: pospravljanje, sesanje','Avto: servis, pospravljanje, pranje','Popravila: hiša, naprave, kolo, drugo','Ostalo: nakupovanje, drugo'],acts:['Sprehod','Šport: gym, tek, kolo, basket, trekking, surf, smučanje','Meditacija','Kitara'],health:['Virus / prehlad','Glavobol'],body:BODY,notecats:['Splošno','Delo','Ideje','Povezave']},
 HKEY={'Virus / prehlad':'virus','Glavobol':'glava'},HLAB={ok:'OK',virus:'Virus / prehlad',glava:'Glavobol',inj:'Poškodba',drugo:'Drugo'},OLDK={S:'SM',B:'BO',J:'JO'},kOf=r=>OLDK[r.k]||r.k||'SM';
 const mem={},st={get:k=>{try{return localStorage.getItem(k)}catch(e){return k in mem?mem[k]:null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}};
 const empty=()=>{const d={v:1};COLS.forEach(c=>d[c]={});return d};
@@ -248,7 +250,7 @@ function openSheet(h){$('#sheetIn').innerHTML=h;$('#sheet').classList.add('open'
 function closeSheet(){$('#sheet').classList.remove('open');$('#sheetIn').innerHTML=''}
 
 // ---------- views
-const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',sH:5,sA:5,room:null,ncat:'*',nq:'',ndraft:'',nopen:new Set(),shareId:null,pv:'stat',hq:'',hn:30};
+const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',sH:5,sA:5,room:null,agrp:null,ncat:'*',nq:'',ndraft:'',nopen:new Set(),shareId:null,pv:'stat',hq:'',hn:30};
 let CH=[],LOCK=false;
 function render(){if(LOCK)return;CH=[];$('#main').innerHTML=({dnevnik:vDnevnik,opravila:vOpravila,nakupi:vNakupi,zaznamki:vZaznamki,pregled:vPregled})[V.tab]();
 document.querySelectorAll('.note.clp').forEach(el=>{if(el.scrollHeight>el.clientHeight+4&&el.nextElementSibling)el.nextElementSibling.hidden=false});
@@ -271,7 +273,7 @@ ${isT&&tb?`<p class="mut sm">Nocoj v postelji ob ${tb} (šteje k jutrišnjemu sp
 <div class="card"><h2>Zdravje<span class="hh"><button class="sm" data-a="editList" data-l="health" aria-label="Uredi seznam">✎</button></span></h2><div class="chips">${healthOpts(h).map(([k,l])=>`<button class="tg ${h.includes(k)?'sel':''}" data-a="health" data-k="${esc(k)}">${esc(l)}</button>`).join('')}</div>
 ${h.includes('inj')?`<div class="lbl" style="display:flex;justify-content:space-between;align-items:center">Del telesa <button class="sm" data-a="editList" data-l="body" aria-label="Uredi seznam">✎</button></div><div class="chips">${[...new Set([...getList('body'),...inj])].map(b=>`<button class="tg s2b ${inj.includes(b)?'sel':''}" data-a="inj" data-b="${esc(b)}">${esc(b)}</button>`).join('')}</div><input data-f="injC" placeholder="Komentar (npr. levo, pri teku)" value="${esc(gf(d,'injC')||'')}" style="margin-top:8px">`:''}
 ${h.includes('drugo')?`<input data-f="hOther" placeholder="Kaj drugo?" value="${esc(gf(d,'hOther')||'')}" style="margin-top:8px">`:''}</div>
-${minCard('Aktivnosti','acts','act',actsOn(d),V.sA,'stepA',false,`<div class="lbl">Koraki (z ure / telefona)</div><input type="number" inputmode="numeric" min="0" id="stepsI" placeholder="npr. 8500" value="${gf(d,'steps')??''}">`)}
+${actCard(actsOn(d),`<div class="lbl">Koraki (z ure / telefona)</div><input type="number" inputmode="numeric" min="0" id="stepsI" placeholder="npr. 8500" value="${gf(d,'steps')??''}">`)}
 ${choreCard(ch)}
 <div class="card"><h2>Zapisek</h2><textarea data-f="note" rows="3" placeholder="…">${esc(gf(d,'note')||'')}</textarea></div>`}
 
@@ -287,6 +289,15 @@ return `<div class="card"><h2>Hišna opravila<span class="hh"><span class="mut n
 <div class="cgrid" style="margin-top:8px">${(G[room]||[]).map(x=>`<button class="chb ${tot[x.c]?'sel':''}" data-a="chore" data-ch="${esc(x.c)}">${esc(x.l)}<span>${tot[x.c]?fmtM(tot[x.c]):''}</span></button>`).join('')}</div></div>`}
 function healthOpts(h){const fixed=['OK','Poškodba','Drugo'],o=[['ok','OK'],...getList('health').filter(l=>!fixed.includes(l)).map(l=>[HKEY[l]||l,l]),['inj','Poškodba'],['drugo','Drugo']];
 h.forEach(k=>{if(!o.some(x=>x[0]===k))o.splice(o.length-2,0,[k,HLAB[k]||k])});return o}
+function actEntries(){const E=[];getList('acts').forEach(line=>{const i=line.indexOf(':');if(i<0)E.push({l:line.trim(),c:line.trim()});else{const g=line.slice(0,i).trim();E.push({g,items:line.slice(i+1).split(',').map(x=>x.trim()).filter(Boolean).map(it=>({l:it,c:g+' · '+it}))})}});return E}
+const actTop=c=>c.split(' · ')[0];
+function actCard(recs,extra){const E=actEntries(),tot={},top={};recs.forEach(r=>{tot[r.c]=(tot[r.c]||0)+r.m;top[actTop(r.c)]=(top[actTop(r.c)]||0)+r.m});
+const known=new Set(E.flatMap(e=>e.items?[e.g,...e.items.map(x=>x.c)]:[e.c]));Object.keys(tot).forEach(c=>{if(tot[c]&&!known.has(c)&&!known.has(actTop(c)))E.push({l:c,c})});
+const sum=recs.reduce((s,r)=>s+r.m,0),og=E.find(e=>e.g&&e.g===V.agrp);
+const tile=x=>`<button class="chb ${tot[x.c]?'sel':''}" data-a="act" data-ch="${esc(x.c)}">${esc(x.l)}<span>${tot[x.c]?fmtM(tot[x.c]):''}</span></button>`;
+return `<div class="card"><h2>Aktivnosti<span class="hh"><span class="mut nt">${sum?fmtM(sum):''}</span><button class="sm stp" data-a="stepA" aria-label="Korak v minutah (tapni za menjavo)">±${V.sA}</button><button class="sm" data-a="editList" data-l="acts" aria-label="Uredi seznam">✎</button></span></h2>
+<div class="cgrid">${E.map(e=>e.g?`<button class="grp ${V.agrp===e.g||top[e.g]?'sel':''}" data-a="agrp" data-g="${esc(e.g)}">${esc(e.g)} ${V.agrp===e.g?'▴':'▾'}<span>${top[e.g]?fmtM(top[e.g]):''}</span></button>`:tile(e)).join('')}</div>
+${og?`<div class="cgrid sub">${og.items.map(tile).join('')}</div>`:''}${extra||''}</div>`}
 function minCard(title,w,act,recs,step,sa,timer,extra){const tot={};recs.forEach(r=>tot[r.c]=(tot[r.c]||0)+r.m);const sum=recs.reduce((s,r)=>s+r.m,0),run=getRun(),list=getList(w);
 Object.keys(tot).forEach(c=>{if(tot[c]&&!list.includes(c))list.push(c)});
 return `<div class="card"><h2>${title}<span class="hh"><span class="mut nt">${sum?fmtM(sum):''}</span><button class="sm stp" data-a="${sa}" aria-label="Korak v minutah (tapni za menjavo)">±${step}</button><button class="sm" data-a="editList" data-l="${w}" aria-label="Uredi seznam">✎</button></span></h2>
@@ -324,7 +335,7 @@ ${catPicker()}<div class="acts"><button class="pri" data-a="inb2note" data-id="$
 async function copyText(t){try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}toast('Kopirano')}
 function dueLbl(k,td){return k===td?'danes':k===addD(td,1)?'jutri':k===addD(td,-1)?'včeraj':fmtD(k)}
 function row(c,r,td){const over=c==='todos'&&r.due&&r.due<td&&!r.done;
-return `<div class="item ${r.done?'done':''}"><button class="ck ${r.done?'on':''}" data-a="tg" data-c="${c}" data-id="${r.id}" aria-label="Označi">${r.done?'✓':''}</button><div class="txt" data-a="edit" data-c="${c}" data-id="${r.id}">${lk(r.text)}${r.due?` <span class="due ${over?'over':''}">${dueLbl(r.due,td)}</span>`:''}</div><button class="x" data-a="del" data-c="${c}" data-id="${r.id}" aria-label="Izbriši">×</button></div>`}
+return `<div class="item ${r.done?'done':''}"><button class="ck ${r.done?'on':''}" data-a="tg" data-c="${c}" data-id="${r.id}" aria-label="Označi">${r.done?'✓':''}</button><div class="txt" data-a="edit" data-c="${c}" data-id="${r.id}">${lk(r.text)}${r.due?` <span class="due ${over?'over':''}">${dueLbl(r.due,td)}${r.tm?' '+r.tm:''}</span>`:''}${r.cal?' <span title="V koledarju">🔔</span>':''}</div><button class="x" data-a="del" data-c="${c}" data-id="${r.id}" aria-label="Izbriši">×</button></div>`}
 
 function vOpravila(){const td=today(),inb=live('inbox').sort((a,b)=>a.c-b.c),all=live('todos'),open=all.filter(t=>!t.done).sort(byDue),
 done=all.filter(t=>t.done).sort((a,b)=>b.doneAt-a.doneAt).slice(0,30);
@@ -373,7 +384,7 @@ function vPregled(){const pvSeg=`<div class="seg rng">${[['stat','Statistika'],[
 function vStat(){const n=V.range,td=today(),from=addD(td,-(n-1)),ld=loggedDays(),cnt={},hr={},anyC=new Set(),chM={},chBy={};K.forEach(k=>{cnt[k]={};hr[k]=Array(24).fill(0)});
 live('smokes').forEach(r=>{const d=new Date(r.t),k=dk(d),c=kOf(r);if(!cnt[c])return;cnt[c][k]=(cnt[c][k]||0)+1;anyC.add(k);if(k>=from&&k<=td)hr[c][d.getHours()]++});
 live('chores').forEach(r=>{const k=dk(new Date(r.t));chM[k]=(chM[k]||0)+r.m;anyC.add(k);if(k>=from&&k<=td)chBy[r.c]=(chBy[r.c]||0)+r.m});
-const actM={},actBy={},acDay={};live('acts').forEach(r=>{const k=dk(new Date(r.t));actM[k]=(actM[k]||0)+r.m;(acDay[k]=acDay[k]||{})[r.c]=(acDay[k][r.c]||0)+r.m;anyC.add(k);if(k>=from&&k<=td)actBy[r.c]=(actBy[r.c]||0)+r.m});
+const actM={},actBy={},acDay={};live('acts').forEach(r=>{const k=dk(new Date(r.t));actM[k]=(actM[k]||0)+r.m;(acDay[k]=acDay[k]||{})[actTop(r.c)]=(acDay[k][actTop(r.c)]||0)+r.m;anyC.add(k);if(k>=from&&k<=td)actBy[r.c]=(actBy[r.c]||0)+r.m});
 const R=[];for(let i=n-1;i>=0;i--){const k=addD(td,-i),tr=anyC.has(k)||ld.has(k),c={};K.forEach(x=>c[x]=tr?(cnt[x][k]||0):null);
 R.push({k,tr,c,sl:sleepVal(k),ps:psy(k),ph:phy(k),f:['mP','mF','eP','eF'].map(f=>gf(k,f)),ac:tr?(actM[k]||0):null,acd:acDay[k]||{},st:gf(k,'steps'),hw:tr?(chM[k]||0):null,dt:gf(k,'dt'),mode:gf(k,'mode'),wh:['d','i'].includes(gf(k,'dt'))?gf(k,'wh'):null,h:gf(k,'health')||[],inj:gf(k,'inj')||[],ho:gf(k,'hOther')})}
 const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null,nn=f=>R.map(f).filter(v=>v!=null),trk=R.filter(r=>r.tr),av=a=>avg(a.filter(v=>v!=null));
@@ -391,7 +402,8 @@ CH.push({id:'cAc',vals:R.map(r=>r.ac),xl,int:1,h:120,tip:i=>T(i)+(R[i].ac==null?
 CH.push({id:'cSt',vals:R.map(r=>r.st),xl,int:1,h:120,tip:i=>T(i)+(R[i].st==null?'ni vnosa':R[i].st+' korakov')});
 CH.push({id:'cHr',type:'heat',rows:K.map(k=>({k,vals:hr[k]})),tip:(k,h,v)=>k+' '+pad(h)+':00–'+pad(h)+':59: '+v});
 const rmBy={};Object.entries(chBy).forEach(([c,m])=>{const r=roomOf(c);rmBy[r]=(rmBy[r]||0)+m});
-const brk=(Object.keys(chBy).length?'<div class="lbl">Po prostorih</div>':'')+brkHTML(rmBy)+(Object.keys(chBy).length?'<div class="lbl">Najpogostejša opravila</div>':'')+brkHTML(chBy,8),brkA=brkHTML(actBy),acN=[...new Set([...getList('acts'),...Object.keys(actBy)])];
+const tpBy={};Object.entries(actBy).forEach(([c,m])=>{tpBy[actTop(c)]=(tpBy[actTop(c)]||0)+m});
+const brk=(Object.keys(chBy).length?'<div class="lbl">Po prostorih</div>':'')+brkHTML(rmBy)+(Object.keys(chBy).length?'<div class="lbl">Najpogostejša opravila</div>':'')+brkHTML(chBy,8),brkA=brkHTML(tpBy)+(Object.keys(actBy).some(c=>c.includes(' · '))?'<div class="lbl">Podrobno</div>'+brkHTML(actBy,8):''),acN=[...new Set([...actEntries().map(e=>e.g||e.c),...Object.keys(actBy).map(actTop)])];
 // correlation matrix
 const cor=(fa,fb)=>{const p=R.filter(r=>fa(r)!=null&&fb(r)!=null).map(r=>[fa(r),fb(r)]);return[pearson(p),p.length]};
 const rowsC=[...K.map(k=>[k,r=>r.c[k]]),['Spanje',r=>r.sl],...acN.map(c=>[c,r=>r.tr?(r.acd[c]||0):null]),['Hišna opr.',r=>r.hw],['Koraki',r=>r.st],['Ure dela',r=>r.wh]],colsC=[['Psih.',r=>r.ps],['Fiz.',r=>r.ph],['Spanje',r=>r.sl]],ns=[];
@@ -526,12 +538,13 @@ stepH:()=>{V.sH=V.sH===5?30:5;render()},
 stepA:()=>{V.sA=V.sA===5?30:5;render()},
 chore:(b,id,e)=>addMin('chores',b.dataset.ch,V.sH*(leftHalf(b,e)?-1:1)),
 room:b=>{V.room=b.dataset.r;render()},
+agrp:b=>{V.agrp=V.agrp===b.dataset.g?null:b.dataset.g;render()},
 act:(b,id,e)=>addMin('acts',b.dataset.ch,V.sA*(leftHalf(b,e)?-1:1)),
 start:b=>{if(getRun())stopRun();put('cfg',{id:'run',v:{c:b.dataset.ch,s:now()}});render()},
 stop:()=>{stopRun();render()},
 reload:()=>location.reload(),
 gotoRun:()=>{stopRun();render()},
-editList:b=>{const w=b.dataset.l;openSheet(`<h3>Uredi seznam</h3><p class="mut sm" style="margin-bottom:8px">${w==='notecats'?'Ena kategorija na vrstico. Zaznamki izbrisane kategorije ostanejo (vidni pod Vse).':w==='chores'?'Ena vrstica = prostor: opravila, ločena z vejico (npr. <i>Kuhinja: smeti, pult</i>).':w==='health'?'Eno na vrstico. OK, Poškodba in Drugo so vedno na voljo.':'Eno na vrstico.'} Vrstni red = prikaz. Izbrisana ostanejo v statistiki.</p><textarea id="lT" rows="10">${esc(getList(w).join('\n'))}</textarea><div class="acts"><button class="pri" data-a="saveList" data-l="${w}">Shrani</button><button data-a="resetList" data-l="${w}">Privzeto</button><button data-a="closeSheet">Prekliči</button></div>`)},
+editList:b=>{const w=b.dataset.l;openSheet(`<h3>Uredi seznam</h3><p class="mut sm" style="margin-bottom:8px">${w==='notecats'?'Ena kategorija na vrstico. Zaznamki izbrisane kategorije ostanejo (vidni pod Vse).':w==='chores'?'Ena vrstica = prostor: opravila, ločena z vejico (npr. <i>Kuhinja: smeti, pult</i>).':w==='health'?'Eno na vrstico. OK, Poškodba in Drugo so vedno na voljo.':w==='acts'?'Eno na vrstico; skupina z možnostmi: <i>Šport: gym, tek, kolo</i>.':'Eno na vrstico.'} Vrstni red = prikaz. Izbrisana ostanejo v statistiki.</p><textarea id="lT" rows="10">${esc(getList(w).join('\n'))}</textarea><div class="acts"><button class="pri" data-a="saveList" data-l="${w}">Shrani</button><button data-a="resetList" data-l="${w}">Privzeto</button><button data-a="closeSheet">Prekliči</button></div>`)},
 saveList:b=>{const v=[...new Set($('#lT').value.split('\n').map(x=>x.trim()).filter(Boolean))];put('cfg',{id:b.dataset.l,v:v.length?v:null});closeSheet();render()},
 resetList:b=>{put('cfg',{id:b.dataset.l,v:null});closeSheet();render()},
 unchore:(b,id)=>{const r=S.chores[id];if(r){r.del=1;put('chores',r);render()}},
@@ -547,10 +560,15 @@ addTodo:()=>{const i=$('#tT'),t=i.value.trim();if(!t)return i.focus();addTodos([
 addShop:()=>{const i=$('#sT'),t=i.value.trim();if(!t)return i.focus();if(!addShop(lines(t,true),V.cat))toast('Že na seznamu');render();$('#sT').focus()},
 cat:b=>{V.cat=b.dataset.cat;render()},
 eCat:b=>document.querySelectorAll('#sheetIn [data-a=eCat]').forEach(x=>x.classList.toggle('sel',x===b)),
-saveEdit:(b,id)=>{const c=b.dataset.c,r=S[c][id],t=$('#eT').value.trim();if(t)r.text=t;else r.del=1;const d=$('#eD'),k=$('#sheetIn [data-a=eCat].sel');if(d)r.due=d.value||null;if(k)r.cat=k.dataset.cat;put(c,r);closeSheet();render()},
+toCal:(b,id)=>{const r=S.todos[id];A.saveEdit(b,id);if(!r||r.del)return;if(!r.due)return toast('Najprej nastavi datum');
+const f=(y,mo,d,h,mi)=>''+y+pad(mo)+pad(d)+(h==null?'':'T'+pad(h)+pad(mi)+'00'),[y,mo,dd]=r.due.split('-').map(Number);let ds;
+if(r.tm){const[h,mi]=r.tm.split(':').map(Number),e=new Date(y,mo-1,dd,h,mi+30);ds=f(y,mo,dd,h,mi)+'/'+f(e.getFullYear(),e.getMonth()+1,e.getDate(),e.getHours(),e.getMinutes())}
+else{const e=new Date(y,mo-1,dd+1);ds=f(y,mo,dd)+'/'+f(e.getFullYear(),e.getMonth()+1,e.getDate())}
+window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(r.text.split('\n')[0].slice(0,120))+'&dates='+ds+'&details='+encodeURIComponent(r.text)+'&ctz=Europe/Ljubljana','_blank','noopener');r.cal=true;put('todos',r);render()},
+saveEdit:(b,id)=>{const c=b.dataset.c,r=S[c][id],t=$('#eT').value.trim();if(t)r.text=t;else r.del=1;const d=$('#eD'),tm=$('#eTm'),k=$('#sheetIn [data-a=eCat].sel');if(d)r.due=d.value||null;if(tm)r.tm=tm.value||null;if(k)r.cat=k.dataset.cat;put(c,r);closeSheet();render()},
 tg:(b,id)=>{const c=b.dataset.c,r=S[c][id];r.done=!r.done;if(c==='todos')r.doneAt=r.done?now():null;put(c,r);render()},
 del:(b,id)=>{const c=b.dataset.c,r=S[c][id];if(r){r.del=1;put(c,r)}closeSheet();render()},
-edit:(b,id)=>{const c=b.dataset.c,r=S[c][id];openSheet(`<h3>Uredi</h3><textarea id="eT" rows="3">${esc(r.text)}</textarea>${c==='todos'?`<label style="margin-top:8px">Rok<input type="date" id="eD" value="${r.due||''}"></label>`:`<div class="seg" style="margin-top:8px">${CATS.map(([k,l])=>`<button data-a="eCat" data-cat="${k}" class="${catOf(r)===k?'sel':''}" style="font-size:14px">${l}</button>`).join('')}</div>`}<div class="acts"><button class="pri" data-a="saveEdit" data-c="${c}" data-id="${id}">Shrani</button><button data-a="del" data-c="${c}" data-id="${id}" class="danger">Izbriši</button><button data-a="closeSheet">Prekliči</button></div>`)},
+edit:(b,id)=>{const c=b.dataset.c,r=S[c][id];openSheet(`<h3>Uredi</h3><textarea id="eT" rows="3">${esc(r.text)}</textarea>${c==='todos'?`<div class="row2" style="margin-top:8px"><label>Datum<input type="date" id="eD" value="${r.due||''}"></label><label>Ura<input type="time" id="eTm" value="${r.tm||''}"></label></div><div class="acts"><button data-a="toCal" data-c="todos" data-id="${id}">📅 Dodaj v koledar${r.cal?' (že dodano)':''}</button></div>`:`<div class="seg" style="margin-top:8px">${CATS.map(([k,l])=>`<button data-a="eCat" data-cat="${k}" class="${catOf(r)===k?'sel':''}" style="font-size:14px">${l}</button>`).join('')}</div>`}<div class="acts"><button class="pri" data-a="saveEdit" data-c="${c}" data-id="${id}">Shrani</button><button data-a="del" data-c="${c}" data-id="${id}" class="danger">Izbriši</button><button data-a="closeSheet">Prekliči</button></div>`)},
 inb2todo:(b,id)=>{const r=S.inbox[id];addTodos(lines(r.text,false));r.del=1;put('inbox',r);closeSheet();toast('Dodano med opravila');render()},
 inb2shop:(b,id)=>{const r=S.inbox[id],c=b.dataset.cat,n=addShop(lines(r.text,true),c);r.del=1;put('inbox',r);closeSheet();toast(CATN[c]+': dodano '+n);render()},
 inbFile:(b,id)=>fileSheet(id),
@@ -588,6 +606,7 @@ wipe:b=>{if(b.dataset.armed){S=empty();clearTimeout(saveT);st.set(KEY,JSON.strin
 document.addEventListener('click',e=>{const t=e.target;if(t.closest('a[href]'))return;
 if(t.id==='sheet')return closeSheet();
 const nb=t.closest('nav button[data-tab]');if(nb){V.tab=nb.dataset.tab;render();scrollTo(0,0);return}
+if(t.tagName==='INPUT'&&/^(time|date)$/.test(t.type)&&t.showPicker){try{t.showPicker()}catch(x){}}
 if(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))return;
 const b=t.closest('[data-a]');if(!b)return;
 const f=A[b.dataset.a];if(f){e.preventDefault();f(b,b.dataset.id,e)}});
@@ -613,11 +632,12 @@ let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(drawChar
 // ---------- incoming share (?title=&text=&url=) -> inbox. Used later by the PWA share_target on Android.
 function migrateLegacy(){Object.values(S.log).forEach(r=>{const[d,f]=r.id.split('|');if((f==='sp'||f==='med')&&r.v){const id='leg'+f+'|'+d;if(!S.acts[id])put('acts',{id,t:pd(d).setHours(12,0,0,0),c:f==='sp'?'Šport':'Meditacija',m:f==='sp'?(r.v===61?60:r.v):10});r.v=null;put('log',r)}})}
 migrateLegacy();
+(()=>{const a=S.cfg.acts;if(S.cfg.mig23||!a||!Array.isArray(a.v))return;const i=a.v.indexOf('Šport');if(i>=0){const v=[...a.v];v[i]=DEFL.acts[1];put('cfg',{id:'acts',v})}put('cfg',{id:'mig23',v:1})})();
 (()=>{if(S.cfg.mig19)return;const c=S.cfg.chores,a=S.cfg.acts;
 if(c&&Array.isArray(c.v)&&c.v.length){const rooms=c.v.map(l=>l.split(':')[0].trim());const add=DEFL.chores.filter(l=>['Klet','Podstreha','Avto','Popravila'].includes(l.split(':')[0])&&!rooms.includes(l.split(':')[0]));if(add.length)put('cfg',{id:'chores',v:[...c.v,...add]})}
 if(a&&Array.isArray(a.v)&&a.v.length&&!a.v.includes('Kitara'))put('cfg',{id:'acts',v:[...a.v,'Kitara']});if((c&&c.v)||(a&&a.v))put('cfg',{id:'mig19',v:1})})();
 setInterval(()=>{if(!LOCK)updRun()},15000);
-const VER='2.2';
+const VER='2.3';
 function checkUpd(){if(LOCK||location.protocol!=='https:')return;fetch('version.txt?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{t=t.trim();const b=$('#upd');if(b&&t&&t!==VER){b.hidden=false;b.textContent='↻ v'+t}}).catch(()=>{})}
 setInterval(checkUpd,1800000);addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpd()});
 let shared=false;
