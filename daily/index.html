@@ -106,7 +106,7 @@ label{font-size:13px;color:var(--ink2);display:block}label input{margin-top:3px}
 .ncat{font-size:11px;color:var(--ink2);border:1px solid var(--line);border-radius:6px;padding:0 6px}
 .note{white-space:pre-wrap;word-break:break-word;font-size:14px}.note.clp{max-height:8.6em;overflow:hidden}
 .note pre{white-space:pre;overflow-x:auto;background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12px;margin:4px 0}
-.note code{font-size:12px;background:var(--surf);border-radius:4px;padding:0 3px}.note a{color:var(--acc)}.mh{font-size:15px}.more{margin-top:4px}
+.note code{font-size:12px;background:var(--surf);border-radius:4px;padding:0 3px}.note a,.txt a,.hl a{color:var(--acc);word-break:break-all}.mh{font-size:15px}.more{margin-top:4px}
 .crow{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
 .ct{display:flex;flex-direction:column;align-items:center;gap:0;padding:5px 2px 6px;border-radius:10px;background:var(--surf);border:1px solid var(--line);min-width:0}
 .ct b{font-size:22px;line-height:1.15;font-variant-numeric:tabular-nums}
@@ -127,7 +127,7 @@ label{font-size:13px;color:var(--ink2);display:block}label input{margin-top:3px}
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v1.8</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="font-size:18px;border:0">⚙</button></span></header>
+<header><h1>Daily <small class="ver">v1.9</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="font-size:18px;border:0">⚙</button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i">📓</span>Dnevnik</button>
@@ -152,7 +152,7 @@ MODES=[['chill','Chill','😌'],['normal','Normal','🙂'],['busy','Busy','⚡']
 DT=[['f','Prosto','🏖'],['d','DOD','🏠'],['i','IJS','🏢']],DTN={f:'Prosto',d:'DOD',i:'IJS'},
 CHORES=['Sesanje','Posoda','Pomivalni stroj','Perilo','Likanje','Kuhanje','Kopalnica','Prah','Smeti','Okolica','Drugo'],
 K=['SM','BO','JO','CF','WD'],STEPS=[5,30,-5,-30],
-DEFL={chores:['Kuhinja: smeti, sesanje, zajtrk, kosilo, večerja, pult, omare, fronte, generalno','Kopalnica: umivalnik, WC, tuš / kad, ogledalo, tla, generalno','Dnevna soba: sesanje, prah, pospravljanje, generalno','Spalnica: postelja, sesanje, prah, pospravljanje','Perilo: pranje, obešanje, zlaganje, likanje','Zunaj: smeti, okolica, avto','Ostalo: nakupovanje, popravila, drugo'],acts:['Sprehod','Šport','Meditacija'],health:['Virus / prehlad','Glavobol'],body:BODY,notecats:['Splošno','Delo','Ideje','Povezave']},
+DEFL={chores:['Kuhinja: smeti, sesanje, zajtrk, kosilo, večerja, pult, omare, fronte, generalno','Kopalnica: umivalnik, WC, tuš / kad, ogledalo, tla, generalno','Dnevna soba: sesanje, prah, pospravljanje, generalno','Spalnica: postelja, sesanje, prah, pospravljanje','Perilo: pranje, obešanje, zlaganje, likanje','Zunaj: smeti, okolica','Klet: pospravljanje, drva, sesanje','Podstreha: pospravljanje, sesanje','Avto: servis, pospravljanje, pranje','Popravila: hiša, naprave, kolo, drugo','Ostalo: nakupovanje, drugo'],acts:['Sprehod','Šport','Meditacija','Kitara'],health:['Virus / prehlad','Glavobol'],body:BODY,notecats:['Splošno','Delo','Ideje','Povezave']},
 HKEY={'Virus / prehlad':'virus','Glavobol':'glava'},HLAB={ok:'OK',virus:'Virus / prehlad',glava:'Glavobol',inj:'Poškodba',drugo:'Drugo'},OLDK={S:'SM',B:'BO',J:'JO'},kOf=r=>OLDK[r.k]||r.k||'SM';
 const mem={},st={get:k=>{try{return localStorage.getItem(k)}catch(e){return k in mem?mem[k]:null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}};
 const empty=()=>{const d={v:1};COLS.forEach(c=>d[c]={});return d};
@@ -263,6 +263,7 @@ put(col,{id:uid(),t:d===today()?now():pd(d).setHours(12,0,0,0),c,m});navigator.v
 function stopRun(silent){const r=getRun();if(!r)return;const m=Math.max(1,Math.round((now()-r.s)/60000));put('acts',{id:uid(),t:r.s,c:r.c,m});put('cfg',{id:'run',v:null});if(!silent)toast(r.c+': +'+fmtM(m))}
 function updRun(){const r=getRun(),b=$('#runH');if(b){b.hidden=!r;if(r)b.textContent='■ '+r.c+' '+agoS(now()-r.s)}document.querySelectorAll('[data-run]').forEach(e=>e.textContent=r?agoS(now()-r.s):'')}
 const brkHTML=(by,lim)=>{const cb=Object.entries(by).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,lim||99),mx=cb.length?cb[0][1]:1;return cb.length?`<div class="brk">${cb.map(([c,m])=>`<span>${esc(c)}</span><i style="width:${(m/mx*100).toFixed(1)}%"></i><span class="num">${fmtM(m)}</span>`).join('')}</div>`:''};
+const lk=t=>esc(t).replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,'$1<a href="$2" target="_blank" rel="noopener">$2</a>');
 const mdIn=h=>h.replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/^#{1,6}\s+(.+)$/gm,'<b class="mh">$1</b>')
 .replace(/^\s*[-*+]\s+\[ \]\s*/gm,'☐ ').replace(/^\s*[-*+]\s+\[[xX]\]\s*/gm,'☑ ').replace(/^\s*[-*+]\s+/gm,'• ')
 .replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>').replace(/(^|[^*\w])\*([^*\n]+)\*(?!\w)/g,'$1<i>$2</i>')
@@ -287,11 +288,11 @@ ${catPicker()}<div class="acts"><button class="pri" data-a="inb2note" data-id="$
 async function copyText(t){try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}toast('Kopirano')}
 function dueLbl(k,td){return k===td?'danes':k===addD(td,1)?'jutri':k===addD(td,-1)?'včeraj':fmtD(k)}
 function row(c,r,td){const over=c==='todos'&&r.due&&r.due<td&&!r.done;
-return `<div class="item ${r.done?'done':''}"><button class="ck ${r.done?'on':''}" data-a="tg" data-c="${c}" data-id="${r.id}" aria-label="Označi">${r.done?'✓':''}</button><div class="txt" data-a="edit" data-c="${c}" data-id="${r.id}">${esc(r.text)}${r.due?` <span class="due ${over?'over':''}">${dueLbl(r.due,td)}</span>`:''}</div><button class="x" data-a="del" data-c="${c}" data-id="${r.id}" aria-label="Izbriši">×</button></div>`}
+return `<div class="item ${r.done?'done':''}"><button class="ck ${r.done?'on':''}" data-a="tg" data-c="${c}" data-id="${r.id}" aria-label="Označi">${r.done?'✓':''}</button><div class="txt" data-a="edit" data-c="${c}" data-id="${r.id}">${lk(r.text)}${r.due?` <span class="due ${over?'over':''}">${dueLbl(r.due,td)}</span>`:''}</div><button class="x" data-a="del" data-c="${c}" data-id="${r.id}" aria-label="Izbriši">×</button></div>`}
 
 function vOpravila(){const td=today(),inb=live('inbox').sort((a,b)=>a.c-b.c),all=live('todos'),open=all.filter(t=>!t.done).sort(byDue),
 done=all.filter(t=>t.done).sort((a,b)=>b.doneAt-a.doneAt).slice(0,30);
-return `${inb.length?`<div class="card inb"><h2>Nabiralnik <span class="mut">${inb.length}</span></h2>${inb.map(r=>`<div class="item" style="display:block"><div class="txt">${esc(r.text)}</div><div class="acts"><button data-a="inb2todo" data-id="${r.id}">→ Opravilo</button>${CATS.map(([k,l])=>`<button data-a="inb2shop" data-cat="${k}" data-id="${r.id}">→ ${l}</button>`).join('')}<button data-a="inbFile" data-id="${r.id}">→ Zaznamek…</button><button data-a="inbdel" data-id="${r.id}">Zavrzi</button></div></div>`).join('')}</div>`:''}
+return `${inb.length?`<div class="card inb"><h2>Nabiralnik <span class="mut">${inb.length}</span></h2>${inb.map(r=>`<div class="item" style="display:block"><div class="txt">${lk(r.text)}</div><div class="acts"><button data-a="inb2todo" data-id="${r.id}">→ Opravilo</button>${CATS.map(([k,l])=>`<button data-a="inb2shop" data-cat="${k}" data-id="${r.id}">→ ${l}</button>`).join('')}<button data-a="inbFile" data-id="${r.id}">→ Zaznamek…</button><button data-a="inbdel" data-id="${r.id}">Zavrzi</button></div></div>`).join('')}</div>`:''}
 <div class="card"><div class="add"><input id="tT" placeholder="Novo opravilo…" autocomplete="off" enterkeyhint="done"><input type="date" id="tD" aria-label="Rok"><button class="pri" data-a="addTodo" aria-label="Dodaj">+</button></div>
 <div class="quick"><button data-a="due" data-n="0">danes</button><button data-a="due" data-n="1">jutri</button><button data-a="due" data-n="">brez roka</button></div></div>
 <div class="card"><h2>Odprto${open.length?` <button class="sm" data-a="shareTodos">Deli</button>`:''}</h2>${open.length?open.map(r=>row('todos',r,td)).join(''):'<div class="empty">Ni odprtih opravil.</div>'}</div>
@@ -324,7 +325,7 @@ if(g('note'))L.push(['Zapisek',g('note')]);
 return{hd,L}}
 function vHist(){const I=idx(),q=V.hq.trim().toLowerCase(),days=allDays(I).map(d=>[d,dayLines(d,I)]).filter(([d,x])=>(x.hd||x.L.length)&&(!q||(fmtD(d)+' '+x.hd+' '+x.L.map(l=>l.join(' ')).join(' ')).toLowerCase().includes(q))),shown=days.slice(0,V.hn);
 return `<input id="hQ" placeholder="🔍 Išči po vseh podatkih" value="${esc(V.hq)}" style="margin-bottom:10px">
-${shown.map(([d,x])=>`<div class="card hday"><h2><span>${fmtD(d)} ${pd(d).getFullYear()}</span><span class="mut nt">${esc(x.hd)}</span></h2>${x.L.map(([k,v])=>`<div class="hl"><span>${k}</span><div>${esc(v)}</div></div>`).join('')}<button class="sm" data-a="hgo" data-d="${d}">Odpri dan</button></div>`).join('')}
+${shown.map(([d,x])=>`<div class="card hday"><h2><span>${fmtD(d)} ${pd(d).getFullYear()}</span><span class="mut nt">${esc(x.hd)}</span></h2>${x.L.map(([k,v])=>`<div class="hl"><span>${k}</span><div>${lk(v)}</div></div>`).join('')}<button class="sm" data-a="hgo" data-d="${d}">Odpri dan</button></div>`).join('')}
 ${days.length>shown.length?`<button data-a="hmore" style="width:100%;margin-bottom:10px">Pokaži več (${days.length-shown.length})</button>`:''}${days.length?'':`<div class="empty">${q?'Ni zadetkov.':'Ni podatkov.'}</div>`}`}
 function mdAll(){const I=idx(),out=['Daily – vsi podatki, izvoz '+today()+'.',''];
 allDays(I).forEach(d=>{const x=dayLines(d,I);if(!x.hd&&!x.L.length)return;out.push('### '+fmtD(d)+' '+pd(d).getFullYear()+(x.hd?' · '+x.hd:''),'');x.L.forEach(([k,v])=>out.push('- **'+k+':** '+String(v).replace(/\n+/g,' ')));out.push('')});
@@ -547,7 +548,7 @@ expJson:()=>exportFile('daily-'+today()+'.json',JSON.stringify(S),'application/j
 expCsv:()=>exportFile('dnevnik-'+today()+'.csv',csv(),'text/csv'),
 wipe:b=>{if(b.dataset.armed){S=empty();clearTimeout(saveT);st.set(KEY,JSON.stringify(S));closeSheet();render();toast('Vsi podatki izbrisani')}else{b.dataset.armed=1;b.textContent='Res izbrišem vse? Tapni še enkrat.'}}
 };
-document.addEventListener('click',e=>{const t=e.target;
+document.addEventListener('click',e=>{const t=e.target;if(t.closest('a[href]'))return;
 if(t.id==='sheet')return closeSheet();
 const nb=t.closest('nav button[data-tab]');if(nb){V.tab=nb.dataset.tab;render();scrollTo(0,0);return}
 if(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))return;
@@ -573,8 +574,11 @@ let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(drawChar
 // ---------- incoming share (?title=&text=&url=) -> inbox. Used later by the PWA share_target on Android.
 function migrateLegacy(){Object.values(S.log).forEach(r=>{const[d,f]=r.id.split('|');if((f==='sp'||f==='med')&&r.v){const id='leg'+f+'|'+d;if(!S.acts[id])put('acts',{id,t:pd(d).setHours(12,0,0,0),c:f==='sp'?'Šport':'Meditacija',m:f==='sp'?(r.v===61?60:r.v):10});r.v=null;put('log',r)}})}
 migrateLegacy();
+(()=>{if(S.cfg.mig19)return;const c=S.cfg.chores,a=S.cfg.acts;
+if(c&&Array.isArray(c.v)&&c.v.length){const rooms=c.v.map(l=>l.split(':')[0].trim());const add=DEFL.chores.filter(l=>['Klet','Podstreha','Avto','Popravila'].includes(l.split(':')[0])&&!rooms.includes(l.split(':')[0]));if(add.length)put('cfg',{id:'chores',v:[...c.v,...add]})}
+if(a&&Array.isArray(a.v)&&a.v.length&&!a.v.includes('Kitara'))put('cfg',{id:'acts',v:[...a.v,'Kitara']});if((c&&c.v)||(a&&a.v))put('cfg',{id:'mig19',v:1})})();
 setInterval(()=>{if(!LOCK)updRun()},15000);
-const VER='1.8';
+const VER='1.9';
 function checkUpd(){if(LOCK||location.protocol!=='https:')return;fetch('version.txt?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{t=t.trim();const b=$('#upd');if(b&&t&&t!==VER){b.hidden=false;b.textContent='↻ v'+t}}).catch(()=>{})}
 setInterval(checkUpd,1800000);addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpd()});
 let shared=false;
