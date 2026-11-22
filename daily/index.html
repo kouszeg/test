@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Pomočnik</title>
+<title>Daily</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
@@ -116,7 +116,7 @@ label{font-size:13px;color:var(--ink2);display:block}label input{margin-top:3px}
 </style>
 </head>
 <body>
-<header><h1>Pomočnik</h1><span><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="font-size:18px;border:0">⚙</button></span></header>
+<header><h1>Daily</h1><span><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="font-size:18px;border:0">⚙</button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i">📓</span>Dnevnik</button>
@@ -129,7 +129,7 @@ label{font-size:13px;color:var(--ink2);display:block}label input{margin-top:3px}
 <script>
 'use strict';
 // ---------- data (every record: id + u = last-modified ms; deletes are tombstones -> merge-ready for later sync)
-const COLS=['log','smokes','todos','shop','inbox','chores'],KEY='pomocnik.v1',
+const COLS=['log','smokes','todos','shop','inbox','chores'],KEY='daily.v1',
 MOOD=['😫','🙁','😐','🙂','😄'],
 HL=[['ok','OK'],['virus','Virus / prehlad'],['glava','Glavobol'],['inj','Poškodba'],['drugo','Drugo']],
 BODY=['glava','vrat','rama','nadlaket','komolec','zapestje','dlan / prsti','prsni koš','zgornji hrbet','križ','trebuh','kolk','stegno','koleno','meča / golen','gleženj','stopalo'],
@@ -143,6 +143,9 @@ const mem={},st={get:k=>{try{return localStorage.getItem(k)}catch(e){return k in
 const empty=()=>{const d={v:1};COLS.forEach(c=>d[c]={});return d};
 function load(){let d=null;try{d=JSON.parse(st.get(KEY))}catch(e){}const o=empty();if(d&&typeof d==='object')COLS.forEach(c=>{if(d[c]&&typeof d[c]==='object')o[c]=d[c]});return o}
 function merge(a,b){const o=empty();COLS.forEach(c=>{o[c]={...(a[c]||{})};for(const[id,r]of Object.entries(b[c]||{})){const x=o[c][id];if(r&&typeof r==='object'&&(!x||(r.u||0)>(x.u||0)))o[c][id]=r}});return o}
+// one-time migration of old storage keys (same origin, so data carries over to /daily/); data is merged, not overwritten
+try{const L=localStorage,o=L.getItem('pomocnik.v1');if(o!=null){let n=null;try{n=JSON.parse(L.getItem('daily.v1'))}catch(e){}L.setItem('daily.v1',JSON.stringify(merge(n||empty(),JSON.parse(o)||{})));L.removeItem('pomocnik.v1')}
+for(const k of['gh','ok']){const v=L.getItem('pomocnik.'+k);if(v!=null){if(L.getItem('daily.'+k)==null||k==='ok')L.setItem('daily.'+k,v);L.removeItem('pomocnik.'+k)}}}catch(e){}
 let S=load(),saveT=0;
 // merge with what is stored before writing, so two open tabs never overwrite each other
 const flush=()=>{clearTimeout(saveT);S=merge(load(),S);st.set(KEY,JSON.stringify(S))};
@@ -348,14 +351,14 @@ function importFile(f){if(!f)return;f.text().then(t=>{const d=JSON.parse(t);if(!
 const settingsHTML=()=>`<h3>Nastavitve</h3><p class="mut">Podatki so samo v tem brskalniku (${count()} zapisov). Sinhronizacije še ni – redno izvozi kopijo.</p>
 <div class="stack"><button data-a="expJson">Izvozi vse (JSON)</button><button data-a="expCsv">Izvozi dnevnik (CSV)</button><label class="btn">Uvozi JSON (združi z obstoječim)<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="danger" data-a="wipe">Izbriši vse podatke</button></div><div id="expOut"></div>
 <h3 style="margin-top:18px">Sinhronizacija (GitHub)</h3><p class="mut sm" style="margin-bottom:8px">Zasebni repozitorij + fine-grained žeton (samo ta repozitorij, Contents: Read and write). Žeton ostane samo na tej napravi in ni v izvozu.</p>
-<div class="stack"><label>Lastnik<input id="gO" value="${esc(G.owner||'kouszeg')}" autocapitalize="off"></label><label>Repozitorij (zaseben!)<input id="gR" value="${esc(G.repo||'pomocnik-data')}" autocapitalize="off"></label>
+<div class="stack"><label>Lastnik<input id="gO" value="${esc(G.owner||'kouszeg')}" autocapitalize="off"></label><label>Repozitorij (zaseben!)<input id="gR" value="${esc(G.repo||'daily-data')}" autocapitalize="off"></label>
 <label>Žeton<input id="gT" type="password" placeholder="${G.token?'(shranjen – pusti prazno)':'github_pat_…'}" autocomplete="off"></label></div>
 <div class="acts"><button class="pri" data-a="gSave">Shrani in sinhroniziraj</button>${gOK()?'<button data-a="gOff">Izklopi</button>':''}</div>
 <p class="mut sm">${gOK()?(SY.state==='err'?'Napaka: '+esc(SY.msg):SY.t?'Zadnja sinhronizacija: '+hm(SY.t):'Še ni sinhronizirano.'):'Izklopljeno – podatki samo na tej napravi.'}</p>
 <div class="acts"><button data-a="closeSheet">Zapri</button></div>`;
 
 // ---------- GitHub sync (optional): one JSON file in a private repo; per-record last-write-wins merge; retries on sha conflict
-const GKEY='pomocnik.gh';
+const GKEY='daily.gh';
 let G=(()=>{try{return JSON.parse(st.get(GKEY))||{}}catch(e){return{}}})();
 const gOK=()=>!!(G.owner&&G.repo&&G.token);
 const SY={busy:false,again:false,dirty:false,t:0,state:'',msg:'',tm:0};
@@ -423,7 +426,7 @@ if(!gOK())return toast('Manjka lastnik, repozitorij ali žeton');sync().then(()=
 gOff:()=>{G={};st.set(GKEY,'{}');sStat('');closeSheet();toast('Sinhronizacija izklopljena (podatki ostanejo lokalno)')},
 closeSheet:()=>closeSheet(),
 copy:()=>copyTA(),
-expJson:()=>exportFile('pomocnik-'+today()+'.json',JSON.stringify(S),'application/json'),
+expJson:()=>exportFile('daily-'+today()+'.json',JSON.stringify(S),'application/json'),
 expCsv:()=>exportFile('dnevnik-'+today()+'.csv',csv(),'text/csv'),
 wipe:b=>{if(b.dataset.armed){S=empty();clearTimeout(saveT);st.set(KEY,JSON.stringify(S));closeSheet();render();toast('Vsi podatki izbrisani')}else{b.dataset.armed=1;b.textContent='Res izbrišem vse? Tapni še enkrat.'}}
 };
@@ -452,10 +455,10 @@ try{const q=new URLSearchParams(location.search),sh=[q.get('title'),q.get('text'
 if(sh){shared=true;put('inbox',{id:uid(),text:sh,c:now()});flush();V.tab='opravila';history.replaceState(null,'',location.pathname)}}catch(e){}
 // Decoy: a visitor without any data sees a bare 404. Unlock: tap "404" 5x quickly (flag stays on this device).
 // Obscurity only: the source is public, but there is no data on the page anyway.
-if(!st.get('pomocnik.ok')&&count()===0&&!gOK()&&!shared){LOCK=true;document.title='404 Not Found';
+if(!st.get('daily.ok')&&count()===0&&!gOK()&&!shared){LOCK=true;document.title='404 Not Found';
 document.body.innerHTML='<div id="lk" style="font:16px/1.5 system-ui,sans-serif;max-width:560px;margin:18vh auto 0;padding:0 24px;color:#52514e;user-select:none"><h1 style="font-size:56px;font-weight:600;color:#0b0b0b">404</h1><p>Not Found</p></div>';
-let n=0,t0=0;$('#lk').addEventListener('click',()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){st.set('pomocnik.ok','1');location.reload()}})}
-else{st.set('pomocnik.ok','1');render();sStat('');sync()}
+let n=0,t0=0;$('#lk').addEventListener('click',()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){st.set('daily.ok','1');location.reload()}})}
+else{st.set('daily.ok','1');render();sStat('');sync()}
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
