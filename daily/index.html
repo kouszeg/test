@@ -100,6 +100,11 @@ label{font-size:13px;color:var(--ink2);display:block}label input{margin-top:3px}
 #expOut textarea{margin-top:8px;font-size:12px}
 #toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--card);padding:8px 14px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
 #toast.on{opacity:1}
+.nc{padding:10px 12px}.nh{display:flex;align-items:center;gap:6px;margin-bottom:4px}.nh .x{font-size:16px;padding:0 5px}
+.ncat{font-size:11px;color:var(--ink2);border:1px solid var(--line);border-radius:6px;padding:0 6px}
+.note{white-space:pre-wrap;word-break:break-word;font-size:14px}.note.clp{max-height:8.6em;overflow:hidden}
+.note pre{white-space:pre;overflow-x:auto;background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12px;margin:4px 0}
+.note code{font-size:12px;background:var(--surf);border-radius:4px;padding:0 3px}.note a{color:var(--acc)}.mh{font-size:15px}.more{margin-top:4px}
 .crow{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
 .ct{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 2px 7px;border-radius:12px;background:var(--surf);min-width:0}
 .ct:active{background:var(--accSoft)}
@@ -120,12 +125,13 @@ label{font-size:13px;color:var(--ink2);display:block}label input{margin-top:3px}
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v1.5</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="font-size:18px;border:0">⚙</button></span></header>
+<header><h1>Daily <small class="ver">v1.6</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="font-size:18px;border:0">⚙</button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i">📓</span>Dnevnik</button>
 <button data-tab="opravila"><span class="i">✅</span>Opravila<span id="badge" class="badge" hidden></span></button>
 <button data-tab="nakupi"><span class="i">🛒</span>Nakupi</button>
+<button data-tab="zaznamki"><span class="i">🔖</span>Zaznamki</button>
 <button data-tab="pregled"><span class="i">📊</span>Pregled</button>
 </nav>
 <div id="sheet"><div class="sh" id="sheetIn"></div></div>
@@ -133,7 +139,7 @@ label{font-size:13px;color:var(--ink2);display:block}label input{margin-top:3px}
 <script>
 'use strict';
 // ---------- data (every record: id + u = last-modified ms; deletes are tombstones -> merge-ready for later sync)
-const COLS=['log','smokes','todos','shop','inbox','chores','acts','cfg'],KEY='daily.v1',
+const COLS=['log','smokes','todos','shop','inbox','chores','acts','cfg','notes'],KEY='daily.v1',
 MOOD=['😫','🙁','😐','🙂','😄'],
 HL=[['ok','OK'],['virus','Virus / prehlad'],['glava','Glavobol'],['inj','Poškodba'],['drugo','Drugo']],
 BODY=['glava','vrat','rama','nadlaket','komolec','zapestje','dlan / prsti','prsni koš','zgornji hrbet','križ','trebuh','kolk','stegno','koleno','meča / golen','gleženj','stopalo'],
@@ -144,7 +150,7 @@ MODES=[['chill','Chill','😌'],['normal','Normal','🙂'],['busy','Busy','⚡']
 DT=[['f','Prosto','🏖'],['d','DOD','🏠'],['i','IJS','🏢']],DTN={f:'Prosto',d:'DOD',i:'IJS'},
 CHORES=['Sesanje','Posoda','Pomivalni stroj','Perilo','Likanje','Kuhanje','Kopalnica','Prah','Smeti','Okolica','Drugo'],
 K=['SM','BO','JO','CF','WD'],STEPS=[5,30,-5,-30],
-DEFL={chores:['Kuhinja: smeti, sesanje, zajtrk, kosilo, večerja, pult, omare, fronte, generalno','Kopalnica: umivalnik, WC, tuš / kad, ogledalo, tla, generalno','Dnevna soba: sesanje, prah, pospravljanje, generalno','Spalnica: postelja, sesanje, prah, pospravljanje','Perilo: pranje, obešanje, zlaganje, likanje','Zunaj: smeti, okolica, avto','Ostalo: nakupovanje, popravila, drugo'],acts:['Sprehod','Šport','Meditacija'],health:['Virus / prehlad','Glavobol'],body:BODY},
+DEFL={chores:['Kuhinja: smeti, sesanje, zajtrk, kosilo, večerja, pult, omare, fronte, generalno','Kopalnica: umivalnik, WC, tuš / kad, ogledalo, tla, generalno','Dnevna soba: sesanje, prah, pospravljanje, generalno','Spalnica: postelja, sesanje, prah, pospravljanje','Perilo: pranje, obešanje, zlaganje, likanje','Zunaj: smeti, okolica, avto','Ostalo: nakupovanje, popravila, drugo'],acts:['Sprehod','Šport','Meditacija'],health:['Virus / prehlad','Glavobol'],body:BODY,notecats:['Splošno','Delo','Ideje','Povezave']},
 HKEY={'Virus / prehlad':'virus','Glavobol':'glava'},HLAB={ok:'OK',virus:'Virus / prehlad',glava:'Glavobol',inj:'Poškodba',drugo:'Drugo'},OLDK={S:'SM',B:'BO',J:'JO'},kOf=r=>OLDK[r.k]||r.k||'SM';
 const mem={},st={get:k=>{try{return localStorage.getItem(k)}catch(e){return k in mem?mem[k]:null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}};
 const empty=()=>{const d={v:1};COLS.forEach(c=>d[c]={});return d};
@@ -206,9 +212,10 @@ function openSheet(h){$('#sheetIn').innerHTML=h;$('#sheet').classList.add('open'
 function closeSheet(){$('#sheet').classList.remove('open');$('#sheetIn').innerHTML=''}
 
 // ---------- views
-const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',sH:5,sA:5,room:null};
+const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',sH:5,sA:5,room:null,ncat:'*',nq:'',ndraft:'',nopen:new Set(),shareId:null};
 let CH=[],LOCK=false;
-function render(){if(LOCK)return;CH=[];$('#main').innerHTML=({dnevnik:vDnevnik,opravila:vOpravila,nakupi:vNakupi,pregled:vPregled})[V.tab]();
+function render(){if(LOCK)return;CH=[];$('#main').innerHTML=({dnevnik:vDnevnik,opravila:vOpravila,nakupi:vNakupi,zaznamki:vZaznamki,pregled:vPregled})[V.tab]();
+document.querySelectorAll('.note.clp').forEach(el=>{if(el.scrollHeight>el.clientHeight+4&&el.nextElementSibling)el.nextElementSibling.hidden=false});
 document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===V.tab));
 const n=live('inbox').length,bd=$('#badge');bd.textContent=n;bd.hidden=!n;updRun();drawCharts()}
 
@@ -255,13 +262,35 @@ put(col,{id:uid(),t:d===today()?now():pd(d).setHours(12,0,0,0),c,m});navigator.v
 function stopRun(silent){const r=getRun();if(!r)return;const m=Math.max(1,Math.round((now()-r.s)/60000));put('acts',{id:uid(),t:r.s,c:r.c,m});put('cfg',{id:'run',v:null});if(!silent)toast(r.c+': +'+fmtM(m))}
 function updRun(){const r=getRun(),b=$('#runH');if(b){b.hidden=!r;if(r)b.textContent='■ '+r.c+' '+agoS(now()-r.s)}document.querySelectorAll('[data-run]').forEach(e=>e.textContent=r?agoS(now()-r.s):'')}
 const brkHTML=(by,lim)=>{const cb=Object.entries(by).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,lim||99),mx=cb.length?cb[0][1]:1;return cb.length?`<div class="brk">${cb.map(([c,m])=>`<span>${esc(c)}</span><i style="width:${(m/mx*100).toFixed(1)}%"></i><span class="num">${fmtM(m)}</span>`).join('')}</div>`:''};
+const mdIn=h=>h.replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/^#{1,6}\s+(.+)$/gm,'<b class="mh">$1</b>')
+.replace(/^\s*[-*+]\s+\[ \]\s*/gm,'☐ ').replace(/^\s*[-*+]\s+\[[xX]\]\s*/gm,'☑ ').replace(/^\s*[-*+]\s+/gm,'• ')
+.replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>').replace(/(^|[^*\w])\*([^*\n]+)\*(?!\w)/g,'$1<i>$2</i>')
+.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>')
+.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,'$1<a href="$2" target="_blank" rel="noopener">$2</a>').replace(/\[\[([^\]\n]+)\]\]/g,'<u>$1</u>');
+const md=t=>String(t??'').split('```').map((g,i)=>i%2?'<pre>'+esc(g.replace(/^[\w+-]*\n/,''))+'</pre>':mdIn(esc(g))).join('');
+const noteCats=()=>[...new Set([...getList('notecats'),...live('notes').map(n=>n.cat).filter(Boolean)])];
+const ncat=n=>n.cat||getList('notecats')[0];
+function noteHTML(n,showCat){const open=V.nopen.has(n.id),d=new Date(n.c);
+return `<div class="card nc"><div class="nh">${showCat?`<span class="ncat">${esc(ncat(n))}</span>`:''}<span class="mut" style="font-size:12px">${d.getDate()}. ${d.getMonth()+1}.</span><span style="flex:1"></span><button class="x" data-a="ncopy" data-id="${n.id}" aria-label="Kopiraj">⧉</button><button class="x" data-a="nshare" data-id="${n.id}" aria-label="Deli">↗</button><button class="x" data-a="nedit" data-id="${n.id}" aria-label="Uredi">✎</button></div><div class="note ${open?'':'clp'}">${md(n.text)}</div>${open?'':`<button class="sm more" data-a="nmore" data-id="${n.id}" hidden>več ▾</button>`}</div>`}
+function vZaznamki(){const cats=noteCats(),all=live('notes'),c=V.ncat==='*'||cats.includes(V.ncat)?V.ncat:'*',q=V.nq.trim().toLowerCase(),cnt=k=>all.filter(n=>ncat(n)===k).length;
+const list=all.filter(n=>(c==='*'||ncat(n)===c)&&(!q||n.text.toLowerCase().includes(q))).sort((a,b)=>b.c-a.c);
+return `<div class="chips" style="margin-bottom:8px">${[['*','Vse',all.length],...cats.map(k=>[k,k,cnt(k)])].map(([k,l,n])=>`<button class="tg s2b ${c===k?'sel':''}" data-a="ncat" data-k="${esc(k)}">${esc(l)} <span class="mut">${n}</span></button>`).join('')}<button class="tg s2b" data-a="editList" data-l="notecats" aria-label="Uredi kategorije">✎</button></div>
+<div class="card"><textarea id="nT" rows="3" placeholder="Nov zaznamek (Markdown: **krepko**, \`koda\`, - seznam, povezave)…">${esc(V.ndraft)}</textarea><div class="acts"><input id="nQ" placeholder="🔍 Išči" value="${esc(V.nq)}" style="flex:1;min-width:0"><button class="pri" data-a="addNote">Dodaj${c==='*'?'':' v '+esc(c)}</button></div></div>
+${list.length?list.map(n=>noteHTML(n,c==='*')).join(''):`<div class="empty" style="padding:8px 4px">${q?'Ni zadetkov.':'Ni zaznamkov.'}</div>`}`}
+function catPicker(sel){const cats=noteCats();sel=sel||(V.ncat!=='*'&&cats.includes(V.ncat)?V.ncat:cats[0]);
+return `<div class="lbl">Kategorija</div><div class="chips">${cats.map(k=>`<button class="tg s2b ${k===sel?'sel':''}" data-a="pickCat" data-k="${esc(k)}">${esc(k)}</button>`).join('')}</div><input id="newCat" placeholder="+ nova kategorija" style="margin-top:6px">`}
+function chosenCat(){const nc=($('#newCat')||{}).value?.trim();if(nc){const l=getList('notecats');if(!l.includes(nc))put('cfg',{id:'notecats',v:[...l,nc]});return nc}const s=$('#sheetIn [data-a=pickCat].sel');return s?s.dataset.k:noteCats()[0]}
+function fileSheet(id){const r=S.inbox[id];if(!r)return;openSheet(`<h3>Kam shranim?</h3><div class="note" style="max-height:28vh;overflow:auto;margin-bottom:6px;border:1px solid var(--line);border-radius:10px;padding:8px">${md(r.text)}</div>
+<div class="acts"><button data-a="inb2todo" data-id="${id}">→ Opravilo</button>${CATS.map(([k,l])=>`<button data-a="inb2shop" data-cat="${k}" data-id="${id}">→ ${l}</button>`).join('')}</div>
+${catPicker()}<div class="acts"><button class="pri" data-a="inb2note" data-id="${id}">→ Zaznamek</button><button data-a="closeSheet">Kasneje</button></div>`)}
+async function copyText(t){try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}toast('Kopirano')}
 function dueLbl(k,td){return k===td?'danes':k===addD(td,1)?'jutri':k===addD(td,-1)?'včeraj':fmtD(k)}
 function row(c,r,td){const over=c==='todos'&&r.due&&r.due<td&&!r.done;
 return `<div class="item ${r.done?'done':''}"><button class="ck ${r.done?'on':''}" data-a="tg" data-c="${c}" data-id="${r.id}" aria-label="Označi">${r.done?'✓':''}</button><div class="txt" data-a="edit" data-c="${c}" data-id="${r.id}">${esc(r.text)}${r.due?` <span class="due ${over?'over':''}">${dueLbl(r.due,td)}</span>`:''}</div><button class="x" data-a="del" data-c="${c}" data-id="${r.id}" aria-label="Izbriši">×</button></div>`}
 
 function vOpravila(){const td=today(),inb=live('inbox').sort((a,b)=>a.c-b.c),all=live('todos'),open=all.filter(t=>!t.done).sort(byDue),
 done=all.filter(t=>t.done).sort((a,b)=>b.doneAt-a.doneAt).slice(0,30);
-return `${inb.length?`<div class="card inb"><h2>Nabiralnik <span class="mut">${inb.length}</span></h2>${inb.map(r=>`<div class="item" style="display:block"><div class="txt">${esc(r.text)}</div><div class="acts"><button data-a="inb2todo" data-id="${r.id}">→ Opravilo</button>${CATS.map(([k,l])=>`<button data-a="inb2shop" data-cat="${k}" data-id="${r.id}">→ ${l}</button>`).join('')}<button data-a="inbdel" data-id="${r.id}">Zavrzi</button></div></div>`).join('')}</div>`:''}
+return `${inb.length?`<div class="card inb"><h2>Nabiralnik <span class="mut">${inb.length}</span></h2>${inb.map(r=>`<div class="item" style="display:block"><div class="txt">${esc(r.text)}</div><div class="acts"><button data-a="inb2todo" data-id="${r.id}">→ Opravilo</button>${CATS.map(([k,l])=>`<button data-a="inb2shop" data-cat="${k}" data-id="${r.id}">→ ${l}</button>`).join('')}<button data-a="inbFile" data-id="${r.id}">→ Zaznamek…</button><button data-a="inbdel" data-id="${r.id}">Zavrzi</button></div></div>`).join('')}</div>`:''}
 <div class="card"><div class="add"><input id="tT" placeholder="Novo opravilo…" autocomplete="off" enterkeyhint="done"><input type="date" id="tD" aria-label="Rok"><button class="pri" data-a="addTodo" aria-label="Dodaj">+</button></div>
 <div class="quick"><button data-a="due" data-n="0">danes</button><button data-a="due" data-n="1">jutri</button><button data-a="due" data-n="">brez roka</button></div></div>
 <div class="card"><h2>Odprto${open.length?` <button class="sm" data-a="shareTodos">Deli</button>`:''}</h2>${open.length?open.map(r=>row('todos',r,td)).join(''):'<div class="empty">Ni odprtih opravil.</div>'}</div>
@@ -381,7 +410,7 @@ out.push([d,...K.map(k=>by(k).length),...K.map(k=>q(by(k).map(r=>hm(r.t)).join('
 return '﻿'+out.join('\n')}
 function importFile(f){if(!f)return;f.text().then(t=>{const d=JSON.parse(t);if(!d||!COLS.some(c=>d[c]&&typeof d[c]==='object'))throw 0;const b=count();S=merge(S,d);flush();closeSheet();render();toast('Uvoženo, +'+(count()-b)+' zapisov')}).catch(()=>toast('Ni veljavna datoteka'))}
 const settingsHTML=()=>`<h3>Nastavitve</h3><p class="mut">Podatki so samo v tem brskalniku (${count()} zapisov). Sinhronizacije še ni – redno izvozi kopijo.</p>
-<div class="stack"><button data-a="expJson">Izvozi vse (JSON)</button><button data-a="expCsv">Izvozi dnevnik (CSV)</button><label class="btn">Uvozi JSON (združi z obstoječim)<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="danger" data-a="wipe">Izbriši vse podatke</button></div><div id="expOut"></div>
+<div class="stack"><button data-a="expJson">Izvozi vse (JSON)</button><button data-a="expCsv">Izvozi dnevnik (CSV)</button><button data-a="expMd">Izvozi zaznamke (Markdown)</button><label class="btn">Uvozi JSON (združi z obstoječim)<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="danger" data-a="wipe">Izbriši vse podatke</button></div><div id="expOut"></div>
 <h3 style="margin-top:18px">Sinhronizacija (GitHub)</h3><p class="mut sm" style="margin-bottom:8px">Zasebni repozitorij + fine-grained žeton (samo ta repozitorij, Contents: Read and write). Žeton ostane samo na tej napravi in ni v izvozu.</p>
 <div class="stack"><label>Lastnik<input id="gO" value="${esc(G.owner||'kouszeg')}" autocapitalize="off"></label><label>Repozitorij (zaseben!)<input id="gR" value="${esc(G.repo||'daily-data')}" autocapitalize="off"></label>
 <label>Žeton<input id="gT" type="password" placeholder="${G.token?'(shranjen – pusti prazno)':'github_pat_…'}" autocomplete="off"></label></div>
@@ -433,7 +462,7 @@ start:b=>{if(getRun())stopRun();put('cfg',{id:'run',v:{c:b.dataset.ch,s:now()}})
 stop:()=>{stopRun();render()},
 reload:()=>location.reload(),
 gotoRun:()=>{V.tab='dnevnik';V.day=today();render();scrollTo(0,0)},
-editList:b=>{const w=b.dataset.l;openSheet(`<h3>Uredi seznam</h3><p class="mut sm" style="margin-bottom:8px">${w==='chores'?'Ena vrstica = prostor: opravila, ločena z vejico (npr. <i>Kuhinja: smeti, pult</i>).':w==='health'?'Eno na vrstico. OK, Poškodba in Drugo so vedno na voljo.':'Eno na vrstico.'} Vrstni red = prikaz. Izbrisana ostanejo v statistiki.</p><textarea id="lT" rows="10">${esc(getList(w).join('\n'))}</textarea><div class="acts"><button class="pri" data-a="saveList" data-l="${w}">Shrani</button><button data-a="resetList" data-l="${w}">Privzeto</button><button data-a="closeSheet">Prekliči</button></div>`)},
+editList:b=>{const w=b.dataset.l;openSheet(`<h3>Uredi seznam</h3><p class="mut sm" style="margin-bottom:8px">${w==='notecats'?'Ena kategorija na vrstico. Zaznamki izbrisane kategorije ostanejo (vidni pod Vse).':w==='chores'?'Ena vrstica = prostor: opravila, ločena z vejico (npr. <i>Kuhinja: smeti, pult</i>).':w==='health'?'Eno na vrstico. OK, Poškodba in Drugo so vedno na voljo.':'Eno na vrstico.'} Vrstni red = prikaz. Izbrisana ostanejo v statistiki.</p><textarea id="lT" rows="10">${esc(getList(w).join('\n'))}</textarea><div class="acts"><button class="pri" data-a="saveList" data-l="${w}">Shrani</button><button data-a="resetList" data-l="${w}">Privzeto</button><button data-a="closeSheet">Prekliči</button></div>`)},
 saveList:b=>{const v=[...new Set($('#lT').value.split('\n').map(x=>x.trim()).filter(Boolean))];put('cfg',{id:b.dataset.l,v:v.length?v:null});closeSheet();render()},
 resetList:b=>{put('cfg',{id:b.dataset.l,v:null});closeSheet();render()},
 unchore:(b,id)=>{const r=S.chores[id];if(r){r.del=1;put('chores',r);render()}},
@@ -453,8 +482,19 @@ saveEdit:(b,id)=>{const c=b.dataset.c,r=S[c][id],t=$('#eT').value.trim();if(t)r.
 tg:(b,id)=>{const c=b.dataset.c,r=S[c][id];r.done=!r.done;if(c==='todos')r.doneAt=r.done?now():null;put(c,r);render()},
 del:(b,id)=>{const c=b.dataset.c,r=S[c][id];if(r){r.del=1;put(c,r)}closeSheet();render()},
 edit:(b,id)=>{const c=b.dataset.c,r=S[c][id];openSheet(`<h3>Uredi</h3><textarea id="eT" rows="3">${esc(r.text)}</textarea>${c==='todos'?`<label style="margin-top:8px">Rok<input type="date" id="eD" value="${r.due||''}"></label>`:`<div class="seg" style="margin-top:8px">${CATS.map(([k,l])=>`<button data-a="eCat" data-cat="${k}" class="${catOf(r)===k?'sel':''}" style="font-size:14px">${l}</button>`).join('')}</div>`}<div class="acts"><button class="pri" data-a="saveEdit" data-c="${c}" data-id="${id}">Shrani</button><button data-a="del" data-c="${c}" data-id="${id}" class="danger">Izbriši</button><button data-a="closeSheet">Prekliči</button></div>`)},
-inb2todo:(b,id)=>{const r=S.inbox[id];addTodos(lines(r.text,false));r.del=1;put('inbox',r);toast('Dodano med opravila');render()},
-inb2shop:(b,id)=>{const r=S.inbox[id],c=b.dataset.cat,n=addShop(lines(r.text,true),c);r.del=1;put('inbox',r);toast(CATN[c]+': dodano '+n);render()},
+inb2todo:(b,id)=>{const r=S.inbox[id];addTodos(lines(r.text,false));r.del=1;put('inbox',r);closeSheet();toast('Dodano med opravila');render()},
+inb2shop:(b,id)=>{const r=S.inbox[id],c=b.dataset.cat,n=addShop(lines(r.text,true),c);r.del=1;put('inbox',r);closeSheet();toast(CATN[c]+': dodano '+n);render()},
+inbFile:(b,id)=>fileSheet(id),
+inb2note:(b,id)=>{const r=S.inbox[id];put('notes',{id:uid(),text:r.text,cat:chosenCat(),c:now()});r.del=1;put('inbox',r);closeSheet();toast('Shranjeno v zaznamke');render()},
+ncat:b=>{V.ncat=b.dataset.k;render()},
+addNote:()=>{const t=$('#nT').value.trim();if(!t)return $('#nT').focus();const cats=noteCats();put('notes',{id:uid(),text:t,cat:V.ncat!=='*'&&cats.includes(V.ncat)?V.ncat:cats[0],c:now()});V.ndraft='';render()},
+nmore:(b,id)=>{V.nopen.add(id);render()},
+ncopy:(b,id)=>copyText(S.notes[id].text),
+nshare:(b,id)=>share(S.notes[id].text),
+nedit:(b,id)=>{const n=S.notes[id];openSheet(`<h3>Uredi zaznamek</h3><textarea id="eN" rows="10">${esc(n.text)}</textarea>${catPicker(ncat(n))}<div class="acts"><button class="pri" data-a="nsave" data-id="${id}">Shrani</button><button class="danger" data-a="del" data-c="notes" data-id="${id}">Izbriši</button><button data-a="closeSheet">Prekliči</button></div>`)},
+nsave:(b,id)=>{const n=S.notes[id],t=$('#eN').value.trim();if(t)n.text=t;else n.del=1;n.cat=chosenCat();put('notes',n);closeSheet();render()},
+pickCat:b=>{document.querySelectorAll('#sheetIn [data-a=pickCat]').forEach(x=>x.classList.toggle('sel',x===b));const i=$('#newCat');if(i)i.value=''},
+expMd:()=>{const by={};live('notes').sort((a,b)=>a.c-b.c).forEach(n=>(by[ncat(n)]=by[ncat(n)]||[]).push(n));exportFile('zaznamki-'+today()+'.md',Object.entries(by).map(([c,a])=>'### '+c+'\n\n'+a.map(n=>'*'+dk(new Date(n.c))+'*\n\n'+n.text.trim()).join('\n\n---\n\n')).join('\n\n')+'\n','text/markdown')},
 inbdel:(b,id)=>{const r=S.inbox[id];r.del=1;put('inbox',r);render()},
 sug:b=>{addShop([b.dataset.t],V.cat);render()},
 clearShop:()=>{live('shop').filter(r=>r.done&&catOf(r)===V.cat).forEach(r=>{r.del=1;put('shop',r)});render()},
@@ -478,8 +518,10 @@ const nb=t.closest('nav button[data-tab]');if(nb){V.tab=nb.dataset.tab;render();
 if(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))return;
 const b=t.closest('[data-a]');if(!b)return;
 const f=A[b.dataset.a];if(f){e.preventDefault();f(b,b.dataset.id)}});
-document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.isComposing)return;const id=e.target.id;if(id==='tT'||id==='tD'){e.preventDefault();A.addTodo()}else if(id==='sT'){e.preventDefault();A.addShop()}});
-document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f;if(f&&(t.tagName==='TEXTAREA'||t.type==='text'))sf(V.day,f,t.value)});
+document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.isComposing)return;const id=e.target.id;if(id==='nT'&&(e.ctrlKey||e.metaKey)){e.preventDefault();return A.addNote()}if(id==='tT'||id==='tD'){e.preventDefault();A.addTodo()}else if(id==='sT'){e.preventDefault();A.addShop()}});
+document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f;if(t.id==='nT')V.ndraft=t.value;
+if(t.id==='nQ'){V.nq=t.value;clearTimeout(V.qT);V.qT=setTimeout(()=>{render();const i=$('#nQ');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)}
+if(f&&(t.tagName==='TEXTAREA'||t.type==='text'))sf(V.day,f,t.value)});
 document.addEventListener('change',e=>{const t=e.target;
 if(t.dataset.f&&t.type==='time'){sf(V.day,t.dataset.f,t.value||null);render()}
 else if(t.id==='swH'||t.id==='swM'){const H=$('#swH').value,M=$('#swM').value;sf(V.day,'sw',H===''&&M===''?null:Math.max(0,Math.round((+H||0)*60+(+M||0))))}
@@ -496,18 +538,18 @@ let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(drawChar
 function migrateLegacy(){Object.values(S.log).forEach(r=>{const[d,f]=r.id.split('|');if((f==='sp'||f==='med')&&r.v){const id='leg'+f+'|'+d;if(!S.acts[id])put('acts',{id,t:pd(d).setHours(12,0,0,0),c:f==='sp'?'Šport':'Meditacija',m:f==='sp'?(r.v===61?60:r.v):10});r.v=null;put('log',r)}})}
 migrateLegacy();
 setInterval(()=>{if(!LOCK)updRun()},15000);
-const VER='1.5';
+const VER='1.6';
 function checkUpd(){if(LOCK||location.protocol!=='https:')return;fetch('version.txt?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{t=t.trim();const b=$('#upd');if(b&&t&&t!==VER){b.hidden=false;b.textContent='↻ v'+t}}).catch(()=>{})}
 setInterval(checkUpd,1800000);addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpd()});
 let shared=false;
 try{const q=new URLSearchParams(location.search),sh=[q.get('title'),q.get('text'),q.get('url')].filter(Boolean).join('\n').trim();
-if(sh){shared=true;put('inbox',{id:uid(),text:sh,c:now()});flush();V.tab='opravila';history.replaceState(null,'',location.pathname)}}catch(e){}
+if(sh){shared=true;V.shareId=uid();put('inbox',{id:V.shareId,text:sh,c:now()});flush();V.tab='opravila';history.replaceState(null,'',location.pathname)}}catch(e){}
 // Decoy: a visitor without any data sees a bare 404. Unlock: tap "404" 5x quickly (flag stays on this device).
 // Obscurity only: the source is public, but there is no data on the page anyway.
 if(!st.get('daily.ok')&&count()===0&&!gOK()&&!shared){LOCK=true;document.title='404 Not Found';
 document.body.innerHTML='<div id="lk" style="font:16px/1.5 system-ui,sans-serif;max-width:560px;margin:18vh auto 0;padding:0 24px;color:#52514e;user-select:none"><h1 style="font-size:56px;font-weight:600;color:#0b0b0b">404</h1><p>Not Found</p></div>';
 let n=0,t0=0;$('#lk').addEventListener('click',()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){st.set('daily.ok','1');location.reload()}})}
-else{st.set('daily.ok','1');render();sStat('');sync();checkUpd()}
+else{st.set('daily.ok','1');render();sStat('');sync();checkUpd();if(V.shareId)fileSheet(V.shareId)}
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
