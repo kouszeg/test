@@ -149,11 +149,19 @@ nav{border-top:1px solid var(--line)}nav .i{filter:none;opacity:1;display:block;
 .item+.item{border-top:1px solid var(--line)}
 .rng button{font-size:14px}
 .chb{position:relative}.chb::before,.chb::after{position:absolute;top:50%;transform:translateY(-50%);font-size:14px;color:var(--mut);opacity:.7}.chb::before{content:'−';left:7px}.chb::after{content:'+';right:7px}
+/* plus = soft green, minus = soft red */
+:root{--plus:#0a8a0a;--plusBg:rgba(12,163,12,.14);--minus:#c43c3c;--minusBg:rgba(208,59,59,.11)}
+@media (prefers-color-scheme:dark){:root{--plus:#45c445;--plusBg:rgba(12,163,12,.2);--minus:#ef7474;--minusBg:rgba(230,103,103,.16)}}
+.pm .mn,.whs .mn{background:var(--minusBg);color:var(--minus)}.pm .pl,.whs .pl{background:var(--plusBg);color:var(--plus)}
+.chb::before{color:var(--minus)!important}.chb::after{color:var(--plus)!important}
+.dtrow{display:flex;gap:6px;align-items:stretch;margin-bottom:6px}.dtrow .dts{flex:1;margin:0}
+.whs{display:flex;align-items:center;gap:3px}.whs b{min-width:44px;text-align:center;font-size:14px;font-variant-numeric:tabular-nums}.whs button{width:30px;padding:6px 0;font-size:17px;font-weight:700}
+.md button{font-size:13px}
 .t4 .tv{font-size:18px}.t4 .tile{padding:8px}
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v2.1</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
+<header><h1>Daily <small class="ver">v2.2</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>Dnevnik</button>
@@ -175,7 +183,7 @@ SPORT=[[15,'15'],[30,'30'],[45,'45'],[60,'1 h'],[61,'1 h+']],
 DN=['ned','pon','tor','sre','čet','pet','sob'],
 CATS=[['g','Živila'],['t','Tehnika'],['s','Šport']],CATN={g:'Živila',t:'Tehnika',s:'Šport'},catOf=r=>r.cat||'g',
 MODES=[['chill','Chill','😌'],['normal','Normal','🙂'],['busy','Busy','⚡'],['tense','Tense','😬']],MODEN={chill:'Chill',normal:'Normal',busy:'Busy',tense:'Tense'},
-DT=[['f','Prosto','🏖'],['d','DOD','🏠'],['i','IJS','🏢']],DTN={f:'Prosto',d:'DOD',i:'IJS'},
+DT=[['f','Fraj','🏖'],['d','DOD','🏠'],['i','IJS','🏢']],DTN={f:'Fraj',d:'DOD',i:'IJS'},
 CHORES=['Sesanje','Posoda','Pomivalni stroj','Perilo','Likanje','Kuhanje','Kopalnica','Prah','Smeti','Okolica','Drugo'],
 K=['SM','BO','JO','CF','WD'],STEPS=[5,30,-5,-30],
 DEFL={chores:['Kuhinja: smeti, sesanje, zajtrk, kosilo, večerja, pult, omare, fronte, generalno','Kopalnica: umivalnik, WC, tuš / kad, ogledalo, tla, generalno','Dnevna soba: sesanje, prah, pospravljanje, generalno','Spalnica: postelja, sesanje, prah, pospravljanje','Perilo: pranje, obešanje, zlaganje, likanje','Zunaj: smeti, okolica','Klet: pospravljanje, drva, sesanje','Podstreha: pospravljanje, sesanje','Avto: servis, pospravljanje, pranje','Popravila: hiša, naprave, kolo, drugo','Ostalo: nakupovanje, drugo'],acts:['Sprehod','Šport','Meditacija','Kitara'],health:['Virus / prehlad','Glavobol'],body:BODY,notecats:['Splošno','Delo','Ideje','Povezave']},
@@ -252,11 +260,10 @@ sc=sleepCalc(d),sw=gf(d,'sw'),tb=gf(addD(d,1),'bed'),sp=gf(d,'sp'),dt=gf(d,'dt')
 const scale=f=>`<div class="seg">${MOOD.map((e,i)=>`<button data-a="set" data-f="${f}" data-v="${i+1}" class="${gf(d,f)===i+1?'sel':''}" aria-label="${i+1} od 5">${e}</button>`).join('')}</div>`;
 const frow=(f,l)=>`<div class="frow"><span>${l}</span>${scale(f)}</div>`;
 return `<div class="daynav"><button data-a="day" data-n="-1" aria-label="Prejšnji dan">‹</button><div><b>${fmtD(d)}</b> ${isT?'<span class="mut">danes</span>':'<button class="sm" data-a="today">Danes</button>'}</div><button data-a="day" data-n="1" aria-label="Naslednji dan" ${isT?'disabled':''}>›</button></div>
-<div class="card"><div class="seg dts">${DT.map(([k,l])=>`<button data-a="setS" data-f="dt" data-v="${k}" class="${dt===k?'sel':''}">${l}</button>`).join('')}</div>
-<div class="seg md">${MODES.map(([k,l])=>`<button data-a="setS" data-f="mode" data-v="${k}" class="${gf(d,'mode')===k?'sel':''}">${l}</button>`).join('')}</div>
-${dt==='d'||dt==='i'?`<div class="whr"><span>Ur dela</span><button data-a="wh" data-v="-0.5" aria-label="Manj">−</button><b>${gf(d,'wh')==null?'–':String(gf(d,'wh')).replace('.',',')+' h'}</b><button data-a="wh" data-v="0.5" aria-label="Več">+</button></div>`:''}</div>
+<div class="card"><div class="dtrow"><div class="seg dts">${DT.map(([k,l])=>`<button data-a="setS" data-f="dt" data-v="${k}" class="${dt===k?'sel':''}">${l}</button>`).join('')}</div>${dt==='d'||dt==='i'?`<div class="whs"><button class="mn" data-a="wh" data-v="-0.5" aria-label="Manj ur dela">−</button><b>${gf(d,'wh')==null?'– h':String(gf(d,'wh')).replace('.',',')+' h'}</b><button class="pl" data-a="wh" data-v="0.5" aria-label="Več ur dela">+</button></div>`:''}</div>
+<div class="seg md">${MODES.map(([k,l,e])=>`<button data-a="setS" data-f="mode" data-v="${k}" class="${gf(d,'mode')===k?'sel':''}">${e} ${l}</button>`).join('')}</div></div>
 <div class="card"><h2>Števci${isT?'':' <label class="tm nt">ura vnosa <input type="time" id="smt" value="12:00"></label>'}</h2>
-<div class="crow">${K.map((k,ix)=>{const n=sm.filter(r=>kOf(r)===k).length;return `<div class="ct"><span class="cl"><i class="sw s${ix}"></i>${k}</span><b>${n}</b><span class="pm"><button data-a="unsmokeK" data-k="${k}" aria-label="${k} −1" ${n?'':'disabled'}>−</button><button class="pri" data-a="smoke" data-k="${k}" aria-label="${k} +1">+</button></span></div>`}).join('')}</div></div>
+<div class="crow">${K.map((k,ix)=>{const n=sm.filter(r=>kOf(r)===k).length;return `<div class="ct"><span class="cl"><i class="sw s${ix}"></i>${k}</span><b>${n}</b><span class="pm"><button class="mn" data-a="unsmokeK" data-k="${k}" aria-label="${k} −1" ${n?'':'disabled'}>−</button><button class="pl" data-a="smoke" data-k="${k}" aria-label="${k} +1">+</button></span></div>`}).join('')}</div></div>
 <div class="card"><h2>Spanje <span class="mut nt">${sc!=null?fmtMin(sc):''}</span></h2>
 <div class="slp">${ib(isT,'bedNow','V posteljo zdaj',IC.moon)}<input type="time" data-f="bed" value="${gf(d,'bed')||''}" aria-label="V postelji">${ib(isT,'wakeNow','Vstal sem zdaj',IC.sun)}<input type="time" data-f="wake" value="${gf(d,'wake')||''}" aria-label="Vstal"><span class="ib ic" title="Spanje po uri">${IC.watch}</span><input type="number" inputmode="numeric" min="0" max="16" id="swH" placeholder="h" aria-label="Ure po uri" value="${sw!=null?Math.floor(sw/60):''}"><input type="number" inputmode="numeric" min="0" max="59" id="swM" placeholder="min" aria-label="Minute po uri" value="${sw!=null?sw%60:''}"></div>
 ${isT&&tb?`<p class="mut sm">Nocoj v postelji ob ${tb} (šteje k jutrišnjemu spanju).</p>`:''}</div>
@@ -285,7 +292,7 @@ Object.keys(tot).forEach(c=>{if(tot[c]&&!list.includes(c))list.push(c)});
 return `<div class="card"><h2>${title}<span class="hh"><span class="mut nt">${sum?fmtM(sum):''}</span><button class="sm stp" data-a="${sa}" aria-label="Korak v minutah (tapni za menjavo)">±${step}</button><button class="sm" data-a="editList" data-l="${w}" aria-label="Uredi seznam">✎</button></span></h2>
 <div class="cgrid">${list.map(c=>{const on=timer&&run&&run.c===c;return `<div class="atile"><button class="chb ${tot[c]?'sel':''}" data-a="${act}" data-ch="${esc(c)}">${esc(c)}<span>${tot[c]?fmtM(tot[c]):''}</span></button>${timer?`<button class="run ${on?'on':''}" data-a="${on?'stop':'start'}" data-ch="${esc(c)}">${on?'■ <span data-run>'+agoS(now()-run.s)+'</span>':'▶ start'}</button>`:''}</div>`}).join('')}</div>${extra||''}</div>`}
 function addMin(col,c,step){const d=V.day,cur=(col==='chores'?choresOn:actsOn)(d).filter(r=>r.c===c).reduce((s,r)=>s+r.m,0);let m=step;if(m<0)m=Math.max(m,-cur);if(!m)return toast(c+': že 0 min');
-put(col,{id:uid(),t:d===today()?now():pd(d).setHours(12,0,0,0),c,m});navigator.vibrate&&navigator.vibrate(15);render()}
+put(col,{id:uid(),t:d===today()?now():pd(d).setHours(12,0,0,0),c,m});render()}
 function stopRun(silent){const r=getRun();if(!r)return;const m=Math.max(1,Math.round((now()-r.s)/60000));put('acts',{id:uid(),t:r.s,c:r.c,m});put('cfg',{id:'run',v:null});if(!silent)toast(r.c+': +'+fmtM(m))}
 function updRun(){const r=getRun(),b=$('#runH');if(b){b.hidden=!r;if(r)b.textContent='■ '+r.c+' '+agoS(now()-r.s)}document.querySelectorAll('[data-run]').forEach(e=>e.textContent=r?agoS(now()-r.s):'')}
 const brkHTML=(by,lim)=>{const cb=Object.entries(by).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,lim||99),mx=cb.length?cb[0][1]:1;return cb.length?`<div class="brk">${cb.map(([c,m])=>`<span>${esc(c)}</span><i style="width:${(m/mx*100).toFixed(1)}%"></i><span class="num">${fmtM(m)}</span>`).join('')}</div>`:''};
@@ -510,7 +517,7 @@ finally{SY.busy=false;if(SY.again||SY.dirty){SY.again=false;schedSync(3000)}}}
 const A={
 day:b=>{const nd=addD(V.day,+b.dataset.n);if(nd<=today()){V.day=nd;render()}},
 today:()=>{V.day=today();render()},
-smoke:b=>{let t=now();if(V.day!==today()){const d=pd(V.day),[h,m]=(($('#smt')||{}).value||'12:00').split(':').map(Number);d.setHours(h,m);t=d.getTime()}put('smokes',{id:uid(),t,k:b.dataset.k});navigator.vibrate&&navigator.vibrate(15);render()},
+smoke:b=>{let t=now();if(V.day!==today()){const d=pd(V.day),[h,m]=(($('#smt')||{}).value||'12:00').split(':').map(Number);d.setHours(h,m);t=d.getTime()}put('smokes',{id:uid(),t,k:b.dataset.k});render()},
 unsmokeK:b=>{const a=smokesOn(V.day).filter(r=>kOf(r)===b.dataset.k),r=a[a.length-1];if(r){r.del=1;put('smokes',r);render()}},
 unsmoke:(b,id)=>{const r=S.smokes[id];if(r){r.del=1;put('smokes',r);render()}},
 setS:b=>{const f=b.dataset.f,v=b.dataset.v;sf(V.day,f,gf(V.day,f)===v?null:v);if(f==='dt'&&!['d','i'].includes(gf(V.day,'dt'))&&gf(V.day,'wh')!=null)sf(V.day,'wh',null);render()},
@@ -610,7 +617,7 @@ migrateLegacy();
 if(c&&Array.isArray(c.v)&&c.v.length){const rooms=c.v.map(l=>l.split(':')[0].trim());const add=DEFL.chores.filter(l=>['Klet','Podstreha','Avto','Popravila'].includes(l.split(':')[0])&&!rooms.includes(l.split(':')[0]));if(add.length)put('cfg',{id:'chores',v:[...c.v,...add]})}
 if(a&&Array.isArray(a.v)&&a.v.length&&!a.v.includes('Kitara'))put('cfg',{id:'acts',v:[...a.v,'Kitara']});if((c&&c.v)||(a&&a.v))put('cfg',{id:'mig19',v:1})})();
 setInterval(()=>{if(!LOCK)updRun()},15000);
-const VER='2.1';
+const VER='2.2';
 function checkUpd(){if(LOCK||location.protocol!=='https:')return;fetch('version.txt?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{t=t.trim();const b=$('#upd');if(b&&t&&t!==VER){b.hidden=false;b.textContent='↻ v'+t}}).catch(()=>{})}
 setInterval(checkUpd,1800000);addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpd()});
 let shared=false;
