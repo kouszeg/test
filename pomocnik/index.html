@@ -13,7 +13,7 @@
 --c0:#2a78d6;--c1:#eb6834;--c2:#1baf7a;--c3:#eda100;--c4:#e87ba4;--c5:#6250d6;--c6:#008300}
 @media (prefers-color-scheme:dark){:root{color-scheme:dark;--page:#0d0d0d;--surf:#141413;--card:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--mut:#898781;--grid:#2c2c2a;--base:#383835;--line:rgba(255,255,255,.10);--acc:#3987e5;--accSoft:#1b2a3d;--bad:#e66767;
 --c0:#3987e5;--c1:#d95926;--c2:#199e70;--c3:#c98500;--c4:#d55181;--c5:#9085e9;--c6:#0ca30c}}
-*{box-sizing:border-box;margin:0}
+*{box-sizing:border-box;margin:0}[hidden]{display:none!important}
 body{font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--page);color:var(--ink);padding-bottom:76px;-webkit-tap-highlight-color:transparent}
 header{position:sticky;top:0;z-index:5;background:var(--page);display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--line)}
 header h1{font-size:17px;font-weight:650}
@@ -194,8 +194,8 @@ function closeSheet(){$('#sheet').classList.remove('open');$('#sheetIn').innerHT
 
 // ---------- views
 const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',step:5};
-let CH=[];
-function render(){CH=[];$('#main').innerHTML=({dnevnik:vDnevnik,opravila:vOpravila,nakupi:vNakupi,pregled:vPregled})[V.tab]();
+let CH=[],LOCK=false;
+function render(){if(LOCK)return;CH=[];$('#main').innerHTML=({dnevnik:vDnevnik,opravila:vOpravila,nakupi:vNakupi,pregled:vPregled})[V.tab]();
 document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===V.tab));
 const n=live('inbox').length,bd=$('#badge');bd.textContent=n;bd.hidden=!n;drawCharts()}
 
@@ -447,9 +447,15 @@ addEventListener('storage',e=>{if(e.key!==KEY)return;try{const d=JSON.parse(e.ne
 let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(drawCharts,150)});
 
 // ---------- incoming share (?title=&text=&url=) -> inbox. Used later by the PWA share_target on Android.
+let shared=false;
 try{const q=new URLSearchParams(location.search),sh=[q.get('title'),q.get('text'),q.get('url')].filter(Boolean).join('\n').trim();
-if(sh){put('inbox',{id:uid(),text:sh,c:now()});flush();V.tab='opravila';history.replaceState(null,'',location.pathname)}}catch(e){}
-render();sStat('');sync();
+if(sh){shared=true;put('inbox',{id:uid(),text:sh,c:now()});flush();V.tab='opravila';history.replaceState(null,'',location.pathname)}}catch(e){}
+// Decoy: a visitor without any data sees a bare 404. Unlock: tap "404" 5x quickly (flag stays on this device).
+// Obscurity only: the source is public, but there is no data on the page anyway.
+if(!st.get('pomocnik.ok')&&count()===0&&!gOK()&&!shared){LOCK=true;document.title='404 Not Found';
+document.body.innerHTML='<div id="lk" style="font:16px/1.5 system-ui,sans-serif;max-width:560px;margin:18vh auto 0;padding:0 24px;color:#52514e;user-select:none"><h1 style="font-size:56px;font-weight:600;color:#0b0b0b">404</h1><p>Not Found</p></div>';
+let n=0,t0=0;$('#lk').addEventListener('click',()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){st.set('pomocnik.ok','1');location.reload()}})}
+else{st.set('pomocnik.ok','1');render();sStat('');sync()}
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
