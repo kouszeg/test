@@ -54,12 +54,13 @@ nav button.on{color:var(--acc);font-weight:600}nav button.on .i{filter:none;opac
 .chip{display:inline-flex;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:999px;padding:1px 2px 1px 10px;font-size:13px;font-variant-numeric:tabular-nums}
 .chip button{border:0;padding:2px 7px;color:var(--mut);font-size:16px;line-height:1}
 .seg{display:flex;gap:6px}.seg button{flex:1;padding:9px 0;font-size:16px;min-width:0}
-.frow{display:flex;align-items:center;gap:8px;margin-top:6px}.frow>span{flex:0 0 64px;font-size:13px;color:var(--ink2)}.frow .seg{flex:1}.frow .seg button{padding:6px 0}
+.frow{display:flex;align-items:center;gap:8px;margin-top:6px}.frow>span{flex:0 0 64px;font-size:13px;color:var(--ink2)}.frow .seg{flex:1}.frow .seg button{padding:4px 0;font-size:15px}
 .tg{border-radius:999px;padding:7px 13px;font-size:14px}.tg.s2b{font-size:13px;padding:5px 10px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 label{font-size:13px;color:var(--ink2);display:block}label input{margin-top:3px}
 .lbl{font-size:13px;color:var(--ink2);margin:10px 0 5px}
-.hm{display:flex;align-items:center;gap:6px}.hm input{width:72px}.hm span{color:var(--ink2);font-size:13px}
+.hm{display:flex;align-items:center;gap:6px}.hm input{width:64px;padding:6px 8px}
+.slp{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:6px;align-items:center}.slp button{padding:5px 9px;font-size:18px}.slp>span{font-size:18px;padding:0 6px}.slp input{padding:6px 8px;min-width:0}.hm span{color:var(--ink2);font-size:13px}
 .add{display:flex;gap:6px}.add input[name=t]{flex:1;min-width:0}.add input[type=date]{flex:0 0 138px;width:138px}.add button{flex:0 0 46px;font-size:22px;padding:0}
 .quick{display:flex;gap:6px;margin-top:8px}.quick button{font-size:13px;padding:4px 10px}
 .item{display:flex;align-items:flex-start;gap:10px;padding:9px 0}
@@ -108,7 +109,7 @@ label{font-size:13px;color:var(--ink2);display:block}label input{margin-top:3px}
 .crow~.chips{margin-top:10px}
 .sy{border:0;font-size:15px;padding:4px 8px;color:var(--mut)}.sy.ok{color:#0ca30c}.sy.pend{color:#c98500}.sy.err{color:var(--bad)}
 .add input:not([type=date]){flex:1;min-width:0}
-.dts{margin-bottom:10px}.dts button{font-size:14px}
+.dts{margin-bottom:8px}.dts button{font-size:14px;padding:7px 0}.md{margin-bottom:10px}.md button{font-size:13px;padding:5px 0}
 .cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.chb{display:flex;flex-direction:column;align-items:center;padding:7px 4px;font-size:13px;line-height:1.25}.chb span{font-size:11px;color:var(--ink2);min-height:14px}
 .tiles.t5{grid-template-columns:repeat(5,1fr)}.t5 .tile{padding:8px 6px}.t5 .tv{font-size:18px}.t5 .tl{white-space:nowrap}
 .mini{display:flex;align-items:flex-start;gap:4px}.mini .ml{flex:0 0 36px;font-size:12px;font-weight:600;padding-top:2px;display:flex;align-items:center}.mini .chart{flex:1}
@@ -119,7 +120,7 @@ label{font-size:13px;color:var(--ink2);display:block}label input{margin-top:3px}
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v1.2</small></h1><span><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="font-size:18px;border:0">⚙</button></span></header>
+<header><h1>Daily <small class="ver">v1.3</small></h1><span><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="font-size:18px;border:0">⚙</button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i">📓</span>Dnevnik</button>
@@ -139,6 +140,7 @@ BODY=['glava','vrat','rama','nadlaket','komolec','zapestje','dlan / prsti','prsn
 SPORT=[[15,'15'],[30,'30'],[45,'45'],[60,'1 h'],[61,'1 h+']],
 DN=['ned','pon','tor','sre','čet','pet','sob'],
 CATS=[['g','Živila'],['t','Tehnika'],['s','Šport']],CATN={g:'Živila',t:'Tehnika',s:'Šport'},catOf=r=>r.cat||'g',
+MODES=[['chill','Chill','😌'],['normal','Normal','🙂'],['busy','Busy','⚡'],['tense','Tense','😬']],MODEN={chill:'Chill',normal:'Normal',busy:'Busy',tense:'Tense'},
 DT=[['f','Prosto','🏖'],['d','DOD','🏠'],['i','IJS','🏢']],DTN={f:'Prosto',d:'DOD',i:'IJS'},
 CHORES=['Sesanje','Posoda','Pomivalni stroj','Perilo','Likanje','Kuhanje','Kopalnica','Prah','Smeti','Okolica','Drugo'],
 K=['SM','BO','JO','CF','WD'],STEPS=[5,30,-5,-30],
@@ -187,7 +189,7 @@ const toMin=s=>{const[h,m]=s.split(':').map(Number);return h*60+m};
 function sleepCalc(d){const b=gf(d,'bed'),w=gf(d,'wake');if(!b||!w)return null;let x=toMin(w)-toMin(b);if(x<=0)x+=1440;return x}
 const sleepVal=d=>gf(d,'sw')??sleepCalc(d); // watch value wins over bed->wake
 const avgOf=a=>{a=a.filter(v=>v!=null);return a.length?a.reduce((s,x)=>s+x,0)/a.length:null};
-const psy=d=>avgOf([gf(d,'mP'),gf(d,'eP')]),phy=d=>avgOf([gf(d,'mF'),gf(d,'eF')]);
+const psy=d=>gf(d,'P')??avgOf([gf(d,'mP'),gf(d,'eP')]),phy=d=>gf(d,'F')??avgOf([gf(d,'mF'),gf(d,'eF')]);
 const norm=s=>s.trim().toLowerCase();
 // strips bullets / numbering / WhatsApp copy prefix "[22. 11. 26, 16:00] Ime: "
 const clean=s=>s.replace(/^\s*\[[^\]]{4,30}\]\s*[^:\n]{1,40}:\s*/,'').replace(/^\s*(?:[-*•·]|\d+[.)])\s+/,'').trim();
@@ -215,15 +217,15 @@ const scale=f=>`<div class="seg">${MOOD.map((e,i)=>`<button data-a="set" data-f=
 const frow=(f,l)=>`<div class="frow"><span>${l}</span>${scale(f)}</div>`;
 return `<div class="daynav"><button data-a="day" data-n="-1" aria-label="Prejšnji dan">‹</button><div><b>${fmtD(d)}</b> ${isT?'<span class="mut">danes</span>':'<button class="sm" data-a="today">Danes</button>'}</div><button data-a="day" data-n="1" aria-label="Naslednji dan" ${isT?'disabled':''}>›</button></div>
 <div class="seg dts">${DT.map(([k,l,e])=>`<button data-a="setS" data-f="dt" data-v="${k}" class="${dt===k?'sel':''}">${e} ${l}</button>`).join('')}</div>
+<div class="seg dts md">${MODES.map(([k,l,e])=>`<button data-a="setS" data-f="mode" data-v="${k}" class="${gf(d,'mode')===k?'sel':''}">${e} ${l}</button>`).join('')}</div>
 <div class="card"><h2>Števci${isT?'':' <label class="tm nt">ura vnosa <input type="time" id="smt" value="12:00"></label>'}</h2>
 <div class="crow">${K.map((k,ix)=>{const a=sm.filter(r=>kOf(r)===k),last=a[a.length-1];return `<button class="ct" data-a="smoke" data-k="${k}" aria-label="${k} +1"><span class="cl"><i class="sw s${ix}"></i>${k}</span><b>${a.length}</b><span class="cm">${isT&&last?agoS(now()-last.t):'&nbsp;'}</span><span class="cm">prej: ${pv.filter(r=>kOf(r)===k).length}</span><span class="cp">+1</span></button>`}).join('')}</div>
 ${sm.length?`<div class="chips">${sm.map(r=>`<span class="chip">${kOf(r)} ${hm(r.t)}<button data-a="unsmoke" data-id="${r.id}" aria-label="Izbriši">×</button></span>`).join('')}</div>`:''}</div>
-<div class="card"><h2>Spanje <span class="mut nt">${sc!=null?'po času '+fmtMin(sc):''}</span></h2>
-${isT?`<div class="acts" style="margin:0 0 10px"><button data-a="bedNow">🛏 V posteljo zdaj</button><button data-a="wakeNow">☀️ Vstal sem zdaj</button></div>`:''}
-<div class="row2"><label>V postelji<input type="time" data-f="bed" value="${gf(d,'bed')||''}"></label><label>Vstal<input type="time" data-f="wake" value="${gf(d,'wake')||''}"></label></div>
-<div class="lbl">Spanje po uri (pametna ura)</div><div class="hm"><input type="number" inputmode="numeric" min="0" max="16" id="swH" placeholder="h" value="${sw!=null?Math.floor(sw/60):''}"><span>h</span><input type="number" inputmode="numeric" min="0" max="59" id="swM" placeholder="min" value="${sw!=null?sw%60:''}"><span>min</span></div>
+<div class="card"><h2>Spanje <span class="mut nt">${sc!=null?fmtMin(sc):''}</span></h2>
+<div class="slp">${isT?'<button data-a="bedNow" aria-label="V posteljo zdaj" title="V posteljo zdaj">🛏</button>':'<span>🛏</span>'}<input type="time" data-f="bed" value="${gf(d,'bed')||''}" aria-label="V postelji">${isT?'<button data-a="wakeNow" aria-label="Vstal sem zdaj" title="Vstal sem zdaj">☀️</button>':'<span>☀️</span>'}<input type="time" data-f="wake" value="${gf(d,'wake')||''}" aria-label="Vstal"></div>
+<div class="hm" style="margin-top:8px"><span title="Spanje po uri" style="font-size:17px;padding:0 6px">⌚</span><input type="number" inputmode="numeric" min="0" max="16" id="swH" placeholder="h" value="${sw!=null?Math.floor(sw/60):''}"><span>h</span><input type="number" inputmode="numeric" min="0" max="59" id="swM" placeholder="min" value="${sw!=null?sw%60:''}"><span>min (ura)</span></div>
 ${isT&&tb?`<p class="mut sm">Nocoj v postelji ob ${tb} (šteje k jutrišnjemu spanju).</p>`:''}</div>
-<div class="card"><h2>Počutje</h2><div class="lbl" style="margin-top:0">Zjutraj (ob zbujenju)</div>${frow('mP','Psihično')}${frow('mF','Fizično')}<div class="lbl">Zvečer</div>${frow('eP','Psihično')}${frow('eF','Fizično')}</div>
+<div class="card"><h2>Počutje</h2>${frow('P','Psihično')}${frow('F','Fizično')}</div>
 <div class="card"><h2>Zdravje</h2><div class="chips">${HL.map(([k,l])=>`<button class="tg ${h.includes(k)?'sel':''}" data-a="health" data-k="${k}">${l}</button>`).join('')}</div>
 ${h.includes('inj')?`<div class="lbl">Del telesa</div><div class="chips">${BODY.map(b=>`<button class="tg s2b ${inj.includes(b)?'sel':''}" data-a="inj" data-b="${b}">${b}</button>`).join('')}</div><input data-f="injC" placeholder="Komentar (npr. levo, pri teku)" value="${esc(gf(d,'injC')||'')}" style="margin-top:8px">`:''}
 ${h.includes('drugo')?`<input data-f="hOther" placeholder="Kaj drugo?" value="${esc(gf(d,'hOther')||'')}" style="margin-top:8px">`:''}</div>
@@ -264,7 +266,7 @@ live('smokes').forEach(r=>{const d=new Date(r.t),k=dk(d),c=kOf(r);if(!cnt[c])ret
 live('chores').forEach(r=>{const k=dk(new Date(r.t));chM[k]=(chM[k]||0)+r.m;anyC.add(k);if(k>=from&&k<=td)chBy[r.c]=(chBy[r.c]||0)+r.m});
 const actM={},actBy={},acDay={};live('acts').forEach(r=>{const k=dk(new Date(r.t));actM[k]=(actM[k]||0)+r.m;(acDay[k]=acDay[k]||{})[r.c]=(acDay[k][r.c]||0)+r.m;anyC.add(k);if(k>=from&&k<=td)actBy[r.c]=(actBy[r.c]||0)+r.m});
 const R=[];for(let i=n-1;i>=0;i--){const k=addD(td,-i),tr=anyC.has(k)||ld.has(k),c={};K.forEach(x=>c[x]=tr?(cnt[x][k]||0):null);
-R.push({k,tr,c,sl:sleepVal(k),ps:psy(k),ph:phy(k),f:['mP','mF','eP','eF'].map(f=>gf(k,f)),ac:tr?(actM[k]||0):null,acd:acDay[k]||{},st:gf(k,'steps'),hw:tr?(chM[k]||0):null,dt:gf(k,'dt'),h:gf(k,'health')||[],inj:gf(k,'inj')||[],ho:gf(k,'hOther')})}
+R.push({k,tr,c,sl:sleepVal(k),ps:psy(k),ph:phy(k),f:['mP','mF','eP','eF'].map(f=>gf(k,f)),ac:tr?(actM[k]||0):null,acd:acDay[k]||{},st:gf(k,'steps'),hw:tr?(chM[k]||0):null,dt:gf(k,'dt'),mode:gf(k,'mode'),h:gf(k,'health')||[],inj:gf(k,'inj')||[],ho:gf(k,'hOther')})}
 const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null,nn=f=>R.map(f).filter(v=>v!=null),trk=R.filter(r=>r.tr),av=a=>avg(a.filter(v=>v!=null));
 const aSl=avg(nn(r=>r.sl)),aPs=avg(nn(r=>r.ps)),aPh=avg(nn(r=>r.ph)),aHw=avg(nn(r=>r.hw)),aAc=avg(nn(r=>r.ac)),aSt=avg(nn(r=>r.st));
 const xl=R.map((r,i)=>{const back=n-1-i,d=pd(r.k);if(n===7)return DN[d.getDay()];return back%(n===30?7:15)===0?d.getDate()+'.'+(d.getMonth()+1)+'.':''});
@@ -274,7 +276,7 @@ const csc=nice(Math.max(0,...K.flatMap(k=>R.map(r=>r.c[k]||0))),1),L=K.length-1;
 K.forEach((k,ix)=>CH.push({id:'cC'+ix,vals:R.map(r=>r.c[k]),xl:ix===L?xl:[],max:csc.max,step:csc.step,mini:1,h:ix===L?62:46,cls:'s'+ix,tip:i=>T(i)+(R[i].tr?k+' '+R[i].c[k]:'ni vnosa')}));
 CH.push({id:'cSl',vals:R.map(r=>r.sl==null?null:r.sl/60),xl,tip:i=>T(i)+(R[i].sl==null?'ni vnosa':fmtMin(R[i].sl))});
 CH.push({id:'cFe',type:'line',max:5,step:1,series:[{k:'Psih.',ix:5,vals:R.map(r=>r.ps)},{k:'Fiz.',ix:6,vals:R.map(r=>r.ph)}],xl,
-tip:i=>{const f=R[i].f;return T(i)+(f.some(v=>v!=null)?`psih. ${dash(f[0])}/${dash(f[2])} · fiz. ${dash(f[1])}/${dash(f[3])} (jutro/večer)`:'ni vnosa')}});
+tip:i=>T(i)+(R[i].ps==null&&R[i].ph==null?'ni vnosa':'psih. '+f1(R[i].ps)+' · fiz. '+f1(R[i].ph))});
 CH.push({id:'cHw',vals:R.map(r=>r.hw),xl,int:1,h:120,tip:i=>T(i)+(R[i].hw==null?'ni vnosa':fmtM(R[i].hw))});
 CH.push({id:'cAc',vals:R.map(r=>r.ac),xl,int:1,h:120,tip:i=>T(i)+(R[i].ac==null?'ni vnosa':fmtM(R[i].ac))});
 CH.push({id:'cSt',vals:R.map(r=>r.st),xl,int:1,h:120,tip:i=>T(i)+(R[i].st==null?'ni vnosa':R[i].st+' korakov')});
@@ -284,9 +286,9 @@ const brk=brkHTML(chBy),brkA=brkHTML(actBy),acN=[...new Set([...getList('acts'),
 const cor=(fa,fb)=>{const p=R.filter(r=>fa(r)!=null&&fb(r)!=null).map(r=>[fa(r),fb(r)]);return[pearson(p),p.length]};
 const rowsC=[...K.map(k=>[k,r=>r.c[k]]),['Spanje',r=>r.sl],...acN.map(c=>[c,r=>r.tr?(r.acd[c]||0):null]),['Hišna opr.',r=>r.hw],['Koraki',r=>r.st]],colsC=[['Psih.',r=>r.ps],['Fiz.',r=>r.ph],['Spanje',r=>r.sl]],ns=[];
 const mat=`<div class="scroll"><table class="tb"><tr><th></th>${colsC.map(c=>`<th class="num">${c[0]}</th>`).join('')}</tr>${rowsC.map(([l,fa])=>`<tr><td>${l}</td>${colsC.map(([cl,fb])=>{if(cl===l)return '<td></td>';const[r,m]=cor(fa,fb);ns.push(m);return `<td class="num" title="n=${m}">${m>=5&&r!=null?(Math.abs(r)<.005?'':r<0?'−':'+')+Math.abs(r).toFixed(2).replace('.',','):'–'}</td>`}).join('')}</tr>`).join('')}</table></div>`;
-const dtT=DT.map(([k,l,e])=>{const rs=trk.filter(r=>r.dt===k);return `<tr><td>${e} ${l}</td><td class="num">${rs.length}</td>${K.map(x=>`<td class="num">${f1(av(rs.map(r=>r.c[x])))}</td>`).join('')}<td class="num">${f1(av(rs.map(r=>r.ps)))}</td><td class="num">${f1(av(rs.map(r=>r.sl==null?null:r.sl/60)))}</td><td class="num">${rs.length?Math.round(av(rs.map(r=>r.hw))):'–'}</td></tr>`}).join('');
+const byT=(L,key)=>L.map(([k,l,e])=>{const rs=trk.filter(r=>r[key]===k);return `<tr><td>${e} ${l}</td><td class="num">${rs.length}</td>${K.map(x=>`<td class="num">${f1(av(rs.map(r=>r.c[x])))}</td>`).join('')}<td class="num">${f1(av(rs.map(r=>r.ps)))}</td><td class="num">${f1(av(rs.map(r=>r.sl==null?null:r.sl/60)))}</td><td class="num">${rs.length?Math.round(av(rs.map(r=>r.hw))):'–'}</td></tr>`}).join(''),dtT=byT(DT,'dt'),mdT=byT(MODES,'mode');
 const hLbl=r=>r.h.map(x=>x==='drugo'?(r.ho||'drugo'):x==='inj'?'poškodba'+(r.inj.length?' ('+r.inj.join(', ')+')':''):({ok:'OK',virus:'virus',glava:'glavobol'})[x]).join(', ');
-const lgF=`<div class="lg"><span><i class="sw s5"></i>Psihično</span><span><i class="sw s6"></i>Fizično</span><span class="mut">povprečje jutro + večer</span></div>`;
+const lgF=`<div class="lg"><span><i class="sw s5"></i>Psihično</span><span><i class="sw s6"></i>Fizično</span></div>`;
 const card=(id,t,l)=>`<div class="card"><h2>${t}</h2>${l||''}<div class="chart" id="${id}" role="img" aria-label="${t}"></div></div>`;
 const tile=(v,l)=>`<div class="tile"><div class="tv">${v}</div><div class="tl">${l}</div></div>`;
 return `<div class="seg rng">${[7,30,90].map(x=>`<button data-a="range" data-n="${x}" class="${n===x?'sel':''}">${x} dni</button>`).join('')}</div>
@@ -300,9 +302,9 @@ ${card('cSl','Spanje (ure)')}${card('cFe','Počutje',lgF)}
 ${card('cSt','Koraki').replace('class="chart"','class="chart auto"')}
 <div class="card"><h2>Hišna opravila (min / dan)</h2><div class="chart auto" id="cHw" role="img" aria-label="Hišna opravila"></div>${brk}</div>
 <div class="card"><h2>Števci po urah</h2><div class="chart auto" id="cHr" role="img" aria-label="Števci po urah"></div><p class="mut sm">Temneje = več (relativno znotraj vrstice). Dotik pokaže število.</p></div>
-<div class="card"><h2>Po tipu dneva (povprečja)</h2>${trk.some(r=>r.dt)?`<div class="scroll"><table class="tb"><tr><th></th><th class="num">dni</th>${K.map(k=>`<th class="num">${k}</th>`).join('')}<th class="num">psih.</th><th class="num">spanje</th><th class="num">hiš. min</th></tr>${dtT}</table></div>`:'<div class="empty">Označi tip dneva v dnevniku (Prosto / DOD / IJS).</div>'}</div>
+<div class="card"><h2>Po tipu dneva in modu (povprečja)</h2>${trk.some(r=>r.dt||r.mode)?`<div class="scroll"><table class="tb"><tr><th></th><th class="num">dni</th>${K.map(k=>`<th class="num">${k}</th>`).join('')}<th class="num">psih.</th><th class="num">spanje</th><th class="num">hiš. min</th></tr>${dtT}<tr><th colspan="10" style="padding-top:12px">mode</th></tr>${mdT}</table></div>`:'<div class="empty">Označi tip dneva in mode v dnevniku.</div>'}</div>
 <div class="card"><h2>Povezave (isti dan)</h2>${mat}<p class="mut sm">Pearsonov r, prikazan pri n ≥ 5 (n = ${ns.length?Math.min(...ns)+'–'+Math.max(...ns):0} dni). Pri n &lt; 30 zelo nezanesljivo. Korelacija ni vzročnost.</p></div>
-<details class="card"><summary>Tabela po dnevih</summary>${trk.length?`<div class="scroll"><table class="tb"><tr><th>dan</th><th>tip</th>${K.map(k=>`<th class="num">${k}</th>`).join('')}<th class="num">spanje</th><th class="num">psih.</th><th class="num">fiz.</th><th class="num">akt.</th><th class="num">koraki</th><th class="num">hiš.</th><th>zdravje</th></tr>${trk.slice().reverse().map(r=>{const d=pd(r.k);return `<tr><td>${d.getDate()}.${d.getMonth()+1}.</td><td>${r.dt?DTN[r.dt]:''}</td>${K.map(k=>`<td class="num">${r.c[k]}</td>`).join('')}<td class="num">${r.sl==null?'':f1(r.sl/60)}</td><td class="num">${r.ps==null?'':f1(r.ps)}</td><td class="num">${r.ph==null?'':f1(r.ph)}</td><td class="num">${r.ac||''}</td><td class="num">${r.st??''}</td><td class="num">${r.hw||''}</td><td>${esc(hLbl(r))}</td></tr>`}).join('')}</table></div>`:'<div class="empty">Ni vnosov.</div>'}</details>`}
+<details class="card"><summary>Tabela po dnevih</summary>${trk.length?`<div class="scroll"><table class="tb"><tr><th>dan</th><th>tip</th><th>mode</th>${K.map(k=>`<th class="num">${k}</th>`).join('')}<th class="num">spanje</th><th class="num">psih.</th><th class="num">fiz.</th><th class="num">akt.</th><th class="num">koraki</th><th class="num">hiš.</th><th>zdravje</th></tr>${trk.slice().reverse().map(r=>{const d=pd(r.k);return `<tr><td>${d.getDate()}.${d.getMonth()+1}.</td><td>${r.dt?DTN[r.dt]:''}</td><td>${r.mode?MODEN[r.mode]:''}</td>${K.map(k=>`<td class="num">${r.c[k]}</td>`).join('')}<td class="num">${r.sl==null?'':f1(r.sl/60)}</td><td class="num">${r.ps==null?'':f1(r.ps)}</td><td class="num">${r.ph==null?'':f1(r.ph)}</td><td class="num">${r.ac||''}</td><td class="num">${r.st??''}</td><td class="num">${r.hw||''}</td><td>${esc(hLbl(r))}</td></tr>`}).join('')}</table></div>`:'<div class="empty">Ni vnosov.</div>'}</details>`}
 
 // ---------- charts (single-series bars: title names it; multi-series lines: legend + direct end labels; hover/tap tooltip)
 function nice(m,int){if(!(m>0))m=1;const raw=m/4,p=10**Math.floor(Math.log10(raw)),f=raw/p;let s=(f<=1?1:f<=2?2:f<=5?5:10)*p;if(int)s=Math.max(1,s);return{max:Math.ceil(m/s-1e-9)*s,step:s}}
@@ -358,10 +360,10 @@ async function copyTA(){const ta=$('#sheetIn textarea');if(!ta)return;try{await 
 function exportFile(name,data,type){try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}catch(e){}
 const o=$('#expOut');if(o)o.innerHTML=`<p class="mut sm">Če se prenos ni začel, kopiraj spodnje:</p><textarea rows="5" readonly>${esc(data)}</textarea><div class="acts"><button data-a="copy">Kopiraj</button></div>`}
 function csv(){const days=new Set(loggedDays());live('smokes').concat(live('chores'),live('acts')).forEach(r=>days.add(dk(new Date(r.t))));const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
-const out=['datum,'+K.join(',')+','+K.map(k=>'cas_'+k).join(',')+',tip_dneva,hisna_min,hisna_opis,v_postelji,vstal,spanje_cas_h,spanje_ura_h,psih_jutro,fiz_jutro,psih_vecer,fiz_vecer,zdravje,poskodba,poskodba_opis,zdravje_drugo,aktivnosti_min,aktivnosti_opis,koraki,zapisek'];
+const out=['datum,'+K.join(',')+','+K.map(k=>'cas_'+k).join(',')+',tip_dneva,mode,hisna_min,hisna_opis,v_postelji,vstal,spanje_cas_h,spanje_ura_h,psihicno,fizicno,zdravje,poskodba,poskodba_opis,zdravje_drugo,aktivnosti_min,aktivnosti_opis,koraki,zapisek'];
 [...days].sort().forEach(d=>{const sm=smokesOn(d),sc=sleepCalc(d),sw=gf(d,'sw'),by=k=>sm.filter(r=>kOf(r)===k),sp=gf(d,'sp');
-out.push([d,...K.map(k=>by(k).length),...K.map(k=>q(by(k).map(r=>hm(r.t)).join(' '))),gf(d,'dt')?DTN[gf(d,'dt')]:'',(()=>{const c=choresOn(d);return c.reduce((s,r)=>s+r.m,0)+','+q(Object.entries(c.reduce((o,r)=>(o[r.c]=(o[r.c]||0)+r.m,o),{})).filter(x=>x[1]).map(([k,v])=>k+' '+v).join('; '))})(),gf(d,'bed')||'',gf(d,'wake')||'',sc==null?'':(sc/60).toFixed(2),sw==null?'':(sw/60).toFixed(2),
-...['mP','mF','eP','eF'].map(f=>gf(d,f)??''),q((gf(d,'health')||[]).join(' ')),q((gf(d,'inj')||[]).join('; ')),q(gf(d,'injC')),q(gf(d,'hOther')),(()=>{const c=actsOn(d);return c.reduce((s,r)=>s+r.m,0)+','+q(Object.entries(c.reduce((o,r)=>(o[r.c]=(o[r.c]||0)+r.m,o),{})).filter(x=>x[1]).map(([k,v])=>k+' '+v).join('; '))})(),gf(d,'steps')??'',q(gf(d,'note'))].join(','))});
+out.push([d,...K.map(k=>by(k).length),...K.map(k=>q(by(k).map(r=>hm(r.t)).join(' '))),gf(d,'dt')?DTN[gf(d,'dt')]:'',gf(d,'mode')?MODEN[gf(d,'mode')]:'',(()=>{const c=choresOn(d);return c.reduce((s,r)=>s+r.m,0)+','+q(Object.entries(c.reduce((o,r)=>(o[r.c]=(o[r.c]||0)+r.m,o),{})).filter(x=>x[1]).map(([k,v])=>k+' '+v).join('; '))})(),gf(d,'bed')||'',gf(d,'wake')||'',sc==null?'':(sc/60).toFixed(2),sw==null?'':(sw/60).toFixed(2),
+...[psy(d),phy(d)].map(v=>v==null?'':+v.toFixed(2)),q((gf(d,'health')||[]).join(' ')),q((gf(d,'inj')||[]).join('; ')),q(gf(d,'injC')),q(gf(d,'hOther')),(()=>{const c=actsOn(d);return c.reduce((s,r)=>s+r.m,0)+','+q(Object.entries(c.reduce((o,r)=>(o[r.c]=(o[r.c]||0)+r.m,o),{})).filter(x=>x[1]).map(([k,v])=>k+' '+v).join('; '))})(),gf(d,'steps')??'',q(gf(d,'note'))].join(','))});
 return '﻿'+out.join('\n')}
 function importFile(f){if(!f)return;f.text().then(t=>{const d=JSON.parse(t);if(!d||!COLS.some(c=>d[c]&&typeof d[c]==='object'))throw 0;const b=count();S=merge(S,d);flush();closeSheet();render();toast('Uvoženo, +'+(count()-b)+' zapisov')}).catch(()=>toast('Ni veljavna datoteka'))}
 const settingsHTML=()=>`<h3>Nastavitve</h3><p class="mut">Podatki so samo v tem brskalniku (${count()} zapisov). Sinhronizacije še ni – redno izvozi kopijo.</p>
