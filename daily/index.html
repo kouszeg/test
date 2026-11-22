@@ -120,7 +120,7 @@ label{font-size:13px;color:var(--ink2);display:block}label input{margin-top:3px}
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v1.3</small></h1><span><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="font-size:18px;border:0">⚙</button></span></header>
+<header><h1>Daily <small class="ver">v1.4</small></h1><span><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="font-size:18px;border:0">⚙</button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i">📓</span>Dnevnik</button>
@@ -144,7 +144,7 @@ MODES=[['chill','Chill','😌'],['normal','Normal','🙂'],['busy','Busy','⚡']
 DT=[['f','Prosto','🏖'],['d','DOD','🏠'],['i','IJS','🏢']],DTN={f:'Prosto',d:'DOD',i:'IJS'},
 CHORES=['Sesanje','Posoda','Pomivalni stroj','Perilo','Likanje','Kuhanje','Kopalnica','Prah','Smeti','Okolica','Drugo'],
 K=['SM','BO','JO','CF','WD'],STEPS=[5,30,-5,-30],
-DEFL={chores:CHORES,acts:['Sprehod','Šport','Meditacija']},OLDK={S:'SM',B:'BO',J:'JO'},kOf=r=>OLDK[r.k]||r.k||'SM';
+DEFL={chores:['Kuhinja: smeti, sesanje, zajtrk, kosilo, večerja, pult, omare, fronte, generalno','Kopalnica: umivalnik, WC, tuš / kad, ogledalo, tla, generalno','Dnevna soba: sesanje, prah, pospravljanje, generalno','Spalnica: postelja, sesanje, prah, pospravljanje','Perilo: pranje, obešanje, zlaganje, likanje','Zunaj: smeti, okolica, avto','Ostalo: nakupovanje, popravila, drugo'],acts:['Sprehod','Šport','Meditacija']},OLDK={S:'SM',B:'BO',J:'JO'},kOf=r=>OLDK[r.k]||r.k||'SM';
 const mem={},st={get:k=>{try{return localStorage.getItem(k)}catch(e){return k in mem?mem[k]:null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}};
 const empty=()=>{const d={v:1};COLS.forEach(c=>d[c]={});return d};
 function load(){let d=null;try{d=JSON.parse(st.get(KEY))}catch(e){}const o=empty();if(d&&typeof d==='object')COLS.forEach(c=>{if(d[c]&&typeof d[c]==='object')o[c]=d[c]});return o}
@@ -205,7 +205,7 @@ function openSheet(h){$('#sheetIn').innerHTML=h;$('#sheet').classList.add('open'
 function closeSheet(){$('#sheet').classList.remove('open');$('#sheetIn').innerHTML=''}
 
 // ---------- views
-const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',sH:5,sA:5};
+const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',sH:5,sA:5,room:null};
 let CH=[],LOCK=false;
 function render(){if(LOCK)return;CH=[];$('#main').innerHTML=({dnevnik:vDnevnik,opravila:vOpravila,nakupi:vNakupi,pregled:vPregled})[V.tab]();
 document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===V.tab));
@@ -230,9 +230,19 @@ ${isT&&tb?`<p class="mut sm">Nocoj v postelji ob ${tb} (šteje k jutrišnjemu sp
 ${h.includes('inj')?`<div class="lbl">Del telesa</div><div class="chips">${BODY.map(b=>`<button class="tg s2b ${inj.includes(b)?'sel':''}" data-a="inj" data-b="${b}">${b}</button>`).join('')}</div><input data-f="injC" placeholder="Komentar (npr. levo, pri teku)" value="${esc(gf(d,'injC')||'')}" style="margin-top:8px">`:''}
 ${h.includes('drugo')?`<input data-f="hOther" placeholder="Kaj drugo?" value="${esc(gf(d,'hOther')||'')}" style="margin-top:8px">`:''}</div>
 ${minCard('Aktivnosti','acts','act',actsOn(d),V.sA,'stepA',isT,`<div class="lbl">Koraki (z ure / telefona)</div><input type="number" inputmode="numeric" min="0" id="stepsI" placeholder="npr. 8500" value="${gf(d,'steps')??''}">`)}
-${minCard('Hišna opravila','chores','chore',ch,V.sH,'stepH',false)}
+${choreCard(ch)}
 <div class="card"><h2>Zapisek</h2><textarea data-f="note" rows="3" placeholder="…">${esc(gf(d,'note')||'')}</textarea></div>`}
 
+// chores grouped by room: list lines "Prostor: a, b, c"; record name "Prostor · a" (lines without ':' keep the bare name)
+function choreGroups(){const G={},add=(r,l,c)=>{(G[r]=G[r]||[]);if(!G[r].some(x=>x.c===c))G[r].push({l,c})};
+getList('chores').forEach(line=>{const i=line.indexOf(':');if(i<0)add('Ostalo',line.trim(),line.trim());else{const r=line.slice(0,i).trim();line.slice(i+1).split(',').map(x=>x.trim()).filter(Boolean).forEach(it=>add(r,it,r+' · '+it))}});return{G,add}}
+const roomOf=c=>{const j=c.indexOf(' · ');return j<0?'Ostalo':c.slice(0,j)};
+function choreCard(recs){const{G,add}=choreGroups(),tot={};recs.forEach(r=>tot[r.c]=(tot[r.c]||0)+r.m);
+const known=new Set(Object.values(G).flat().map(x=>x.c));Object.keys(tot).forEach(c=>{if(tot[c]&&!known.has(c)){const j=c.indexOf(' · ');j<0?add('Ostalo',c,c):add(c.slice(0,j),c.slice(j+3),c)}});
+const rs=Object.keys(G),room=rs.includes(V.room)?V.room:rs[0],rt=r=>G[r].reduce((s,x)=>s+(tot[x.c]||0),0),sum=recs.reduce((s,r)=>s+r.m,0),step=V.sH;
+return `<div class="card"><h2>Hišna opravila<span class="hh"><span class="mut nt">${sum?fmtM(sum):''}</span><button class="sm stp ${step<0?'neg':''}" data-a="stepH" aria-label="Korak (tapni za menjavo)">${step>0?'+':'−'}${Math.abs(step)}</button><button class="sm" data-a="editList" data-l="chores" aria-label="Uredi seznam">✎</button></span></h2>
+<div class="chips">${rs.map(r=>{const t=rt(r);return `<button class="tg s2b ${r===room?'sel':''}" data-a="room" data-r="${esc(r)}">${esc(r)}${t?` <span class="mut">${fmtM(t)}</span>`:''}</button>`}).join('')}</div>
+<div class="cgrid" style="margin-top:8px">${(G[room]||[]).map(x=>`<button class="chb ${tot[x.c]?'sel':''}" data-a="chore" data-ch="${esc(x.c)}">${esc(x.l)}<span>${tot[x.c]?fmtM(tot[x.c]):''}</span></button>`).join('')}</div></div>`}
 function minCard(title,w,act,recs,step,sa,timer,extra){const tot={};recs.forEach(r=>tot[r.c]=(tot[r.c]||0)+r.m);const sum=recs.reduce((s,r)=>s+r.m,0),run=getRun(),list=getList(w);
 Object.keys(tot).forEach(c=>{if(tot[c]&&!list.includes(c))list.push(c)});
 return `<div class="card"><h2>${title}<span class="hh"><span class="mut nt">${sum?fmtM(sum):''}</span><button class="sm stp ${step<0?'neg':''}" data-a="${sa}" aria-label="Korak (tapni za menjavo)">${step>0?'+':'−'}${Math.abs(step)}</button><button class="sm" data-a="editList" data-l="${w}" aria-label="Uredi seznam">✎</button></span></h2>
@@ -241,7 +251,7 @@ function addMin(col,c,step){const d=V.day,cur=(col==='chores'?choresOn:actsOn)(d
 put(col,{id:uid(),t:d===today()?now():pd(d).setHours(12,0,0,0),c,m});navigator.vibrate&&navigator.vibrate(15);render()}
 function stopRun(silent){const r=getRun();if(!r)return;const m=Math.max(1,Math.round((now()-r.s)/60000));put('acts',{id:uid(),t:r.s,c:r.c,m});put('cfg',{id:'run',v:null});if(!silent)toast(r.c+': +'+fmtM(m))}
 function updRun(){const r=getRun(),b=$('#runH');if(b){b.hidden=!r;if(r)b.textContent='■ '+r.c+' '+agoS(now()-r.s)}document.querySelectorAll('[data-run]').forEach(e=>e.textContent=r?agoS(now()-r.s):'')}
-const brkHTML=by=>{const cb=Object.entries(by).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]),mx=cb.length?cb[0][1]:1;return cb.length?`<div class="brk">${cb.map(([c,m])=>`<span>${esc(c)}</span><i style="width:${(m/mx*100).toFixed(1)}%"></i><span class="num">${fmtM(m)}</span>`).join('')}</div>`:''};
+const brkHTML=(by,lim)=>{const cb=Object.entries(by).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,lim||99),mx=cb.length?cb[0][1]:1;return cb.length?`<div class="brk">${cb.map(([c,m])=>`<span>${esc(c)}</span><i style="width:${(m/mx*100).toFixed(1)}%"></i><span class="num">${fmtM(m)}</span>`).join('')}</div>`:''};
 function dueLbl(k,td){return k===td?'danes':k===addD(td,1)?'jutri':k===addD(td,-1)?'včeraj':fmtD(k)}
 function row(c,r,td){const over=c==='todos'&&r.due&&r.due<td&&!r.done;
 return `<div class="item ${r.done?'done':''}"><button class="ck ${r.done?'on':''}" data-a="tg" data-c="${c}" data-id="${r.id}" aria-label="Označi">${r.done?'✓':''}</button><div class="txt" data-a="edit" data-c="${c}" data-id="${r.id}">${esc(r.text)}${r.due?` <span class="due ${over?'over':''}">${dueLbl(r.due,td)}</span>`:''}</div><button class="x" data-a="del" data-c="${c}" data-id="${r.id}" aria-label="Izbriši">×</button></div>`}
@@ -281,7 +291,8 @@ CH.push({id:'cHw',vals:R.map(r=>r.hw),xl,int:1,h:120,tip:i=>T(i)+(R[i].hw==null?
 CH.push({id:'cAc',vals:R.map(r=>r.ac),xl,int:1,h:120,tip:i=>T(i)+(R[i].ac==null?'ni vnosa':fmtM(R[i].ac))});
 CH.push({id:'cSt',vals:R.map(r=>r.st),xl,int:1,h:120,tip:i=>T(i)+(R[i].st==null?'ni vnosa':R[i].st+' korakov')});
 CH.push({id:'cHr',type:'heat',rows:K.map(k=>({k,vals:hr[k]})),tip:(k,h,v)=>k+' '+pad(h)+':00–'+pad(h)+':59: '+v});
-const brk=brkHTML(chBy),brkA=brkHTML(actBy),acN=[...new Set([...getList('acts'),...Object.keys(actBy)])];
+const rmBy={};Object.entries(chBy).forEach(([c,m])=>{const r=roomOf(c);rmBy[r]=(rmBy[r]||0)+m});
+const brk=(Object.keys(chBy).length?'<div class="lbl">Po prostorih</div>':'')+brkHTML(rmBy)+(Object.keys(chBy).length?'<div class="lbl">Najpogostejša opravila</div>':'')+brkHTML(chBy,8),brkA=brkHTML(actBy),acN=[...new Set([...getList('acts'),...Object.keys(actBy)])];
 // correlation matrix
 const cor=(fa,fb)=>{const p=R.filter(r=>fa(r)!=null&&fb(r)!=null).map(r=>[fa(r),fb(r)]);return[pearson(p),p.length]};
 const rowsC=[...K.map(k=>[k,r=>r.c[k]]),['Spanje',r=>r.sl],...acN.map(c=>[c,r=>r.tr?(r.acd[c]||0):null]),['Hišna opr.',r=>r.hw],['Koraki',r=>r.st]],colsC=[['Psih.',r=>r.ps],['Fiz.',r=>r.ph],['Spanje',r=>r.sl]],ns=[];
@@ -413,11 +424,12 @@ setS:b=>{const f=b.dataset.f,v=b.dataset.v;sf(V.day,f,gf(V.day,f)===v?null:v);re
 stepH:()=>{V.sH=STEPS[(STEPS.indexOf(V.sH)+1)%4];render()},
 stepA:()=>{V.sA=STEPS[(STEPS.indexOf(V.sA)+1)%4];render()},
 chore:b=>addMin('chores',b.dataset.ch,V.sH),
+room:b=>{V.room=b.dataset.r;render()},
 act:b=>addMin('acts',b.dataset.ch,V.sA),
 start:b=>{if(getRun())stopRun();put('cfg',{id:'run',v:{c:b.dataset.ch,s:now()}});render()},
 stop:()=>{stopRun();render()},
 gotoRun:()=>{V.tab='dnevnik';V.day=today();render();scrollTo(0,0)},
-editList:b=>{const w=b.dataset.l;openSheet(`<h3>Uredi seznam</h3><p class="mut sm" style="margin-bottom:8px">Eno na vrstico, vrstni red = prikaz. Izbrisana ostanejo v statistiki.</p><textarea id="lT" rows="10">${esc(getList(w).join('\n'))}</textarea><div class="acts"><button class="pri" data-a="saveList" data-l="${w}">Shrani</button><button data-a="resetList" data-l="${w}">Privzeto</button><button data-a="closeSheet">Prekliči</button></div>`)},
+editList:b=>{const w=b.dataset.l;openSheet(`<h3>Uredi seznam</h3><p class="mut sm" style="margin-bottom:8px">${w==='chores'?'Ena vrstica = prostor: opravila, ločena z vejico (npr. <i>Kuhinja: smeti, pult</i>).':'Eno na vrstico.'} Vrstni red = prikaz. Izbrisana ostanejo v statistiki.</p><textarea id="lT" rows="10">${esc(getList(w).join('\n'))}</textarea><div class="acts"><button class="pri" data-a="saveList" data-l="${w}">Shrani</button><button data-a="resetList" data-l="${w}">Privzeto</button><button data-a="closeSheet">Prekliči</button></div>`)},
 saveList:b=>{const v=[...new Set($('#lT').value.split('\n').map(x=>x.trim()).filter(Boolean))];put('cfg',{id:b.dataset.l,v:v.length?v:null});closeSheet();render()},
 resetList:b=>{put('cfg',{id:b.dataset.l,v:null});closeSheet();render()},
 unchore:(b,id)=>{const r=S.chores[id];if(r){r.del=1;put('chores',r);render()}},
