@@ -7,5 +7,23 @@
   "m": [
    "gemini-3.8-flash-tts"
   ]
+ },
+ "2026-11-23-tambora": {
+  "h": "ac2cb1ed53d0",
+  "d": 624,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-lite-tts"
+  ]
+ },
+ "2026-11-23-vzdih": {
+  "h": "9a448656195a",
+  "d": 233,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-lite-tts"
+  ]
  }
 }
