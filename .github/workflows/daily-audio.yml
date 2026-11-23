@@ -33,7 +33,8 @@ jobs:
         env: {GH_TOKEN: '${{ github.token }}'}
         run: |
           git config user.name "daily-bot"; git config user.email "daily-bot@users.noreply.github.com"
-          git add -A daily/branje/audio daily/tts-test 2>/dev/null || true
+          for d in daily/branje/audio daily/tts-test; do [ -e "$d" ] && git add -A "$d"; done
+          git status --short | head -20
           if git diff --cached --quiet; then echo "nothing new"; exit 0; fi
           git commit -q -m "audio: narration" && git pull --rebase -q && git push -q
           gh workflow run pages.yml
