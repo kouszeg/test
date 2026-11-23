@@ -216,7 +216,7 @@ body.reading nav{display:none}body.reading{padding-bottom:24px}
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v4.33</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" id="trB" data-a="trash" aria-label="Koš" style="padding:4px 6px" hidden><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><button class="sm" data-a="goStats" aria-label="Pregled" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg></button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
+<header><h1>Daily <small class="ver">v4.34</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" id="trB" data-a="trash" aria-label="Koš" style="padding:4px 6px" hidden><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><button class="sm" data-a="goStats" aria-label="Pregled" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg></button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>Dnevnik</button>
@@ -701,8 +701,8 @@ const tB=V.tdB,tF=from,fin=live('feel').filter(e=>{const k=dk(new Date(e.t));ret
 const bl=b=>b*tB+'–'+(b+1)*tB+' h';
 FD.forEach(([k,,,nm],j)=>{const G=BI.map(b=>fin.filter(e=>hb(e)===b&&e[k]!=null).map(e=>e[k]));CH.push({id:'cD'+j,vals:G.map(avgOf),xl:j===FD.length-1?BI.map(b=>BI.length>8&&b%2?'':String(b*tB)):[],max:5,step:5,mini:1,h:j===FD.length-1?62:46,tip:i=>bl(BI[i])+': '+(G[i].length?nm+' '+f1(avgOf(G[i]))+' (n='+G[i].length+')':'ni vnosa')})});
 const tod=`<div class="lbl" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">Čez dan (povprečje vnosov)<span style="flex:1"></span>${sseg('tdB',String(tB),[['1','1 h'],['2','2 h'],['3','3 h']])}</div>${BI.length?FD.map(([k,,,nm],j)=>`<div class="mini"><span class="ml" style="flex-basis:84px;font-weight:500">${nm}</span><div class="chart auto" id="cD${j}" role="img" aria-label="${nm} čez dan"></div></div>`).join('')+`<p class="mut sm">Vnosov v obdobju: ${fin.length}. Stolpec = povprečje vnosov v tem urnem oknu; tapni za n.</p>`:'<div class="empty">V tem obdobju ni vnosov počutja.</div>'}`;
-CH.push({id:'cHw',vals:R.map(r=>r.hw),xl,int:1,h:120,tip:i=>T(i)+(R[i].hw==null?'ni vnosa':fmtM(R[i].hw))});
-CH.push({id:'cAc',vals:R.map(r=>r.ac),xl,int:1,h:120,tip:i=>T(i)+(R[i].ac==null?'ni vnosa':fmtM(R[i].ac))});
+CH.push({id:'cHw',vals:R.map(r=>r.hw==null?null:r.hw/60),xl,h:120,tip:i=>T(i)+(R[i].hw==null?'ni vnosa':fmtM(R[i].hw))});
+CH.push({id:'cAc',vals:R.map(r=>r.ac==null?null:r.ac/60),xl,h:120,tip:i=>T(i)+(R[i].ac==null?'ni vnosa':fmtM(R[i].ac))});
 CH.push({id:'cSt',vals:R.map(r=>r.st),xl,int:1,h:120,tip:i=>T(i)+(R[i].st==null?'ni vnosa':R[i].st+' korakov')});
 CH.push({id:'cHr',type:'heat',rows:K.map(k=>({k,vals:hr[k]})),tip:(k,h,v)=>k+' '+pad(h)+':00–'+pad(h)+':59: '+v});
 const rmBy={};Object.entries(chBy).forEach(([c,m])=>{const r=roomOf(c);rmBy[r]=(rmBy[r]||0)+m});
@@ -727,9 +727,9 @@ return `<div class="seg rng">${[7,30,90].map(x=>`<button data-a="range" data-n="
 ${card('cSl','Spanje (ure)')}
 <div class="card"><h2>Počutje po dimenzijah (povprečje dneva)</h2><div class="mini"><span class="ml" style="flex-basis:84px;font-weight:500">Zdravje</span><div class="chart auto" id="cHg" role="img" aria-label="Zdravje splošno"></div></div>${FD.map(([k,l,r,nm],j)=>`<div class="mini"><span class="ml" style="flex-basis:84px;font-weight:500">${nm}</span><div class="chart auto" id="cF${j}" role="img" aria-label="${nm}"></div></div>`).join('')}<p class="mut sm">Lestvica 1–5, 5 = bolje. Več vnosov v dnevu = več ožjih stolpcev (vsak vnos svoj).</p>
 ${tod}</div>
-<div class="card"><h2>Aktivnosti (min / dan)</h2><div class="chart auto" id="cAc" role="img" aria-label="Aktivnosti"></div>${brkA}</div>
+<div class="card"><h2>Aktivnosti (h / dan)</h2><div class="chart auto" id="cAc" role="img" aria-label="Aktivnosti"></div>${brkA}</div>
 ${hasSt?card('cSt','Koraki').replace('class="chart"','class="chart auto"'):''}
-<div class="card"><h2>Hišna opravila (min / dan)</h2><div class="chart auto" id="cHw" role="img" aria-label="Hišna opravila"></div>${brk}</div>
+<div class="card"><h2>Hišna opravila (h / dan)</h2><div class="chart auto" id="cHw" role="img" aria-label="Hišna opravila"></div>${brk}</div>
 <div class="card"><h2>Števci po urah</h2><div class="chart auto" id="cHr" role="img" aria-label="Števci po urah"></div><p class="mut sm">Temneje = več (relativno znotraj vrstice). Dotik pokaže število.</p></div>
 <div class="card"><h2>Po tipu dneva in modu (povprečja)</h2>${trk.some(r=>r.dt||r.mode)?`<div class="scroll"><table class="tb"><tr><th></th><th class="num">dni</th>${K.map(k=>`<th class="num">${k}</th>`).join('')}<th class="num">delo h</th><th class="num">psih.</th><th class="num">spanje</th><th class="num">hiš. min</th></tr>${dtT}<tr><th colspan="11" style="padding-top:12px">mode</th></tr>${mdT}</table></div>`:'<div class="empty">Označi tip dneva in mode v dnevniku.</div>'}</div>
 <div class="card"><h2>Povezave (isti dan)</h2>${mat}<p class="mut sm">Pearsonov r, prikazan pri n ≥ 5 (n = ${ns.length?Math.min(...ns)+'–'+Math.max(...ns):0} dni). Pri n &lt; 30 zelo nezanesljivo. Korelacija ni vzročnost.</p></div>
@@ -1061,7 +1061,7 @@ live('acts').filter(r=>r.c==='Branje').forEach(r=>{r.c='Branje/študij';put('act
 if(c&&Array.isArray(c.v)&&c.v.length){const rooms=c.v.map(l=>l.split(':')[0].trim());const add=DEFL.chores.filter(l=>['Klet','Podstreha','Avto','Popravila'].includes(l.split(':')[0])&&!rooms.includes(l.split(':')[0]));if(add.length)put('cfg',{id:'chores',v:[...c.v,...add]})}
 if(a&&Array.isArray(a.v)&&a.v.length&&!a.v.includes('Kitara'))put('cfg',{id:'acts',v:[...a.v,'Kitara']});if((c&&c.v)||(a&&a.v))put('cfg',{id:'mig19',v:1})})();
 setInterval(()=>{if(!LOCK)updRun()},15000);
-const VER='4.33';
+const VER='4.34';
 function checkUpd(){if(LOCK||location.protocol!=='https:')return;fetch('version.txt?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{t=t.trim();const b=$('#upd');if(b&&t&&t!==VER){b.hidden=false;b.textContent='↻ v'+t}}).catch(()=>{})}
 setInterval(checkUpd,1800000);addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpd()});
 let shared=false;
