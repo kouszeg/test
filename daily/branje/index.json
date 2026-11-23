@@ -30,6 +30,46 @@
   "min": 10
  },
  {
+  "id": "2026-11-23-navade",
+  "title": "Enaindvajset dni, ki jih ni bilo",
+  "sub": "Koliko časa v resnici traja nova navada in zakaj pomaga preprost načrt »če – potem«",
+  "area": "Osebnostna rast",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1577,
+  "min": 10
+ },
+ {
+  "id": "2026-11-23-ostrom",
+  "title": "Tragedija, ki se ni zgodila",
+  "sub": "Elinor Ostrom, švicarske krave in zakaj skupno ni nujno obsojeno na propad",
+  "area": "Politika, ekonomija, družba",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1394,
+  "min": 9
+ },
+ {
+  "id": "2026-11-23-tramvaj",
+  "title": "Kretnica in mostovž",
+  "sub": "Problem tramvaja, ali zakaj nam ni vseeno, kako umre en človek",
+  "area": "Filozofija",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1289,
+  "min": 8
+ },
+ {
+  "id": "2026-11-23-tambora",
+  "title": "Leto brez poletja",
+  "sub": "Kako je izbruh vulkana v Indoneziji prinesel lakoto v Evropo, Frankensteina in kolo",
+  "area": "Zgodovina",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1421,
+  "min": 9
+ },
+ {
   "id": "2026-11-23-tezejeva-ladja",
   "title": "Tezejeva ladja",
   "sub": "Če zamenjaš vse dele, ali je to še ista stvar?",

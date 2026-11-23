@@ -14,6 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 daily/tools/videos.py
+        env:
+          YT_KEY: ${{ secrets.YT_KEY }}
       - name: commit
         run: |
           git config user.name "daily-bot"
