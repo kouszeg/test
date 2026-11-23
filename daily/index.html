@@ -133,7 +133,7 @@ body{background:var(--page)}header{background:var(--page);border-bottom:0;paddin
 button,.btn{border:0;background:var(--fill)}
 .sel{background:var(--accSoft)!important;color:var(--acc);font-weight:600}
 input,textarea{border:0;background:var(--fill)}input:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:-2px}
-input[type=time]::-webkit-calendar-picker-indicator{display:none}
+input[type=time]::-webkit-calendar-picker-indicator{display:none}input[type=time]{font-size:15px;font-variant-numeric:tabular-nums}input[type=time]::-webkit-datetime-edit,input[type=time]::-webkit-datetime-edit-fields-wrapper{padding:0}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}input[type=number]{-moz-appearance:textfield}
 header button,nav button,.x,.chip button{background:none}
 nav{border-top:1px solid var(--line)}nav .i{filter:none;opacity:1;display:block;height:22px}nav button{gap:2px}
@@ -143,7 +143,7 @@ nav{border-top:1px solid var(--line)}nav .i{filter:none;opacity:1;display:block;
 .stp{background:var(--fill)}.stp.neg{color:var(--bad)}
 .dts{margin-bottom:6px}.dts button{font-size:14px;padding:8px 0}.md{margin:0}.md button{font-size:13px;padding:6px 0}
 .whr{display:flex;align-items:center;gap:8px;margin-top:10px}.whr span{color:var(--ink2);font-size:13px;flex:1}.whr b{min-width:52px;text-align:center;font-variant-numeric:tabular-nums}.whr button{width:38px;padding:5px 0;font-size:18px}
-.slp{display:grid;grid-template-columns:34px 1fr 34px 1fr 26px 38px 44px;gap:5px;align-items:center}
+.slp{display:grid;grid-template-columns:34px 1fr 30px 1fr 60px;gap:6px 5px;align-items:center}.slv{text-align:right;font-weight:600;font-size:15px;white-space:nowrap;font-variant-numeric:tabular-nums}.slu{text-align:center;color:var(--ink2);font-size:13px}
 .slp input{padding:7px 4px;text-align:center;min-width:0;font-variant-numeric:tabular-nums}
 .ib{display:flex;align-items:center;justify-content:center;height:34px;padding:0;color:var(--ink2)}.ib.ic{background:none;color:var(--mut)}
 .item+.item{border-top:1px solid var(--line)}
@@ -176,7 +176,7 @@ body.reading nav{display:none}body.reading{padding-bottom:24px}
 .chb::before{color:var(--minus)!important}.chb::after{color:var(--plus)!important}
 .grp{display:flex;flex-direction:column;align-items:center;padding:7px 4px;font-size:13px;line-height:1.25}.grp span{font-size:11px;color:var(--acc);min-height:14px}
 .cgrid.sub{margin-top:6px;padding:6px;background:var(--fill);border-radius:12px}.sub .chb{background:var(--card)}
-.wrk{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.wrk>span{font-size:13px;color:var(--ink2)}.wrk>span b{color:var(--ink);font-weight:600;margin-left:4px;white-space:nowrap}.wt{display:grid;grid-template-columns:30px 64px 30px 64px;gap:4px;align-items:center}.wt input{padding:6px 2px;text-align:center;min-width:0}.wt .ib{height:30px}
+.wrk{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.wrk>span{font-size:13px;color:var(--ink2)}.wrk>span b{color:var(--ink);font-weight:600;margin-left:4px;white-space:nowrap}.wt{display:grid;grid-template-columns:30px 80px 30px 80px;gap:4px;align-items:center}.wt input{padding:6px 2px;text-align:center;min-width:0}.wt .ib{height:30px}
 .flbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin:8px 0 2px}.flbl:first-of-type{margin-top:0}
 .fdr{display:grid;grid-template-columns:56px 1fr 56px;gap:6px;align-items:center;margin-top:5px}.fdr>span{font-size:11px;color:var(--ink2);line-height:1.15}.fdr>span:last-child{text-align:right}
 .fsc{display:flex;gap:4px}.fsc button{flex:1;padding:4px 0;font-size:19px;line-height:1.3;min-width:0}
@@ -190,7 +190,7 @@ body.reading nav{display:none}body.reading{padding-bottom:24px}
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v3.4</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" id="trB" data-a="trash" aria-label="Koš" style="padding:4px 6px" hidden><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><button class="sm" data-a="goStats" aria-label="Pregled" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg></button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
+<header><h1>Daily <small class="ver">v3.5</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" id="trB" data-a="trash" aria-label="Koš" style="padding:4px 6px" hidden><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><button class="sm" data-a="goStats" aria-label="Pregled" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg></button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>Dnevnik</button>
@@ -254,7 +254,7 @@ addD=(k,n)=>{const d=pd(k);d.setDate(d.getDate()+n);return dk(d)},
 today=()=>dk(new Date()),
 fmtD=k=>{const d=pd(k);return DN[d.getDay()]+', '+d.getDate()+'. '+(d.getMonth()+1)+'.'},
 hm=t=>{const d=new Date(t);return pad(d.getHours())+':'+pad(d.getMinutes())},
-fmtMin=m=>Math.floor(m/60)+' h '+pad(Math.round(m%60))+' min',
+fmtMin=m=>Math.floor(m/60)+' h '+pad(Math.round(m%60))+' min',fmtHM=m=>Math.floor(m/60)+' h '+pad(Math.round(m%60)),
 agoS=ms=>{const m=Math.floor(ms/60000);return m<60?m+' min':Math.floor(m/60)+' h '+m%60+' m'},
 fmtM=m=>m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+m%60+' min':''),
 ago=ms=>{const m=Math.floor(ms/60000);return m<60?m+' min':Math.floor(m/60)+' h '+pad(m%60)+' min'},
@@ -293,7 +293,7 @@ function openSheet(h){$('#sheetIn').innerHTML=h;$('#sheet').classList.add('open'
 function closeSheet(){$('#sheet').classList.remove('open');$('#sheetIn').innerHTML=''}
 
 // ---------- views
-const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',sH:5,sA:5,room:null,agrp:null,cmo:new Set(),bv:'zg',story:null,rf:'*',lf:'*',lx:new Set(),fs:+(st.get('daily.fs')||18),rsec:0,lastAct:0,selT:'',ncat:'*',nq:'',ndraft:'',nopen:new Set(),shareId:null,pv:'stat',hq:'',hn:30};
+const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',sH:5,sA:5,room:null,agrp:null,cmo:new Set(),bv:'zg',story:null,rf:'*',lf:'*',lc:'',lx:new Set(),fs:+(st.get('daily.fs')||18),rsec:0,lastAct:0,selT:'',ncat:'*',nq:'',ndraft:'',nopen:new Set(),shareId:null,pv:'stat',hq:'',hn:30};
 let CH=[],LOCK=false;
 function render(){if(LOCK)return;CH=[];$('#main').innerHTML=({dnevnik:vDnevnik,opravila:vOpravila,nakupi:vNakupi,zaznamki:vZaznamki,branje:vBranje,pregled:vPregled})[V.tab]();tips();{const tb=$('#trB');if(tb)tb.hidden=!trashed().length}
 document.querySelectorAll('.note.clp').forEach(el=>{if(el.scrollHeight>el.clientHeight+4&&el.nextElementSibling)el.nextElementSibling.hidden=false});
@@ -310,8 +310,9 @@ return `<div class="daynav"><button data-a="day" data-n="-1" aria-label="Prejšn
 <div class="seg md">${MODES.map(([k,l,e])=>`<button data-a="setS" data-f="mode" data-v="${k}" class="${gf(d,'mode')===k?'sel':''}">${e} ${l}</button>`).join('')}</div>${cmIn('day')}</div>
 <div class="card"><h2>Števci<span class="hh">${isT?'':'<label class="tm nt">ura vnosa <input type="time" id="smt" value="12:00"></label>'}${cmBtn('cnt')}</span></h2>
 <div class="crow">${K.map((k,ix)=>{const n=sm.filter(r=>kOf(r)===k).length;return `<div class="ct"><span class="cl"><i class="sw s${KC[k]}"></i>${k}</span><span class="pm"><button class="mn" data-a="unsmokeK" data-k="${k}" aria-label="${k} −1" ${n?'':'disabled'}>−</button><b>${n}</b><button class="pl" data-a="smoke" data-k="${k}" aria-label="${k} +1">+</button></span></div>`}).join('')}</div>${cmIn('cnt')}</div>
-<div class="card"><h2>Spanje<span class="hh"><span class="mut nt">${sc!=null?fmtMin(sc):''}</span>${cmBtn('sleep')}</span></h2>
-<div class="slp">${ib(isT,'bedNow','V posteljo zdaj',IC.moon)}<input type="time" data-f="bed" value="${gf(d,'bed')||''}" aria-label="V postelji">${ib(isT,'wakeNow','Vstal sem zdaj',IC.sun)}<input type="time" data-f="wake" value="${gf(d,'wake')||''}" aria-label="Vstal"><span class="ib ic" title="Spanje po uri">${IC.watch}</span><input type="number" inputmode="numeric" min="0" max="16" id="swH" placeholder="h" aria-label="Ure po uri" value="${sw!=null?Math.floor(sw/60):''}"><input type="number" inputmode="numeric" min="0" max="59" id="swM" placeholder="min" aria-label="Minute po uri" value="${sw!=null?sw%60:''}"></div>
+<div class="card"><h2>Spanje<span class="hh">${sc!=null&&sw!=null&&sw!==sc?`<span class="mut nt">po uri ${sw<sc?'−':'+'}${fmtM(Math.abs(sw-sc))}</span>`:''}${cmBtn('sleep')}</span></h2>
+<div class="slp">${ib(isT,'bedNow','V posteljo zdaj',IC.moon)}<input type="time" data-f="bed" value="${gf(d,'bed')||''}" aria-label="V postelji">${ib(isT,'wakeNow','Vstal sem zdaj',IC.sun)}<input type="time" data-f="wake" value="${gf(d,'wake')||''}" aria-label="Vstal"><span class="slv" title="V postelji (od leganja do vstajanja)">${sc!=null?fmtHM(sc):'–'}</span>
+<span class="ib ic" title="Spanje po uri">${IC.watch}</span><input type="number" inputmode="numeric" min="0" max="16" id="swH" placeholder="h" aria-label="Ure po uri" value="${sw!=null?Math.floor(sw/60):''}"><span class="slu">h</span><input type="number" inputmode="numeric" min="0" max="59" id="swM" placeholder="min" aria-label="Minute po uri" value="${sw!=null?sw%60:''}"><span class="slv" title="Spanje po uri">${sw!=null?fmtHM(sw):'–'}</span></div>
 ${isT&&tb?`<p class="mut sm">Nocoj v postelji ob ${tb} (šteje k jutrišnjemu spanju).</p>`:''}${cmIn('sleep')}</div>
 ${feelCard(d)}
 <div class="card"><h2>Zdravje<span class="hh">${cmBtn('health')}<button class="sm" data-a="editList" data-l="health" aria-label="Uredi seznam">✎</button></span></h2><div class="fdr" style="margin:0 0 10px"><span>slabo</span><div class="fsc">${HG.map((e,j)=>`<button data-a="set" data-f="hg" data-v="${j+1}" class="${gf(d,'hg')===j+1?'sel':''}" aria-label="Splošno: ${HGL[j]} (${j+1}/5)">${e}</button>`).join('')}</div><span>odlično</span></div><div class="chips">${healthOpts(h).map(([k,l])=>`<button class="tg ${h.includes(k)?'sel':''}" data-a="health" data-k="${esc(k)}">${esc(l)}</button>`).join('')}</div>
@@ -422,13 +423,14 @@ if(j){LK.feed=j;try{localStorage.setItem('daily.yt',JSON.stringify(j))}catch(e){
 LK.loading=false;if(V.tab==='branje'&&V.bv==='lek')render()}
 const fdur=l=>{if(!(l>0))return'';const h=Math.floor(l/3600),m=Math.floor(l%3600/60),x=l%60;return(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0')};
 function vLek(){if(!LK.feed&&!LK.err){loadFeed();return '<div class="empty">Nalagam …</div>'}
-const F=LK.feed||{channels:[],videos:[]},sv=live('vids').filter(x=>YTRE.test(x.v)).sort((a,b)=>b.c-a.c),seen=v=>{const r=S.reads['yt:'+v];return!!(r&&r.done)},f=['*','new','saved'].includes(V.lf)?V.lf:'*';
+const F=LK.feed||{channels:[],videos:[]},sv=live('vids').filter(x=>YTRE.test(x.v)).sort((a,b)=>b.c-a.c),seen=v=>{const r=S.reads['yt:'+v];return!!(r&&r.done)},f=['*','new','saved'].includes(V.lf)?V.lf:'*',chs=F.channels.map(c=>c.name).filter(n=>F.videos.some(x=>(F.channels[x.c]||{}).name===n)),lc=f!=='saved'&&chs.includes(V.lc)?V.lc:'';
 let list=f==='saved'?sv.map(x=>({v:x.v,t:x.t,ch:'Shranjeno',d:x.c,sid:x.id})):F.videos.filter(x=>YTRE.test(x.v)).map(x=>({v:x.v,t:x.t,l:x.l,ch:(F.channels[x.c]||{}).name||'',d:Date.parse(x.d)}));
-if(f==='new')list=list.filter(x=>!seen(x.v));
+if(f==='new')list=list.filter(x=>!seen(x.v));if(lc)list=list.filter(x=>x.ch===lc);
 const card=x=>{const u='https://www.youtube.com/watch?v='+x.v,dd=new Date(x.d);return `<div class="vid ${seen(x.v)?'seen':''}"><a class="vth" href="${u}" target="_blank" rel="noopener"><img loading="lazy" src="https://i.ytimg.com/vi/${x.v}/mqdefault.jpg" alt="">${x.l?`<span class="vdu">${fdur(x.l)}</span>`:''}</a><div class="vin"><a class="vtt" href="${u}" target="_blank" rel="noopener">${esc(x.t)}</a><div class="mut" style="font-size:12px">${isNaN(dd)?'':dd.getDate()+'. '+(dd.getMonth()+1)+'. '+dd.getFullYear()}</div></div><div class="vac"><button class="vck ${seen(x.v)?'on':''}" data-a="ytSeen" data-v="${x.v}" aria-label="${seen(x.v)?'Ogledano (tapni za preklic)':'Označi kot ogledano'}">✓</button>${x.sid?`<button class="x" data-a="del" data-c="vids" data-id="${x.sid}" aria-label="Odstrani">×</button>`:''}</div></div>`};
-const body=f==='saved'?list.map(card).join(''):F.channels.map(c=>c.name).filter(n=>list.some(x=>x.ch===n)).map(n=>{const a=list.filter(x=>x.ch===n),op=V.lx.has(n);
+const body=f==='saved'||lc?list.map(card).join(''):F.channels.map(c=>c.name).filter(n=>list.some(x=>x.ch===n)).map(n=>{const a=list.filter(x=>x.ch===n),op=V.lx.has(n);
 return `<button class="grh grb" data-a="lx" data-k="${esc(n)}"><b>${esc(n)}</b><span class="mut">${a.length}</span><span style="flex:1"></span>${a.length>2?`<span class="mut">${op?'manj ▴':'vse ▾'}</span>`:''}</button>${(op?a:a.slice(0,2)).map(card).join('')}`}).join('');
 return `<div class="chips" style="margin-bottom:6px">${[['*','Vse'],['new','Neogledano'],['saved','Shranjeno'+(sv.length?' '+sv.length:'')]].map(([k,l])=>`<button class="tg s2b ${f===k?'sel':''}" data-a="lf" data-k="${k}">${l}</button>`).join('')}</div>
+${f==='saved'?'':`<div class="chips hs" style="margin-bottom:6px">${chs.map(n=>`<button class="tg s2b ${lc===n?'sel':''}" data-a="lc" data-k="${esc(n)}">${esc(n)}</button>`).join('')}</div>`}
 ${F.updated?`<p class="mut sm" style="margin:4px 2px 6px">Seznam se osveži enkrat na teden (zadnjič ${esc(F.updated.slice(0,10))}). Video iz YouTuba lahko deliš v Daily in ga shraniš sem.</p>`:''}
 ${body||`<div class="empty">${f==='saved'?'Deli video iz YouTuba v Daily in izberi »→ Lekcije«.':LK.err?'Seznama ni mogoče naložiti.':'Ni videov.'}</div>`}`}
 function vNotes(){const cats=noteCats(),all=live('notes'),c=V.ncat==='*'||cats.includes(V.ncat)?V.ncat:'*',q=V.nq.trim().toLowerCase(),cnt=k=>all.filter(n=>ncat(n)===k).length;
@@ -707,7 +709,7 @@ nshare:(b,id)=>share(S.notes[id].text),
 nedit:(b,id)=>{const n=S.notes[id];openSheet(`<h3>Uredi zaznamek</h3><textarea id="eN" rows="10">${esc(n.text)}</textarea>${catPicker(ncat(n))}<div class="acts"><button class="pri" data-a="nsave" data-id="${id}">Shrani</button><button class="danger" data-a="del" data-c="notes" data-id="${id}">Izbriši</button><button data-a="closeSheet">Prekliči</button></div>`)},
 nsave:(b,id)=>{const n=S.notes[id],t=$('#eN').value.trim();if(t)n.text=t;else{n.del=1;n.dt=now()}n.cat=chosenCat();put('notes',n);closeSheet();render()},
 bv:b=>{V.bv=b.dataset.v;render();scrollTo(0,0)},
-lf:b=>{V.lf=b.dataset.k;render()},lx:b=>{const k=b.dataset.k;V.lx.has(k)?V.lx.delete(k):V.lx.add(k);render()},
+lf:b=>{V.lf=b.dataset.k;render()},lc:b=>{V.lc=V.lc===b.dataset.k?'':b.dataset.k;render();scrollTo(0,0)},lx:b=>{const k=b.dataset.k;V.lx.has(k)?V.lx.delete(k):V.lx.add(k);render()},
 ytSeen:b=>{const id='yt:'+b.dataset.v,r=S.reads[id]||{id};r.done=!r.done;r.t=now();put('reads',r);render()},
 goStats:()=>{if(isReading())flushRead();V.tab='pregled';render();scrollTo(0,0)},
 inb2vid:(b,id)=>{const r=S.inbox[id],v=ytId(r.text);if(!v)return;const t=r.text.split('\n').map(x=>x.trim()).find(x=>x&&!/https?:\/\//.test(x))||'YouTube video';put('vids',{id:uid(),v,t,c:now()});r.del=1;put('inbox',r);closeSheet();toast('Shranjeno v Lekcije');render()},
@@ -775,7 +777,7 @@ if(f&&(t.tagName==='TEXTAREA'||t.type==='text'))sf(V.day,f,t.value)});
 document.addEventListener('change',e=>{const t=e.target;
 if(t.dataset.f&&t.type==='time'){sf(V.day,t.dataset.f,t.value||null);if(t.dataset.f==='ws'||t.dataset.f==='we')calcWh(V.day);render()}
 else if(t.dataset.fe==='t'){const c=curFeel(V.day);if(c&&t.value){const[h,mi]=t.value.split(':').map(Number),x=pd(V.day);x.setHours(h,mi,0,0);c.t=x.getTime();put('feel',c);render()}}
-else if(t.id==='swH'||t.id==='swM'){const H=$('#swH').value,M=$('#swM').value;sf(V.day,'sw',H===''&&M===''?null:Math.max(0,Math.round((+H||0)*60+(+M||0))))}
+else if(t.id==='swH'||t.id==='swM'){const H=$('#swH').value,M=$('#swM').value,v=H===''&&M===''?null:Math.max(0,Math.round((+H||0)*60+(+M||0)));sf(V.day,'sw',v);const o=document.querySelectorAll('.slp .slv')[1];if(o)o.textContent=v!=null?fmtHM(v):'–'}
 else if(t.id==='stepsI'){const v=t.value.trim();sf(V.day,'steps',v===''?null:Math.max(0,Math.round(+v)))}
 else if(t.id==='imp')importFile(t.files[0])});
 document.addEventListener('toggle',e=>{if(e.target.id==='doneD')V.doneOpen=e.target.open},true);
@@ -808,7 +810,7 @@ live('acts').filter(r=>r.c==='Branje').forEach(r=>{r.c='Branje/študij';put('act
 if(c&&Array.isArray(c.v)&&c.v.length){const rooms=c.v.map(l=>l.split(':')[0].trim());const add=DEFL.chores.filter(l=>['Klet','Podstreha','Avto','Popravila'].includes(l.split(':')[0])&&!rooms.includes(l.split(':')[0]));if(add.length)put('cfg',{id:'chores',v:[...c.v,...add]})}
 if(a&&Array.isArray(a.v)&&a.v.length&&!a.v.includes('Kitara'))put('cfg',{id:'acts',v:[...a.v,'Kitara']});if((c&&c.v)||(a&&a.v))put('cfg',{id:'mig19',v:1})})();
 setInterval(()=>{if(!LOCK)updRun()},15000);
-const VER='3.4';
+const VER='3.5';
 function checkUpd(){if(LOCK||location.protocol!=='https:')return;fetch('version.txt?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{t=t.trim();const b=$('#upd');if(b&&t&&t!==VER){b.hidden=false;b.textContent='↻ v'+t}}).catch(()=>{})}
 setInterval(checkUpd,1800000);addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpd()});
 let shared=false;
