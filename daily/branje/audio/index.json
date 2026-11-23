@@ -25,5 +25,15 @@
   "m": [
    "gemini-3.8-flash-lite-tts"
   ]
+ },
+ "2026-11-23-spomin": {
+  "h": "3117dca667b2",
+  "d": 582,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-lite-tts",
+   "gemini-3.8-flash-tts"
+  ]
  }
 }
