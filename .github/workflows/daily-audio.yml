@@ -4,7 +4,8 @@ name: daily-audio
 on:
   workflow_dispatch:
     inputs:
-      mode: {description: 'stories | samples', default: 'stories'}
+      mode: {description: 'stories | samples | story', default: 'stories'}
+      story: {description: 'story id(s) for mode story', default: ''}
       voices: {description: 'voices for samples (comma separated)', default: 'Charon,Algieba,Schedar,Sadaltager'}
   push:
     branches: [main]
@@ -27,8 +28,11 @@ jobs:
           GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
           MODE: ${{ github.event.inputs.mode }}
           VOICES: ${{ github.event.inputs.voices }}
+          STORY: ${{ github.event.inputs.story }}
         run: |
-          if [ "$MODE" = "samples" ]; then python3 daily/tools/audio.py samples "$VOICES"; else python3 daily/tools/audio.py; fi
+          if [ "$MODE" = "samples" ]; then python3 daily/tools/audio.py samples "$VOICES"
+          elif [ "$MODE" = "story" ]; then python3 daily/tools/audio.py story "$STORY"
+          else python3 daily/tools/audio.py; fi
       - name: Commit and redeploy
         env: {GH_TOKEN: '${{ github.token }}'}
         run: |

@@ -4,6 +4,7 @@
 # parts (audio/parts/) and continue on the next run.
 #   python3 tools/audio.py                      -> stories without audio (newest first)
 #   python3 tools/audio.py samples V1,V2,...    -> short voice samples to daily/tts-test/
+#   python3 tools/audio.py story ID[,ID]        -> only these stories
 import base64, hashlib, io, json, os, re, subprocess, sys, time, urllib.error, urllib.request, wave
 
 ROOT = os.path.join(os.path.dirname(__file__), '..')
@@ -11,7 +12,7 @@ BR = os.path.join(ROOT, 'branje')
 AD = os.path.join(BR, 'audio')
 PD = os.path.join(AD, 'parts')
 KEY = os.environ.get('GEMINI_KEY', '')
-VOICE = os.environ.get('TTS_VOICE', 'Charon')
+VOICE = os.environ.get('TTS_VOICE') or 'Algieba'   # chosen by ear (calm, smooth)
 STYLE = os.environ.get('TTS_STYLE', 'calm, measured and thoughtful narrator, unhurried, warm and low; like a reflective podcast host')
 MODELS = ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts']
 CHUNK = 3000          # characters per request (about 3 minutes of speech)
@@ -197,7 +198,7 @@ def samples(voices):
         print('sample', v, m, len(pcm) // 48000, 's')
 
 
-def stories():
+def stories(only=None):
     os.makedirs(PD, exist_ok=True)
     ip = os.path.join(AD, 'index.json')
     idx = json.load(open(ip, encoding='utf-8')) if os.path.exists(ip) else {}
@@ -205,6 +206,8 @@ def stories():
     done = 0
     for it in items:  # newest first
         sid = it['id']
+        if only and sid not in only:
+            continue
         paras = narration(open(os.path.join(BR, sid + '.md'), encoding='utf-8').read())
         h = hashlib.sha1(('\n'.join(paras) + VOICE + STYLE).encode()).hexdigest()[:12]
         if idx.get(sid, {}).get('h') == h and os.path.exists(os.path.join(AD, sid + '.mp3')):
@@ -258,5 +261,7 @@ if __name__ == '__main__':
         sys.exit('GEMINI_KEY missing')
     if len(sys.argv) > 1 and sys.argv[1] == 'samples':
         samples((sys.argv[2] if len(sys.argv) > 2 else 'Charon').split(','))
+    elif len(sys.argv) > 2 and sys.argv[1] == 'story':
+        stories(set(sys.argv[2].split(',')))
     else:
         stories()
