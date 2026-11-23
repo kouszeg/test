@@ -209,7 +209,7 @@ body.reading nav{display:none}body.reading{padding-bottom:24px}
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v4.17</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" id="trB" data-a="trash" aria-label="Koš" style="padding:4px 6px" hidden><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><button class="sm" data-a="goStats" aria-label="Pregled" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg></button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
+<header><h1>Daily <small class="ver">v4.18</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" id="trB" data-a="trash" aria-label="Koš" style="padding:4px 6px" hidden><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><button class="sm" data-a="goStats" aria-label="Pregled" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg></button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>Dnevnik</button>
@@ -465,17 +465,28 @@ ttsVoice=()=>{const lg=ttsLang(),L=ttsVoices(lg),nm=st.get('daily.ttsv.'+lg);ret
 function voiceSheet(){const lg=ttsLang(),L=ttsVoices(lg),cur=ttsVoice();
 openSheet(`<h3 style="margin:0 0 6px">Glas (${LGN[lg]||lg})</h3>${L.length?L.map((v,i)=>`<button class="tg s2b ${cur&&v.voiceURI===cur.voiceURI?'sel':''}" data-a="ttsV" data-i="${i}" style="display:block;width:100%;text-align:left;margin:4px 0">${esc(v.name)} <span class="mut" style="font-size:12px">${esc(v.lang)}${v.localService===false?' · splet':''}</span></button>`).join(''):`<p>Na tej napravi ni nobenega glasu za ${LGN[lg]||lg} jezik.</p>`}<p class="mut sm" style="margin-top:8px">Tapni glas za preizkus. Glasovi so od telefona oz. brskalnika. Več glasov: Nastavitve telefona → Pretvorba besedila v govor → Googlov mehanizem → Namesti glasovne podatke. V brskalniku Edge na računalniku so na voljo tudi Microsoftovi »Natural« glasovi.</p>`)}
 function ttsMark(sc){document.querySelectorAll('.tts-on').forEach(e=>e.classList.remove('tts-on'));const el=ttsEls()[TS.i];if(el){el.classList.add('tts-on');if(sc)el.scrollIntoView({block:'center',behavior:'smooth'})}}
-function ttsSpeak(){const E=ttsEls();if(TS.i>=E.length){ttsStop();const r=rdOf(V.story)||{id:V.story};r.done=true;r.p=1;r.t=now();put('reads',r);toast('Prebrano do konca');render();return}
-ttsMark(true);const u=new SpeechSynthesisUtterance(E[TS.i].innerText.replace(/\s+/g,' ').trim()),v=ttsVoice();u.lang=v?v.lang:(ttsLang()==='en'?'en-GB':'sl-SI');try{if(v)u.voice=v}catch(x){}u.rate=TS.rate;
-u.onend=()=>{if(TS.on&&TS.u===u){TS.i++;ttsSpeak()}};u.onerror=e=>{if(TS.u!==u||/interrupted|canceled/.test(e.error))return;ttsStop();toast('Branje ni uspelo ('+e.error+')');render()};
-TS.u=u;V.lastAct=now();speechSynthesis.speak(u)}
+// the whole remaining text is queued at once, so speech can go on while the page is throttled (screen off);
+// a silent looping <audio> keeps the page an active media session and gives lock-screen play/pause/skip
+let KA=null;
+function keepAlive(on){try{if(on){if(!KA){const n=80000,b=new Uint8Array(44+n),dv=new DataView(b.buffer),w=(o,t)=>{for(let i=0;i<t.length;i++)b[o+i]=t.charCodeAt(i)};
+w(0,'RIFF');dv.setUint32(4,36+n,true);w(8,'WAVEfmt ');dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);dv.setUint32(24,8000,true);dv.setUint32(28,8000,true);dv.setUint16(32,1,true);dv.setUint16(34,8,true);w(36,'data');dv.setUint32(40,n,true);b.fill(128,44);
+KA=new Audio(URL.createObjectURL(new Blob([b],{type:'audio/wav'})));KA.loop=true}KA.play().catch(()=>{});
+if('mediaSession' in navigator){const ms=navigator.mediaSession,x=ST.idx&&ST.idx.find(y=>y.id===TS.id),set=(a,f)=>{try{ms.setActionHandler(a,f)}catch(e){}};try{ms.metadata=new MediaMetadata({title:x?x.title:'Branje',artist:'Daily · branje'})}catch(e){}
+set('play',()=>{if(!TS.on&&isReading()){ttsStart();render()}});set('pause',()=>{if(TS.on){ttsStop();render()}});set('nexttrack',()=>{if(TS.on){TS.i++;ttsSpeak()}});set('previoustrack',()=>{if(TS.on){TS.i=Math.max(0,TS.i-1);ttsSpeak()}});ms.playbackState='playing'}}
+else{if(KA)KA.pause();if('mediaSession' in navigator)navigator.mediaSession.playbackState='paused'}}catch(e){}}
+function ttsFin(){const id=TS.id;ttsStop();TS.id=null;const r=rdOf(id)||{id};r.done=true;r.p=1;r.t=now();put('reads',r);toast('Prebrano do konca');render()}
+function ttsSpeak(){const E=ttsEls();if(TS.i>=E.length)return ttsFin();const g=TS.g=(TS.g||0)+1,v=ttsVoice(),lang=v?v.lang:(ttsLang()==='en'?'en-GB':'sl-SI'),tx=E.map(e=>e.innerText.replace(/\s+/g,' ').trim());
+ttsMark(true);try{speechSynthesis.cancel()}catch(e){}
+setTimeout(()=>{if(TS.g!==g||!TS.on)return;for(let k=TS.i;k<tx.length;k++){const u=new SpeechSynthesisUtterance(tx[k]);u.lang=lang;try{if(v)u.voice=v}catch(x){}u.rate=TS.rate;
+u.onstart=()=>{if(TS.g!==g)return;TS.i=k;V.lastAct=now();ttsMark(!document.hidden)};
+u.onerror=e=>{if(TS.g!==g||/interrupted|canceled/.test(e.error))return;ttsStop();toast('Branje ni uspelo ('+e.error+')');render()};
+if(k===tx.length-1)u.onend=()=>{if(TS.g===g&&TS.on)ttsFin()};speechSynthesis.speak(u)}},80)}
 function ttsStart(){if(!hasTTS)return toast('Brskalnik ne podpira branja na glas');
 if(TS.id!==V.story){const E=ttsEls(),top=110;let k=E.findIndex(e=>e.getBoundingClientRect().bottom>top);TS.i=Math.max(0,k)}
-TS.on=true;TS.id=V.story;speechSynthesis.cancel();
+TS.on=true;TS.id=V.story;keepAlive(true);
 const go=()=>{if(!ttsVoice()&&!TS.warned){TS.warned=1;toast('Ni glasu za ta jezik: Nastavitve telefona → Pretvorba besedila v govor')}ttsSpeak()};
-if(speechSynthesis.getVoices().length)setTimeout(go,60);else{let d=0;const f=()=>{if(d)return;d=1;go()};speechSynthesis.addEventListener('voiceschanged',f,{once:true});setTimeout(f,800)}
-if(navigator.wakeLock)navigator.wakeLock.request('screen').then(w=>TS.wl=w).catch(()=>{})}
-function ttsStop(){if(!TS.on)return;TS.on=false;TS.u=null;try{speechSynthesis.cancel()}catch(e){}if(TS.wl){TS.wl.release().catch(()=>{});TS.wl=null}document.querySelectorAll('.tts-on').forEach(e=>e.classList.remove('tts-on'))}
+if(speechSynthesis.getVoices().length)go();else{let d=0;const f=()=>{if(d)return;d=1;go()};speechSynthesis.addEventListener('voiceschanged',f,{once:true});setTimeout(f,800)}}
+function ttsStop(){if(!TS.on)return;TS.on=false;TS.g=(TS.g||0)+1;try{speechSynthesis.cancel()}catch(e){}keepAlive(false);document.querySelectorAll('.tts-on').forEach(e=>e.classList.remove('tts-on'))}
 function vReader(){const x=ST.idx&&ST.idx.find(y=>y.id===V.story),b=ST.body[V.story];if(!b){if(!ST.idx)loadIndex();loadBody(V.story);return '<div class="empty">Nalagam …</div>'}
 const r=rdOf(V.story),qs=live('notes').filter(n=>n.src===V.story);
 return `<div class="rbar"><button data-a="closeStory">‹ Nazaj</button><span style="flex:1"></span>${hasTTS?(TS.on?`<button class="on" data-a="tts" aria-label="Ustavi branje">⏸</button><button data-a="ttsR" aria-label="Hitrost branja">${String(TS.rate).replace('.',',')}×</button>`:`<button data-a="tts" aria-label="Preberi na glas (od mesta na zaslonu naprej)">▶ Preberi</button>`)+`<button data-a="ttsVs" aria-label="Izberi glas">🗣</button>`:''}<button data-a="fs" data-v="-1" aria-label="Manjša pisava">A−</button><button data-a="fs" data-v="1" aria-label="Večja pisava">A+</button></div>
@@ -919,7 +930,7 @@ else if(t.id==='swH'||t.id==='swM'){const H=$('#swH').value,M=$('#swM').value,v=
 else if(t.id==='stepsI'){const v=t.value.trim();sf(V.day,'steps',v===''?null:Math.max(0,Math.round(+v)))}
 else if(t.id==='imp')importFile(t.files[0])});
 document.addEventListener('toggle',e=>{if(e.target.id==='doneD')V.doneOpen=e.target.open},true);
-addEventListener('visibilitychange',()=>{if(!document.hidden&&TS.on&&navigator.wakeLock&&(!TS.wl||TS.wl.released))navigator.wakeLock.request('screen').then(w=>TS.wl=w).catch(()=>{});if(document.hidden){saveUI();if(isReading())flushRead();flush();if(SY.dirty)sync()}else{const t=today();if(t!==V.last){if(V.day===V.last)V.day=t;V.last=t;render()}sync()}});
+addEventListener('visibilitychange',()=>{if(document.hidden){saveUI();if(isReading())flushRead();flush();if(SY.dirty)sync()}else{const t=today();if(t!==V.last){if(V.day===V.last)V.day=t;V.last=t;render()}sync()}});
 addEventListener('online',()=>sync());setInterval(()=>{if(!document.hidden)sync()},300000);
 addEventListener('pagehide',flush);
 addEventListener('storage',e=>{if(e.key!==KEY)return;try{const d=JSON.parse(e.newValue);S=d?merge(S,d):empty();const a=document.activeElement;if(!a||!/^(INPUT|TEXTAREA)$/.test(a.tagName))render()}catch(x){}});
@@ -953,7 +964,7 @@ live('acts').filter(r=>r.c==='Branje').forEach(r=>{r.c='Branje/študij';put('act
 if(c&&Array.isArray(c.v)&&c.v.length){const rooms=c.v.map(l=>l.split(':')[0].trim());const add=DEFL.chores.filter(l=>['Klet','Podstreha','Avto','Popravila'].includes(l.split(':')[0])&&!rooms.includes(l.split(':')[0]));if(add.length)put('cfg',{id:'chores',v:[...c.v,...add]})}
 if(a&&Array.isArray(a.v)&&a.v.length&&!a.v.includes('Kitara'))put('cfg',{id:'acts',v:[...a.v,'Kitara']});if((c&&c.v)||(a&&a.v))put('cfg',{id:'mig19',v:1})})();
 setInterval(()=>{if(!LOCK)updRun()},15000);
-const VER='4.17';
+const VER='4.18';
 function checkUpd(){if(LOCK||location.protocol!=='https:')return;fetch('version.txt?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{t=t.trim();const b=$('#upd');if(b&&t&&t!==VER){b.hidden=false;b.textContent='↻ v'+t}}).catch(()=>{})}
 setInterval(checkUpd,1800000);addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpd()});
 let shared=false;
