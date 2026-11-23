@@ -5,7 +5,7 @@ name: daily-audio
 on:
   workflow_dispatch:
     inputs:
-      mode: {description: 'stories | samples | story', default: 'stories'}
+      mode: {description: 'stories | samples | story | ab (story at bitrates in voices field)', default: 'stories'}
       story: {description: 'story id(s) for mode story', default: ''}
       voices: {description: 'voices for samples (comma separated)', default: 'Charon,Algieba,Schedar,Sadaltager'}
   push:
@@ -45,6 +45,7 @@ jobs:
         run: |
           if [ "$MODE" = "samples" ]; then python3 -u daily/tools/audio.py samples "$VOICES"
           elif [ "$MODE" = "story" ]; then python3 -u daily/tools/audio.py story "$STORY"
+          elif [ "$MODE" = "ab" ]; then python3 -u daily/tools/audio.py ab "$STORY" "$VOICES"
           else python3 -u daily/tools/audio.py; fi
       - name: Upload to release
         env: {GH_TOKEN: '${{ github.token }}'}

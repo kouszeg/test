@@ -184,6 +184,21 @@ def chunks(paras):
     return res
 
 
+def ab(sid, rates):
+    """One take of a story encoded at several Opus bitrates -> daily/tts-test/<id>_<rate>.ogg (for comparing by ear)."""
+    paras = narration(open(os.path.join(BR, sid + '.md'), encoding='utf-8').read())
+    pcm = b''
+    for t in chunks(paras):
+        p, m = synth(t)
+        pcm += p + b'\x00' * 33600   # 0.7 s pause between parts
+        print('  part', m, len(p) // 48000, 's')
+    os.makedirs(os.path.join(ROOT, 'tts-test'), exist_ok=True)
+    for r in rates:
+        out = os.path.join(ROOT, 'tts-test', f'{sid}_{r}.ogg')
+        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 's16le', '-ar', '24000', '-ac', '1', '-i', '-', '-c:a', 'libopus', '-b:a', r, '-application', 'voip', out], input=pcm, check=True)
+        print('ab', r, os.path.getsize(out) // 1024, 'KB')
+
+
 def samples(voices):
     s = open(os.path.join(BR, '2026-11-23-tambora.md'), encoding='utf-8').read()
     P = narration(s)
@@ -271,6 +286,8 @@ if __name__ == '__main__':
         sys.exit('GEMINI_KEY missing')
     if len(sys.argv) > 1 and sys.argv[1] == 'samples':
         samples((sys.argv[2] if len(sys.argv) > 2 else 'Charon').split(','))
+    elif len(sys.argv) > 2 and sys.argv[1] == 'ab':
+        ab(sys.argv[2], (sys.argv[3] if len(sys.argv) > 3 else '24k,16k').split(','))
     elif len(sys.argv) > 2 and sys.argv[1] == 'story':
         stories(set(sys.argv[2].split(',')))
     else:
