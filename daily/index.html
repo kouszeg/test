@@ -157,6 +157,15 @@ nav{border-top:1px solid var(--line)}nav .i{filter:none;opacity:1;display:block;
 .ct .pm{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:1px;gap:0}.ct .pm b{flex:1;text-align:center}.ct .pm button{width:24px;padding:2px 0}
 :root{--ring:rgba(214,72,72,.6);--ringBg:rgba(214,72,72,.09)}@media (prefers-color-scheme:dark){:root{--ring:rgba(239,116,116,.75);--ringBg:rgba(239,116,116,.12)}}
 .frow .sel,.md .sel,.dts .sel{background:var(--ringBg)!important;box-shadow:inset 0 0 0 2px var(--ring);color:var(--ink)}
+.rbar{display:flex;gap:6px;align-items:center;margin:-4px 0 6px;position:sticky;top:42px;z-index:4;background:var(--page);padding:4px 0}
+.rd{font-family:Georgia,"Iowan Old Style","Noto Serif","Droid Serif",serif;line-height:1.65;max-width:36em;margin:0 auto;padding:2px 4px;color:var(--ink);-webkit-user-select:text;user-select:text}
+.rd h1{font-size:1.45em;line-height:1.25;margin:.25em 0 .35em}.rd h2{font-size:1.15em;line-height:1.3;margin:1.5em 0 .45em}.rd h3{font-size:1.02em;margin:1.2em 0 .3em}
+.rd p{margin:0 0 .9em}.rd blockquote{margin:0 0 .9em;padding-left:.8em;border-left:3px solid var(--acc);color:var(--ink2)}.rd ul{margin:0 0 .9em 1.1em;padding:0}.rd li{margin-bottom:.35em}
+.rd a{color:var(--acc)}.rd figure{margin:1.3em 0 .4em;color:var(--ink2)}.rd figure svg{width:100%;height:auto;display:block}.rd figure+p i{font-size:.85em;color:var(--ink2)}
+.rmeta{font-family:system-ui,sans-serif;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
+#hlBtn{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:25;box-shadow:0 4px 14px rgba(0,0,0,.25);padding:10px 16px;border-radius:12px}
+body.reading nav{display:none}body.reading{padding-bottom:24px}
+.story{cursor:pointer}.stt{display:block;font-size:16px;margin-top:3px;line-height:1.3}.sst{font-size:12px;color:var(--acc)}.sst.done{color:var(--plus)}
 .vsl{display:flex;flex-direction:column;gap:5px}.vsl button{text-align:left;padding:7px 12px;font-size:14px}
 .chb::before{color:var(--minus)!important}.chb::after{color:var(--plus)!important}
 .grp{display:flex;flex-direction:column;align-items:center;padding:7px 4px;font-size:13px;line-height:1.25}.grp span{font-size:11px;color:var(--acc);min-height:14px}
@@ -168,7 +177,7 @@ nav{border-top:1px solid var(--line)}nav .i{filter:none;opacity:1;display:block;
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v2.7</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
+<header><h1>Daily <small class="ver">v3.0</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>Dnevnik</button>
@@ -179,10 +188,11 @@ nav{border-top:1px solid var(--line)}nav .i{filter:none;opacity:1;display:block;
 </nav>
 <div id="sheet"><div class="sh" id="sheetIn"></div></div>
 <div id="toast"></div>
+<button id="hlBtn" class="pri" data-a="hl" hidden>＋ Izpisek v zaznamke</button>
 <script>
 'use strict';
 // ---------- data (every record: id + u = last-modified ms; deletes are tombstones -> merge-ready for later sync)
-const COLS=['log','smokes','todos','shop','inbox','chores','acts','cfg','notes'],KEY='daily.v1',
+const COLS=['log','smokes','todos','shop','inbox','chores','acts','cfg','notes','reads'],KEY='daily.v1',
 MOOD=['😫','🙁','😐','🙂','😄'],
 HL=[['ok','OK'],['virus','Virus / prehlad'],['glava','Glavobol'],['inj','Poškodba'],['drugo','Drugo']],
 BODY=['glava','vrat','rama','nadlaket','komolec','zapestje','dlan / prsti','prsni koš','zgornji hrbet','križ','trebuh','kolk','stegno','koleno','meča / golen','gleženj','stopalo'],
@@ -193,7 +203,7 @@ MODES=[['chill','Chill','😌'],['normal','Normal','🙂'],['busy','Busy','⚡']
 DT=[['f','Free','🏖'],['d','DOD','🏠'],['i','IJS','🏢']],DTN={f:'Free',d:'DOD',i:'IJS'},
 CHORES=['Sesanje','Posoda','Pomivalni stroj','Perilo','Likanje','Kuhanje','Kopalnica','Prah','Smeti','Okolica','Drugo'],
 K=['SM','BO','JO','CF','WD'],STEPS=[5,30,-5,-30],
-DEFL={chores:['Kuhinja: smeti, sesanje, zajtrk, kosilo, večerja, pult, omare, fronte, generalno','Kopalnica: umivalnik, WC, tuš / kad, ogledalo, tla, generalno','Dnevna soba: sesanje, prah, pospravljanje, generalno','Spalnica: postelja, sesanje, prah, pospravljanje','Perilo: pranje, obešanje, zlaganje, likanje','Zunaj: smeti, okolica','Klet: pospravljanje, drva, sesanje','Podstreha: pospravljanje, sesanje','Avto: servis, pospravljanje, pranje','Popravila: hiša, naprave, kolo, drugo','Ostalo: nakupovanje, drugo'],acts:['Sprehod','Šport: gym, tek, kolo, basket, trekking, surf, smučanje','Meditacija','Kitara'],health:['Virus / prehlad','Glavobol'],virus:['Blago – normalno obratujem','Slabo, kašelj – delam, brez gibanja','Boleča viroza z vročino','Grounded – visoka vročina'],body:BODY,notecats:['Splošno','Delo','Ideje','Povezave']},
+DEFL={chores:['Kuhinja: smeti, sesanje, zajtrk, kosilo, večerja, pult, omare, fronte, generalno','Kopalnica: umivalnik, WC, tuš / kad, ogledalo, tla, generalno','Dnevna soba: sesanje, prah, pospravljanje, generalno','Spalnica: postelja, sesanje, prah, pospravljanje','Perilo: pranje, obešanje, zlaganje, likanje','Zunaj: smeti, okolica','Klet: pospravljanje, drva, sesanje','Podstreha: pospravljanje, sesanje','Avto: servis, pospravljanje, pranje','Popravila: hiša, naprave, kolo, drugo','Ostalo: nakupovanje, drugo'],acts:['Sprehod','Šport: gym, tek, kolo, basket, trekking, surf, smučanje','Meditacija','Kitara','Branje'],health:['Virus / prehlad','Glavobol'],virus:['Blago – normalno obratujem','Slabo, kašelj – delam, brez gibanja','Boleča viroza z vročino','Grounded – visoka vročina'],body:BODY,notecats:['Splošno','Delo','Ideje','Povezave']},
 VS=[[1,'Blago – normalno obratujem'],[2,'Slabo, kašelj – delam, brez gibanja'],[3,'Boleča viroza z vročino'],[4,'Grounded – visoka vročina']],VSN={1:'blago',2:'slabo, kašelj',3:'boleča, vročina',4:'grounded, visoka vročina'},
 HKEY={'Virus / prehlad':'virus','Glavobol':'glava'},HLAB={ok:'OK',virus:'Virus / prehlad',glava:'Glavobol',inj:'Poškodba',drugo:'Drugo'},OLDK={S:'SM',B:'BO',J:'JO'},kOf=r=>OLDK[r.k]||r.k||'SM';
 const mem={},st={get:k=>{try{return localStorage.getItem(k)}catch(e){return k in mem?mem[k]:null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}};
@@ -256,11 +266,12 @@ function openSheet(h){$('#sheetIn').innerHTML=h;$('#sheet').classList.add('open'
 function closeSheet(){$('#sheet').classList.remove('open');$('#sheetIn').innerHTML=''}
 
 // ---------- views
-const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',sH:5,sA:5,room:null,agrp:null,cmo:new Set(),ncat:'*',nq:'',ndraft:'',nopen:new Set(),shareId:null,pv:'stat',hq:'',hn:30};
+const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',sH:5,sA:5,room:null,agrp:null,cmo:new Set(),zv:'notes',story:null,rf:'*',fs:+(st.get('daily.fs')||18),rsec:0,lastAct:0,selT:'',ncat:'*',nq:'',ndraft:'',nopen:new Set(),shareId:null,pv:'stat',hq:'',hn:30};
 let CH=[],LOCK=false;
 function render(){if(LOCK)return;CH=[];$('#main').innerHTML=({dnevnik:vDnevnik,opravila:vOpravila,nakupi:vNakupi,zaznamki:vZaznamki,pregled:vPregled})[V.tab]();
 document.querySelectorAll('.note.clp').forEach(el=>{if(el.scrollHeight>el.clientHeight+4&&el.nextElementSibling)el.nextElementSibling.hidden=false});
-document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===V.tab));
+document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===V.tab));document.body.classList.toggle('reading',isReading());
+if(isReading()&&V.restore&&ST.body[V.story]){const id=V.story;V.restore=false;requestAnimationFrame(()=>{const r=rdOf(id);if(r&&r.p&&!r.done)scrollTo(0,r.p*(document.documentElement.scrollHeight-innerHeight))})}
 const n=live('inbox').length,bd=$('#badge');bd.textContent=n;bd.hidden=!n;updRun();drawCharts()}
 
 function vDnevnik(){const d=V.day,isT=d===today(),sm=smokesOn(d),pv=smokesOn(addD(d,-1)),h=gf(d,'health')||[],inj=gf(d,'inj')||[],
@@ -331,8 +342,37 @@ const md=t=>String(t??'').split('```').map((g,i)=>i%2?'<pre>'+esc(g.replace(/^[\
 const noteCats=()=>[...new Set([...getList('notecats'),...live('notes').map(n=>n.cat).filter(Boolean)])];
 const ncat=n=>n.cat||getList('notecats')[0];
 function noteHTML(n,showCat){const open=V.nopen.has(n.id),d=new Date(n.c);
-return `<div class="card nc"><div class="nh">${showCat?`<span class="ncat">${esc(ncat(n))}</span>`:''}<span class="mut" style="font-size:12px">${d.getDate()}. ${d.getMonth()+1}.</span><span style="flex:1"></span><button class="x" data-a="ncopy" data-id="${n.id}" aria-label="Kopiraj">⧉</button><button class="x" data-a="nshare" data-id="${n.id}" aria-label="Deli">↗</button><button class="x" data-a="nedit" data-id="${n.id}" aria-label="Uredi">✎</button></div><div class="note ${open?'':'clp'}">${md(n.text)}</div>${open?'':`<button class="sm more" data-a="nmore" data-id="${n.id}" hidden>več ▾</button>`}</div>`}
-function vZaznamki(){const cats=noteCats(),all=live('notes'),c=V.ncat==='*'||cats.includes(V.ncat)?V.ncat:'*',q=V.nq.trim().toLowerCase(),cnt=k=>all.filter(n=>ncat(n)===k).length;
+return `<div class="card nc"><div class="nh">${showCat?`<span class="ncat">${esc(ncat(n))}</span>`:''}<span class="mut" style="font-size:12px">${d.getDate()}. ${d.getMonth()+1}.</span><span style="flex:1"></span><button class="x" data-a="ncopy" data-id="${n.id}" aria-label="Kopiraj">⧉</button><button class="x" data-a="nshare" data-id="${n.id}" aria-label="Deli">↗</button>${n.src?`<button class="x" data-a="openStory" data-s="${esc(n.src)}" aria-label="Odpri zgodbo">📖</button>`:''}<button class="x" data-a="nedit" data-id="${n.id}" aria-label="Uredi">✎</button></div><div class="note ${open?'':'clp'}">${md(n.text)}</div>${open?'':`<button class="sm more" data-a="nmore" data-id="${n.id}" hidden>več ▾</button>`}</div>`}
+const ST={idx:null,err:false,body:{},loading:false};
+const isReading=()=>V.tab==='zaznamki'&&V.zv==='read'&&!!V.story;
+async function loadIndex(){if(ST.loading)return;ST.loading=true;try{const r=await fetch('branje/index.json',{cache:'no-cache'});if(!r.ok)throw 0;ST.idx=await r.json();ST.err=false;
+ST.idx.forEach(x=>{if(!ST.body[x.id])fetch('branje/'+x.id+'.md').then(r=>r.ok?r.text():null).then(t=>{if(t)ST.body[x.id]=t}).catch(()=>{})})}catch(e){ST.err=true}ST.loading=false;if(V.tab==='zaznamki'&&V.zv==='read')render()}
+async function loadBody(id){if(ST['l_'+id])return;ST['l_'+id]=1;try{const r=await fetch('branje/'+id+'.md');if(r.ok)ST.body[id]=await r.text()}catch(e){}ST['l_'+id]=0;if(isReading())render()}
+function renderStory(src){const svgs=[];src=src.replace(/^---[\s\S]*?\n---\n/,'').replace(/```svg\n([\s\S]*?)```/g,(m,x)=>{svgs.push(x);return '\n\n@@SVG'+(svgs.length-1)+'@@\n\n'});
+const inl=t=>esc(t).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/(^|[^*\w])\*([^*\n]+)\*(?!\w)/g,'$1<i>$2</i>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+return src.split(/\n\s*\n/).map(b=>{b=b.trim();if(!b)return '';let m;
+if(m=b.match(/^@@SVG(\d+)@@$/))return '<figure>'+svgs[+m[1]]+'</figure>';
+if(m=b.match(/^(#{1,3})\s+(.*)$/))return `<h${m[1].length}>${inl(m[2])}</h${m[1].length}>`;
+if(/^>\s?/.test(b))return '<blockquote>'+inl(b.replace(/^>\s?/gm,''))+'</blockquote>';
+if(/^[-*]\s/.test(b))return '<ul>'+b.split(/\n(?=[-*]\s)/).map(l=>'<li>'+inl(l.replace(/^[-*]\s+/,''))+'</li>').join('')+'</ul>';
+return '<p>'+inl(b).replace(/\n/g,'<br>')+'</p>'}).join('')}
+const rdOf=id=>{const r=S.reads[id];return r&&!r.del?r:null};
+function vReadList(){if(!ST.idx){loadIndex();return ST.err?'<div class="empty">Seznama ni mogoče naložiti (ni povezave?).</div>':'<div class="empty">Nalagam …</div>'}
+const areas=[...new Set(ST.idx.map(x=>x.area))],f=V.rf,list=ST.idx.filter(x=>f==='*'||(f==='new'?!(rdOf(x.id)&&rdOf(x.id).done):x.area===f));
+return `<div class="chips" style="margin-bottom:8px">${[['*','Vse'],['new','Neprebrano'],...areas.map(a=>[a,a])].map(([k,l])=>`<button class="tg s2b ${f===k?'sel':''}" data-a="rf" data-k="${esc(k)}">${esc(l)}</button>`).join('')}</div>
+${list.map(x=>{const r=rdOf(x.id),stt=r&&r.done?'✓ prebrano':r&&r.p>0.02?Math.round(r.p*100)+' %':'novo',d=pd(x.date);return `<div class="card story" data-a="openStory" data-s="${esc(x.id)}"><div class="nh"><span class="ncat">${esc(x.area)}</span><span class="mut" style="font-size:12px">${x.min} min · ${d.getDate()}. ${d.getMonth()+1}.</span><span style="flex:1"></span><span class="sst ${r&&r.done?'done':''}">${stt}</span></div><b class="stt">${esc(x.title)}</b>${x.sub?`<div class="mut" style="font-size:13px;margin-top:2px">${esc(x.sub)}</div>`:''}</div>`}).join('')||'<div class="empty">Ni zgodb.</div>'}`}
+function vReader(){const x=ST.idx&&ST.idx.find(y=>y.id===V.story),b=ST.body[V.story];if(!b){if(!ST.idx)loadIndex();loadBody(V.story);return '<div class="empty">Nalagam …</div>'}
+const r=rdOf(V.story),qs=live('notes').filter(n=>n.src===V.story);
+return `<div class="rbar"><button data-a="closeStory">‹ Nazaj</button><span style="flex:1"></span><button data-a="fs" data-v="-1" aria-label="Manjša pisava">A−</button><button data-a="fs" data-v="1" aria-label="Večja pisava">A+</button></div>
+<article class="rd" style="font-size:${V.fs}px">${x?`<div class="rmeta">${esc(x.area)} · ${x.min} min</div>`:''}${renderStory(b)}</article>
+<div class="card" style="margin-top:14px">${r&&r.done?'<div class="mut">✓ Prebrano</div>':'<button class="pri" data-a="markRead" style="width:100%">Označi kot prebrano</button>'}${qs.length?`<div class="lbl">Tvoji izpiski (${qs.length})</div>${qs.map(n=>`<div class="note" style="margin:6px 0;padding-left:8px;border-left:3px solid var(--acc)">${md(n.text)}</div>`).join('')}`:''}<p class="mut sm">Označi del besedila in tapni »＋ Izpisek«, da ga shraniš v zaznamke.</p></div>`}
+function saveProg(force){if(!isReading())return;const h=document.documentElement.scrollHeight-innerHeight;if(h<=0)return;const p=Math.min(1,Math.max(0,scrollY/h)),r=rdOf(V.story)||{id:V.story};
+if(!force&&Math.abs((r.p||0)-p)<0.02)return;r.p=p;r.t=now();if(p>0.97)r.done=true;put('reads',r)}
+function flushRead(){saveProg(true);if(V.rsec>=60){const m=Math.round(V.rsec/60);put('acts',{id:uid(),t:now(),c:'Branje',m});toast('Branje: +'+m+' min')}V.rsec=0}
+function ensureCat(c){const l=getList('notecats');if(!l.includes(c))put('cfg',{id:'notecats',v:[...l,c]})}
+function vZaznamki(){const seg=`<div class="seg rng">${[['notes','Zaznamki'],['read','Branje']].map(([k,l])=>`<button data-a="zv" data-v="${k}" class="${V.zv===k?'sel':''}">${l}</button>`).join('')}</div>`;
+if(V.zv==='read')return V.story?vReader():seg+vReadList();return seg+vNotes()}
+function vNotes(){const cats=noteCats(),all=live('notes'),c=V.ncat==='*'||cats.includes(V.ncat)?V.ncat:'*',q=V.nq.trim().toLowerCase(),cnt=k=>all.filter(n=>ncat(n)===k).length;
 const list=all.filter(n=>(c==='*'||ncat(n)===c)&&(!q||n.text.toLowerCase().includes(q))).sort((a,b)=>b.c-a.c);
 return `<div class="chips" style="margin-bottom:8px">${[['*','Vse',all.length],...cats.map(k=>[k,k,cnt(k)])].map(([k,l,n])=>`<button class="tg s2b ${c===k?'sel':''}" data-a="ncat" data-k="${esc(k)}">${esc(l)} <span class="mut">${n}</span></button>`).join('')}<button class="tg s2b" data-a="editList" data-l="notecats" aria-label="Uredi kategorije">✎</button></div>
 <div class="card"><textarea id="nT" rows="3" placeholder="Nov zaznamek (Markdown: **krepko**, \`koda\`, - seznam, povezave)…">${esc(V.ndraft)}</textarea><div class="acts"><input id="nQ" placeholder="🔍 Išči" value="${esc(V.nq)}" style="flex:1;min-width:0"><button class="pri" data-a="addNote">Dodaj${c==='*'?'':' v '+esc(c)}</button></div></div>
@@ -594,6 +634,14 @@ ncopy:(b,id)=>copyText(S.notes[id].text),
 nshare:(b,id)=>share(S.notes[id].text),
 nedit:(b,id)=>{const n=S.notes[id];openSheet(`<h3>Uredi zaznamek</h3><textarea id="eN" rows="10">${esc(n.text)}</textarea>${catPicker(ncat(n))}<div class="acts"><button class="pri" data-a="nsave" data-id="${id}">Shrani</button><button class="danger" data-a="del" data-c="notes" data-id="${id}">Izbriši</button><button data-a="closeSheet">Prekliči</button></div>`)},
 nsave:(b,id)=>{const n=S.notes[id],t=$('#eN').value.trim();if(t)n.text=t;else n.del=1;n.cat=chosenCat();put('notes',n);closeSheet();render()},
+zv:b=>{V.zv=b.dataset.v;render();scrollTo(0,0)},
+rf:b=>{V.rf=b.dataset.k;render()},
+openStory:b=>{V.tab='zaznamki';V.zv='read';V.story=b.dataset.s;V.restore=true;V.rsec=0;V.lastAct=now();scrollTo(0,0);render()},
+closeStory:()=>{flushRead();V.story=null;$('#hlBtn').hidden=true;render();scrollTo(0,0)},
+markRead:()=>{const r=rdOf(V.story)||{id:V.story};r.done=true;r.p=1;r.t=now();put('reads',r);render()},
+fs:b=>{V.fs=Math.min(26,Math.max(14,V.fs+ +b.dataset.v));st.set('daily.fs',String(V.fs));const a=$('.rd');if(a)a.style.fontSize=V.fs+'px'},
+hl:()=>{const t=V.selT;if(!t)return;const x=ST.idx&&ST.idx.find(y=>y.id===V.story);ensureCat('Branje');
+put('notes',{id:uid(),text:'> '+t.replace(/\n+/g,'\n> ')+'\n\n— '+(x?x.title:''),cat:'Branje',src:V.story,c:now()});try{getSelection().removeAllRanges()}catch(e){}V.selT='';$('#hlBtn').hidden=true;toast('Izpisek shranjen v zaznamke')},
 pv:b=>{V.pv=b.dataset.v;render()},
 hmore:()=>{V.hn+=30;render()},
 hgo:b=>{V.tab='dnevnik';V.day=b.dataset.d;render();scrollTo(0,0)},
@@ -619,7 +667,7 @@ wipe:b=>{if(b.dataset.armed){S=empty();clearTimeout(saveT);st.set(KEY,JSON.strin
 };
 document.addEventListener('click',e=>{const t=e.target;if(t.closest('a[href]'))return;
 if(t.id==='sheet')return closeSheet();
-const nb=t.closest('nav button[data-tab]');if(nb){V.tab=nb.dataset.tab;render();scrollTo(0,0);return}
+const nb=t.closest('nav button[data-tab]');if(nb){if(isReading())flushRead();V.tab=nb.dataset.tab;render();scrollTo(0,0);return}
 if(t.tagName==='INPUT'&&/^(time|date)$/.test(t.type)&&t.showPicker){try{t.showPicker()}catch(x){}}
 if(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))return;
 const b=t.closest('[data-a]');if(!b)return;
@@ -637,10 +685,15 @@ else if(t.id==='swH'||t.id==='swM'){const H=$('#swH').value,M=$('#swM').value;sf
 else if(t.id==='stepsI'){const v=t.value.trim();sf(V.day,'steps',v===''?null:Math.max(0,Math.round(+v)))}
 else if(t.id==='imp')importFile(t.files[0])});
 document.addEventListener('toggle',e=>{if(e.target.id==='doneD')V.doneOpen=e.target.open},true);
-addEventListener('visibilitychange',()=>{if(document.hidden){flush();if(SY.dirty)sync()}else{const t=today();if(t!==V.last){if(V.day===V.last)V.day=t;V.last=t;render()}sync()}});
+addEventListener('visibilitychange',()=>{if(document.hidden){if(isReading())flushRead();flush();if(SY.dirty)sync()}else{const t=today();if(t!==V.last){if(V.day===V.last)V.day=t;V.last=t;render()}sync()}});
 addEventListener('online',()=>sync());setInterval(()=>{if(!document.hidden)sync()},300000);
 addEventListener('pagehide',flush);
 addEventListener('storage',e=>{if(e.key!==KEY)return;try{const d=JSON.parse(e.newValue);S=d?merge(S,d):empty();const a=document.activeElement;if(!a||!/^(INPUT|TEXTAREA)$/.test(a.tagName))render()}catch(x){}});
+addEventListener('scroll',()=>{if(!isReading())return;V.lastAct=now();clearTimeout(V.spT);V.spT=setTimeout(()=>saveProg(false),1500)},{passive:true});
+addEventListener('touchstart',()=>{V.lastAct=now()},{passive:true});
+setInterval(()=>{if(isReading()&&!document.hidden&&now()-V.lastAct<120000)V.rsec+=15},15000);
+document.addEventListener('selectionchange',()=>{const b=$('#hlBtn');if(!b||!isReading())return;const sel=getSelection(),t=sel?sel.toString().trim():'',rd=$('.rd'),inRd=t&&rd&&sel.anchorNode&&rd.contains(sel.anchorNode);
+if(inRd){V.selT=t;V.lastAct=now();clearTimeout(V.hlT);b.hidden=false}else{clearTimeout(V.hlT);V.hlT=setTimeout(()=>{b.hidden=true;V.selT=''},700)}});
 let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(drawCharts,150)});
 
 // ---------- incoming share (?title=&text=&url=) -> inbox. Used later by the PWA share_target on Android.
@@ -651,7 +704,7 @@ migrateLegacy();
 if(c&&Array.isArray(c.v)&&c.v.length){const rooms=c.v.map(l=>l.split(':')[0].trim());const add=DEFL.chores.filter(l=>['Klet','Podstreha','Avto','Popravila'].includes(l.split(':')[0])&&!rooms.includes(l.split(':')[0]));if(add.length)put('cfg',{id:'chores',v:[...c.v,...add]})}
 if(a&&Array.isArray(a.v)&&a.v.length&&!a.v.includes('Kitara'))put('cfg',{id:'acts',v:[...a.v,'Kitara']});if((c&&c.v)||(a&&a.v))put('cfg',{id:'mig19',v:1})})();
 setInterval(()=>{if(!LOCK)updRun()},15000);
-const VER='2.7';
+const VER='3.0';
 function checkUpd(){if(LOCK||location.protocol!=='https:')return;fetch('version.txt?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{t=t.trim();const b=$('#upd');if(b&&t&&t!==VER){b.hidden=false;b.textContent='↻ v'+t}}).catch(()=>{})}
 setInterval(checkUpd,1800000);addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpd()});
 let shared=false;
