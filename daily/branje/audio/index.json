@@ -35,5 +35,15 @@
    "gemini-3.8-flash-lite-tts",
    "gemini-3.8-flash-tts"
   ]
+ },
+ "2026-11-23-kitajska": {
+  "h": "5982206dea30",
+  "d": 887,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-lite-tts",
+   "gemini-3.8-flash-tts"
+  ]
  }
 }
