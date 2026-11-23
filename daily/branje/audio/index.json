@@ -45,5 +45,23 @@
    "gemini-3.8-flash-lite-tts",
    "gemini-3.8-flash-tts"
   ]
+ },
+ "2026-11-23-panamski-prekop": {
+  "h": "47dd71ce8712",
+  "d": 473,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ]
+ },
+ "2026-11-23-ptice-selivke": {
+  "h": "247004810dd6",
+  "d": 421,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-lite-tts"
+  ]
  }
 }
