@@ -9,7 +9,11 @@ CH=[("Veritasium","UCHnyfMqiRRG1u-2MsSQLbXA"),("Kurzgesagt","UCsXVk37bltHxD1rDPw
 ("Primer","UCKzJFdi57J53Vr_BkTfN3uQ"),("Crash Course","UCX6b17PVsYBQ0ip5gyeme-Q"),("Sabine Hossenfelder","UC1yNl2E66ZzKApQdRuTQ4tw"),
  # personal growth, philosophy (incl. Taoism), well-being; handles are resolved via the API
  ("The School of Life","@theschooloflifetv"),("Big Think","@bigthink"),("Einzelgänger","@Einzelganger"),("Academy of Ideas","@academyofideas"),
- ("Wireless Philosophy","@WirelessPhilosophy"),("HealthyGamerGG","@HealthyGamerGG"),("Matt D'Avella","@mattdavella")]
+ ("Wireless Philosophy","@WirelessPhilosophy"),("HealthyGamerGG","@HealthyGamerGG"),("Matt D'Avella","@mattdavella"),
+ # meditation: short guided sessions and long sleep meditations; '|' = alternative handles tried in order
+ ("Jason Stephenson","UCqPYhcdFgrlUXiGmPRAej1w"),("The Honest Guys","@TheHonestGuys|@thehonestguys"),("Michael Sealey","@MichaelSealey"),
+ ("Great Meditation","@GreatMeditation"),("The Mindful Movement","@TheMindfulMovement"),("Tara Brach","@tarabrach"),
+ ("Plum Village App","UCytzR1tkUYoF5DjGYiYkhGQ"),("Sam Harris","@samharrisorg|@SamHarris|@wakingup"),("Ten Percent Happier","@TenPercentHappier"),("Headspace","@headspace")]
 NS={'a':'http://www.w3.org/2005/Atom','yt':'http://www.youtube.com/xml/schemas/2015'}
 OUT=os.path.join(os.path.dirname(__file__),'..','lekcije','feed.json')
 UA={'User-Agent':'Mozilla/5.0 (daily-feed)'}
@@ -46,7 +50,10 @@ for name,cid in CH:
     try:
         if cid.startswith('@'):
             if not KEY: raise Exception('handle needs YT_KEY')
-            it=api('channels?part=id&forHandle='+urllib.parse.quote(cid)).get('items') or []
+            it=[]
+            for h in cid.split('|'):
+                it=api('channels?part=id&forHandle='+urllib.parse.quote(h)).get('items') or []
+                if it: print('handle',name,h,'->',it[0]['id']); break
             if not it: raise Exception('handle not found '+cid)
             cid=it[0]['id']
         if KEY:
@@ -69,7 +76,7 @@ for name,cid in CH:
                 old[v]={'v':v,'t':e.find('a:title',NS).text,'d':e.find('a:published',NS).text[:10],'ch':name}
     except Exception as ex: print('FAIL',name,ex)
     chans.append({'name':name,'id':cid,'ok':ok>0})
-vids=sorted(old.values(),key=lambda x:x['d'],reverse=True)[:5000]
+vids=sorted(old.values(),key=lambda x:x['d'],reverse=True)[:7000]
 L=lengths([x['v'] for x in vids if not x.get('l')])
 for x in vids:
     if not x.get('l') and L.get(x['v']): x['l']=L[x['v']]
