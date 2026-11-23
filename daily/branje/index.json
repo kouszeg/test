@@ -1,5 +1,35 @@
 [
  {
+  "id": "2026-11-23-kitajska",
+  "title": "Tri tisočletja Kitajske",
+  "sub": "Od orakeljskih kosti do tai chija – hiter pregled zgodovine, filozofije in kulture",
+  "area": "Zgodovina",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1716,
+  "min": 11
+ },
+ {
+  "id": "2026-11-23-panamski-prekop",
+  "title": "Dvigalo za ladje",
+  "sub": "Kako Panamski prekop vsako ladjo dvigne 26 metrov nad morje – in zakaj potrebuje dež",
+  "area": "Tehnika",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 933,
+  "min": 6
+ },
+ {
+  "id": "2026-11-23-ptice-selivke",
+  "title": "Kako ptice najdejo pot",
+  "sub": "Sonce, zvezde in magnetno polje – trije kompasi ptic selivk",
+  "area": "Narava",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 934,
+  "min": 6
+ },
+ {
   "id": "2026-11-23-broad-street",
   "title": "The Pump on Broad Street",
   "sub": "How John Snow traced cholera to a single well",
