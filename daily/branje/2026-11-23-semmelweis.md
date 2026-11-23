@@ -1,7 +1,7 @@
 ---
 title: Zdravnik, ki je naročil umivanje rok
 subtitle: Ignaz Semmelweis, dve porodnišnici na Dunaju in zakaj pravilna ideja ni bila dovolj
-area: Zgodovina znanosti
+area: Zgodovina
 date: 2026-11-23
 ---
 

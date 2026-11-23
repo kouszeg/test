@@ -23,7 +23,7 @@
   "id": "2026-11-23-harrison",
   "title": "Ura, ki je rešila morje",
   "sub": "John Harrison, zemljepisna dolžina in zakaj je bil čas ključ do položaja",
-  "area": "Zgodovina znanosti",
+  "area": "Zgodovina",
   "date": "2026-11-23",
   "type": "story",
   "words": 1759,
@@ -33,7 +33,7 @@
   "id": "2026-11-23-semmelweis",
   "title": "Zdravnik, ki je naročil umivanje rok",
   "sub": "Ignaz Semmelweis, dve porodnišnici na Dunaju in zakaj pravilna ideja ni bila dovolj",
-  "area": "Zgodovina znanosti",
+  "area": "Zgodovina",
   "date": "2026-11-23",
   "type": "story",
   "words": 1152,
@@ -157,6 +157,36 @@
   "date": "2026-11-23",
   "type": "short",
   "words": 462,
+  "min": 3
+ },
+ {
+  "id": "2026-11-23-koledar",
+  "title": "Deset dni, ki jih ni bilo",
+  "sub": "Kako je Evropa leta 1582 preskočila deset dni in zakaj je leto 2000 bilo prestopno, 1900 pa ne",
+  "area": "Zgodovina",
+  "date": "2026-11-23",
+  "type": "short",
+  "words": 565,
+  "min": 4
+ },
+ {
+  "id": "2026-11-23-tai-chi",
+  "title": "Mehko premaga trdo",
+  "sub": "Tai chi, taoizem in kaj o počasnem gibanju v resnici vemo",
+  "area": "Filozofija",
+  "date": "2026-11-23",
+  "type": "short",
+  "words": 563,
+  "min": 4
+ },
+ {
+  "id": "2026-11-23-vzdih",
+  "title": "Pet minut vzdihovanja",
+  "sub": "Stanfordska raziskava o dihanju, razpoloženju in o tem, kako brati obetavne rezultate",
+  "area": "Dobro počutje",
+  "date": "2026-11-23",
+  "type": "short",
+  "words": 525,
   "min": 3
  }
 ]
