@@ -1,7 +1,8 @@
-# Narrates Branje stories to MP3 with Gemini TTS (free tier) -> daily/branje/audio/<id>.mp3 + audio/index.json.
+# Narrates Branje stories with Gemini TTS (free tier) -> Opus 24 kbit/s files uploaded as assets of the GitHub release
+# 'audio' (outside git history, no size cap) + daily/branje/audio/index.json (in the repo).
 # Runs in GitHub Actions (secret GEMINI_KEY). Free-tier quota is per model (~10 requests/day each), so the
 # script walks a list of TTS models and moves on when one answers 429. Unfinished stories keep their finished
-# parts (audio/parts/) and continue on the next run.
+# parts (release assets part_*) and continue on the next run. The workflow uploads/deletes what _release.json lists.
 #   python3 tools/audio.py                      -> stories without audio (newest first)
 #   python3 tools/audio.py samples V1,V2,...    -> short voice samples to daily/tts-test/
 #   python3 tools/audio.py story ID[,ID]        -> only these stories
@@ -133,8 +134,11 @@ def synth(text):
     raise Quota('all TTS models used up')
 
 
-def to_mp3(pcm, path):
-    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 's16le', '-ar', '24000', '-ac', '1', '-i', '-', '-b:a', '48k', path], input=pcm, check=True)
+OPUS = ['-c:a', 'libopus', '-b:a', '24k', '-application', 'voip']   # speech: ~0.18 MB per minute
+
+
+def to_audio(pcm, path):
+    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 's16le', '-ar', '24000', '-ac', '1', '-i', '-', *OPUS, path], input=pcm, check=True)
 
 
 def mp3_len(path):
@@ -194,7 +198,7 @@ def samples(voices):
         except Quota as q:
             print('STOP', q)
             break
-        to_mp3(pcm, os.path.join(ROOT, 'tts-test', f'gemini_{v}.mp3'))
+        to_audio(pcm, os.path.join(ROOT, 'tts-test', f'gemini_{v}.ogg'))
         print('sample', v, m, len(pcm) // 48000, 's')
 
 
@@ -204,44 +208,49 @@ def stories(only=None):
     idx = json.load(open(ip, encoding='utf-8')) if os.path.exists(ip) else {}
     items = json.load(open(os.path.join(BR, 'index.json'), encoding='utf-8'))
     done = 0
+    rel = {'upload': [], 'delete': []}
     for it in items:  # newest first
         sid = it['id']
         if only and sid not in only:
             continue
         paras = narration(open(os.path.join(BR, sid + '.md'), encoding='utf-8').read())
         h = hashlib.sha1(('\n'.join(paras) + VOICE + STYLE).encode()).hexdigest()[:12]
-        if idx.get(sid, {}).get('h') == h and os.path.exists(os.path.join(AD, sid + '.mp3')):
+        if idx.get(sid, {}).get('h') == h:
             continue
         parts = chunks(paras)
         print(f'{sid}: {len(parts)} parts')
         models = []
         try:
             for n, t in enumerate(parts):
-                pp = os.path.join(PD, f'{sid}.{h}.{n}.mp3')
+                pp = os.path.join(PD, f'part_{sid}.{h}.{n}.ogg')
                 if os.path.exists(pp):
                     continue
                 pcm, m = synth(t)
                 models.append(m)
-                to_mp3(pcm, pp)
+                to_audio(pcm, pp)
+                rel['upload'].append(pp)
                 print(f'  part {n + 1}/{len(parts)} {m} {len(pcm) // 48000} s')
         except Quota as q:
             print('STOP:', q)
             break
         # all parts ready: join with a short pause, drop the parts
         lst = os.path.join(PD, 'list.txt')
-        sil = os.path.join(PD, 'sil.mp3')
-        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'lavfi', '-i', 'anullsrc=r=24000:cl=mono', '-t', '0.7', '-b:a', '48k', sil], check=True)
+        sil = os.path.join(PD, 'sil.ogg')
+        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'lavfi', '-i', 'anullsrc=r=24000:cl=mono', '-t', '0.7', *OPUS, sil], check=True)
         with open(lst, 'w') as f:
             for n in range(len(parts)):
                 if n:
                     f.write(f"file '{os.path.abspath(sil)}'\n")
-                f.write(f"file '{os.path.abspath(os.path.join(PD, f'{sid}.{h}.{n}.mp3'))}'\n")
-        out = os.path.join(AD, sid + '.mp3')
-        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', lst, '-b:a', '48k', out], check=True)
+                f.write(f"file '{os.path.abspath(os.path.join(PD, f'part_{sid}.{h}.{n}.ogg'))}'\n")
+        out = os.path.join(AD, sid + '.ogg')
+        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', lst, *OPUS, out], check=True)
         for f in os.listdir(PD):
-            if f.startswith(sid + '.') or f in ('list.txt', 'sil.mp3'):
+            if f.startswith(f'part_{sid}.') or f in ('list.txt', 'sil.ogg'):
+                if f.startswith('part_'):
+                    rel['delete'].append(f)
                 os.remove(os.path.join(PD, f))
-        idx[sid] = {'h': h, 'd': mp3_len(out), 'v': VOICE, 'm': sorted(set(models))}
+        rel['upload'] = [x for x in rel['upload'] if os.path.exists(x)] + [out]
+        idx[sid] = {'h': h, 'd': mp3_len(out), 'f': 'ogg', 'v': VOICE, 'm': sorted(set(models))}
         json.dump(idx, open(ip, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
         done += 1
         print(f'  -> {out} {idx[sid]["d"]} s')
@@ -249,10 +258,11 @@ def stories(only=None):
     ids = {it['id'] for it in items}
     for sid in [k for k in idx if k not in ids]:
         idx.pop(sid)
-        p = os.path.join(AD, sid + '.mp3')
-        if os.path.exists(p):
-            os.remove(p)
+        rel['delete'].append(sid + '.ogg')
     json.dump(idx, open(ip, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    rel['upload'] = sorted(set(x for x in rel['upload'] if os.path.exists(x)))
+    rel['delete'] = sorted(set(rel['delete']))
+    json.dump(rel, open(os.path.join(AD, '_release.json'), 'w'), indent=1)
     print('stories narrated this run:', done, '| models used up:', sorted(dead))
 
 
