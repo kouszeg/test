@@ -34,22 +34,43 @@ try:
     j=json.load(open(OUT,encoding='utf-8')); names=[c['name'] for c in j['channels']]
     for x in j['videos']: old[x['v']]=dict(x,ch=names[x['c']])
 except Exception: pass
+KEY=os.environ.get('YT_KEY'); PAGES=4   # with an API key: up to 4x50 latest uploads per channel (back catalogue)
+def api(path):
+    return json.load(urllib.request.urlopen('https://www.googleapis.com/youtube/v3/'+path+'&key='+KEY,timeout=20))
 chans=[]
 for name,cid in CH:
     ok=0
     try:
-        xml=urllib.request.urlopen(urllib.request.Request('https://www.youtube.com/feeds/videos.xml?channel_id='+cid,headers=UA),timeout=20).read()
-        for e in ET.fromstring(xml).findall('a:entry',NS):
-            v=e.find('yt:videoId',NS).text; ok+=1
-            if v in old: old[v]['t']=e.find('a:title',NS).text; continue
-            if is_short(v): continue
-            old[v]={'v':v,'t':e.find('a:title',NS).text,'d':e.find('a:published',NS).text[:10],'ch':name}
+        if KEY:
+            tok=''
+            for _ in range(PAGES):
+                j=api('playlistItems?part=snippet,contentDetails&maxResults=50&playlistId=UU'+cid[2:]+('&pageToken='+tok if tok else ''))
+                for it in j.get('items',[]):
+                    v=it['contentDetails']['videoId'];t=it['snippet']['title'];d=(it['contentDetails'].get('videoPublishedAt') or it['snippet'].get('publishedAt') or '')[:10]; ok+=1
+                    if t in ('Private video','Deleted video') or not d: continue
+                    if v in old: old[v]['t']=t; continue
+                    old[v]={'v':v,'t':t,'d':d,'ch':name,'new':1}
+                tok=j.get('nextPageToken')
+                if not tok: break
+        else:
+            xml=urllib.request.urlopen(urllib.request.Request('https://www.youtube.com/feeds/videos.xml?channel_id='+cid,headers=UA),timeout=20).read()
+            for e in ET.fromstring(xml).findall('a:entry',NS):
+                v=e.find('yt:videoId',NS).text; ok+=1
+                if v in old: old[v]['t']=e.find('a:title',NS).text; continue
+                if is_short(v): continue
+                old[v]={'v':v,'t':e.find('a:title',NS).text,'d':e.find('a:published',NS).text[:10],'ch':name}
     except Exception as ex: print('FAIL',name,ex)
     chans.append({'name':name,'id':cid,'ok':ok>0})
-vids=sorted(old.values(),key=lambda x:x['d'],reverse=True)[:800]
+vids=sorted(old.values(),key=lambda x:x['d'],reverse=True)[:5000]
 L=lengths([x['v'] for x in vids if not x.get('l')])
 for x in vids:
     if not x.get('l') and L.get(x['v']): x['l']=L[x['v']]
+# API path: Shorts are only possible for videos up to 3 min, check just those
+drop=set()
+for x in vids:
+    if x.pop('new',0) and (x.get('l') or 999)<=180 and is_short(x['v']): drop.add(x['v'])
+vids=[x for x in vids if x['v'] not in drop]
+print('shorts dropped:',len(drop))
 print('no duration:',sum(1 for x in vids if not x.get('l')),'(set repo secret YT_KEY for durations)' if not os.environ.get('YT_KEY') else '')
 idx={c['name']:i for i,c in enumerate(chans)}
 vids=[dict({'v':x['v'],'t':x['t'],'d':x['d'],'c':idx[x['ch']]},**({'l':x['l']} if x.get('l') else {})) for x in vids if x['ch'] in idx]
