@@ -7,6 +7,7 @@ on:
     inputs:
       mode: {description: 'stories | samples | story | ab (story at bitrates in voices field)', default: 'stories'}
       story: {description: 'story id(s) for mode story', default: ''}
+      models: {description: 'TTS model order (comma separated, optional)', default: ''}
       voices: {description: 'voices for samples (comma separated)', default: 'Charon,Algieba,Schedar,Sadaltager'}
   push:
     branches: [main]
@@ -42,6 +43,7 @@ jobs:
           MODE: ${{ github.event.inputs.mode }}
           VOICES: ${{ github.event.inputs.voices }}
           STORY: ${{ github.event.inputs.story }}
+          TTS_MODELS: ${{ github.event.inputs.models }}
         run: |
           if [ "$MODE" = "samples" ]; then python3 -u daily/tools/audio.py samples "$VOICES"
           elif [ "$MODE" = "story" ]; then python3 -u daily/tools/audio.py story "$STORY"
