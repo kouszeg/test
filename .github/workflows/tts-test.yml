@@ -1,6 +1,8 @@
 name: tts-test
 # Manual test: Slovenian sample read by free TTS engines (edge-tts Petra/Rok, Piper artur) -> artifact with MP3s
 on: workflow_dispatch
+permissions:
+  contents: write
 jobs:
   tts:
     runs-on: ubuntu-latest
@@ -26,11 +28,15 @@ jobs:
           edge-tts --list-voices | grep -i sl-SI || true
       - name: Piper (open source, voice artur)
         run: |
+          sudo apt-get -qq install -y ffmpeg >/dev/null
           pip install -q piper-tts
           B=https://huggingface.co/rhasspy/piper-voices/resolve/main/sl/sl_SI/artur/medium
           curl -sSL -o artur.onnx $B/sl_SI-artur-medium.onnx && curl -sSL -o artur.onnx.json $B/sl_SI-artur-medium.onnx.json
           (python3 -m piper -m artur.onnx -f out/3_piper_artur.wav < sample.txt || piper --model artur.onnx --output_file out/3_piper_artur.wav < sample.txt) || echo "PIPER FAIL"
           [ -f out/3_piper_artur.wav ] && ffmpeg -loglevel error -y -i out/3_piper_artur.wav -b:a 96k out/3_piper_artur.mp3 && rm out/3_piper_artur.wav || true
           ls -la out
-      - uses: actions/upload-artifact@v4
-        with: {name: tts-samples, path: out/}
+      - name: Commit samples to daily/tts-test/
+        run: |
+          mkdir -p daily/tts-test && cp out/*.mp3 daily/tts-test/
+          git config user.name "daily-bot"; git config user.email "daily-bot@users.noreply.github.com"
+          git add daily/tts-test && git commit -m "tts-test: samples" && git pull --rebase -q && git push
