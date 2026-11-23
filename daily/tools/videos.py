@@ -1,6 +1,6 @@
-# Daily job (GitHub Actions): read YouTube RSS of selected channels -> daily/lekcije/feed.json
+# Weekly job (GitHub Actions): read YouTube RSS of selected channels -> daily/lekcije/feed.json
 # Keeps earlier entries (union by video id), drops YouTube Shorts, caps the total size.
-import json, os, urllib.request, urllib.error, xml.etree.ElementTree as ET, datetime
+import json, os, re, urllib.request, urllib.error, xml.etree.ElementTree as ET, datetime
 CH=[("Veritasium","UCHnyfMqiRRG1u-2MsSQLbXA"),("Kurzgesagt","UCsXVk37bltHxD1rDPwtNM8Q"),("Nightshift (Kurzgesagt)","UCq8ZAAsI89IoJ-fn1gYpO3g"),
 ("3Blue1Brown","UCYO_jab_esuFRV4b17AJtAw"),("Vsauce","UC6nSFpj9HTCZ5t-N3Rm3-HA"),("SmarterEveryDay","UC6107grRI4m0o2-emgoDnAA"),("Mark Rober","UCY1kMZp36IQSyNx_9h4mpCg"),
 ("Tom Scott","UCBa659QWEk1AI4Tg--mrJ2A"),("PBS Space Time","UC7_gcs09iThXybpVgjHZ_7g"),("MinutePhysics","UCUHW94eEFW7hkUMVaZz4eDg"),("CGP Grey","UC2C_jShtL725hvbm1arSV9w"),
@@ -9,13 +9,19 @@ CH=[("Veritasium","UCHnyfMqiRRG1u-2MsSQLbXA"),("Kurzgesagt","UCsXVk37bltHxD1rDPw
 ("Primer","UCKzJFdi57J53Vr_BkTfN3uQ"),("Crash Course","UCX6b17PVsYBQ0ip5gyeme-Q"),("Sabine Hossenfelder","UC1yNl2E66ZzKApQdRuTQ4tw")]
 NS={'a':'http://www.w3.org/2005/Atom','yt':'http://www.youtube.com/xml/schemas/2015'}
 OUT=os.path.join(os.path.dirname(__file__),'..','lekcije','feed.json')
-UA={'User-Agent':'Mozilla/5.0 (daily-feed)'}
+UA={'User-Agent':'Mozilla/5.0 (daily-feed)','Accept-Language':'en'}
 class NoRedir(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*a,**k): return None
 op=urllib.request.build_opener(NoRedir)
 def is_short(v):
     try: return op.open(urllib.request.Request('https://www.youtube.com/shorts/'+v,headers=UA),timeout=15).status==200
     except Exception: return False
+def length(v):
+    # duration in seconds from the watch page (not in RSS); None if unavailable
+    try:
+        h=urllib.request.urlopen(urllib.request.Request('https://www.youtube.com/watch?v='+v,headers=dict(UA,Cookie='CONSENT=YES+1')),timeout=20).read().decode('utf-8','ignore')
+        m=re.search(r'"lengthSeconds":"(\d+)"',h); return int(m.group(1)) if m else None
+    except Exception: return None
 old={}
 try:
     j=json.load(open(OUT,encoding='utf-8')); names=[c['name'] for c in j['channels']]
@@ -34,8 +40,14 @@ for name,cid in CH:
     except Exception as ex: print('FAIL',name,ex)
     chans.append({'name':name,'id':cid,'ok':ok>0})
 vids=sorted(old.values(),key=lambda x:x['d'],reverse=True)[:800]
+miss=0
+for x in vids:
+    if not x.get('l'):
+        x['l']=length(x['v'])
+        if not x['l']: miss+=1
+print('no duration:',miss)
 idx={c['name']:i for i,c in enumerate(chans)}
-vids=[{'v':x['v'],'t':x['t'],'d':x['d'],'c':idx[x['ch']]} for x in vids if x['ch'] in idx]
+vids=[dict({'v':x['v'],'t':x['t'],'d':x['d'],'c':idx[x['ch']]},**({'l':x['l']} if x.get('l') else {})) for x in vids if x['ch'] in idx]
 os.makedirs(os.path.dirname(OUT),exist_ok=True)
 json.dump({'updated':datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%MZ'),'channels':chans,'videos':vids},open(OUT,'w',encoding='utf-8'),ensure_ascii=False,separators=(',',':'))
 print(len(vids),'videos;',sum(c['ok'] for c in chans),'/',len(chans),'channels ok')
