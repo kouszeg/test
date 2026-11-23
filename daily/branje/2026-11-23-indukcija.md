@@ -103,3 +103,18 @@ Humov nauk ni, da naj prenehamo zaupati izkušnji. To bi bilo nemogoče in nespa
 - [Bertrand Russell, The Problems of Philosophy (1912), poglavje On Induction – Project Gutenberg](https://www.gutenberg.org/ebooks/5827)
 - [Stanford Encyclopedia of Philosophy: Karl Popper](https://plato.stanford.edu/entries/popper/)
 - [MIT OpenCourseWare 24.00: zapiski o indukciji (PDF)](https://dspace.mit.edu/bitstream/handle/1721.1/127766/24-00-fall-2010/contents/lecture-notes/MIT24_00F10_lec06.pdf)
+
+## Povzetek
+
+- Hume: sklepanje iz preteklosti na prihodnost predpostavlja, da je narava enakomerna, tega pa ne moremo dokazati ne z logiko ne z izkušnjo, ne da bi se vrteli v krogu.
+- Russellov piščanec (1912) je vsako jutro trdneje pričakoval hrano, dokler kmet ni prinesel noža.
+- Črni labodi (Avstralija, 1697) in modeli pred krizo leta 2008 kažejo, kako krhki so tudi zelo potrjeni vzorci.
+
+## Preveri se
+
+- V: Kateri dve vrsti spoznanja je ločil Hume?
+  O: Odnose med idejami (matematika, logika: nasprotje je protislovje) in dejstva o svetu, ki jih spoznavamo z izkušnjo.
+- V: Zakaj enakomernosti narave ne moremo upravičiti z izkušnjo?
+  O: Sklep »doslej je veljalo, zato bo veljalo tudi naprej« je že sam induktiven, torej bi predpostavljal to, kar želimo dokazati.
+- V: Kdaj in kje so Evropejci prvič videli črne labode?
+  O: Leta 1697 nizozemska odprava Willema de Vlamingha na zahodni obali Avstralije, ob reki, ki se danes imenuje Swan River.

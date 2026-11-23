@@ -243,3 +243,18 @@ To vprašanje premakne pozornost z ocenjevanja lastnega značaja na razumevanje 
 ## Za ogled
 
 - [Tim Urban: Inside the mind of a master procrastinator (TED, 14 min)](https://www.ted.com/talks/tim_urban_inside_the_mind_of_a_master_procrastinator) – duhovit, a natančen opis boja med »racionalnim odločevalcem« in »opico takojšnje nagrade«.
+
+## Povzetek
+
+- Namera ne zadostuje: v metaanalizi iz leta 2023 (29.600 ljudi) jih približno 47,6 % s pozitivno namero ni izvedlo vedenja.
+- Ljudje z dobro samokontrolo se manj borijo s skušnjavami, ker imajo koristne navade (Galla in Duckworth, 2015); izčrpavanje ega se v veliki replikaciji (2016) ni potrdilo.
+- Izvedbene namere (»ko X, takrat Y«) in odstranjevanje ovir delujejo bolje od same volje; navade pa niso rešitev za vse.
+
+## Preveri se
+
+- V: Kolikšen delež ljudi s pozitivno namero za telesno dejavnost je ni uresničil?
+  O: Približno 47,6 % (metaanaliza iz leta 2023, 29.600 posameznikov).
+- V: Kaj sta ugotovila Galla in Duckworth (2015)?
+  O: Ljudje z boljšo samokontrolo pogosteje uporabljajo koristne navade, zato jim želeno vedenje vzame manj napora; ne odločajo se vsak dan znova.
+- V: Kaj je pokazala replikacija teorije izčrpavanja ega iz leta 2016?
+  O: V 23 laboratorijih z 2.141 udeleženci je bil učinek zelo majhen, statistično blizu nič.

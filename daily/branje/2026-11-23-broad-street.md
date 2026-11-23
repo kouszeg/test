@@ -86,3 +86,18 @@ Broad Street is now called Broadwick Street. A replica of the pump, without a ha
 - [UCLA: The Broad Street pump outbreak](https://epi-snow.ph.ucla.edu/Stream2_BSPoutbreak_a.html)
 - [Cholera and the Thames: Dr John Snow and Reverend Whitehead](https://www.choleraandthethames.co.uk/cholera-in-london/cholera-in-soho/)
 - [Wikipedia: 1854 Broad Street cholera outbreak](https://en.wikipedia.org/wiki/1854_Broad_Street_cholera_outbreak)
+
+## Povzetek
+
+- In 1854 John Snow traced a cholera outbreak in Soho to the Broad Street pump by mapping deaths house by house and checking the exceptions.
+- His "grand experiment" in south London: 315 deaths per 10,000 houses on Southwark and Vauxhall water, 37 on Lambeth water.
+- The Board of Health still blamed miasma, and the pump handle was put back after the outbreak.
+
+## Preveri se
+
+- V: Why did the widow in Hampstead die of cholera, far from Soho?
+  O: She liked the Broad Street water so much that a bottle of it was brought to her every day; she and her niece drank the bottle delivered on 31 August.
+- V: What did Snow's "grand experiment" compare?
+  O: Houses on the same streets supplied by two companies: Southwark and Vauxhall took sewage-polluted Thames water at Battersea, Lambeth had moved its intake upstream in 1852. Deaths: 315 vs 37 per 10,000 houses.
+- V: What was probably the first case, and who found it?
+  O: Henry Whitehead found it: five-month-old Frances Lewis at 40 Broad Street, whose nappy water was emptied into a cesspool next to the pump.

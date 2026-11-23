@@ -55,3 +55,18 @@ Morda je najzanimivejše vprašanje osebno. Če se v desetih letih spremenijo tv
 ## Za ogled
 
 - [TED-Ed na YouTubu](https://www.youtube.com/@TEDEd/search?query=ship%20of%20theseus) – poišči njihovo animirano razlago Tezejeve ladje.
+
+## Povzetek
+
+- Atenci so stoletja menjavali strohnele deske Tezejeve ladje, dokler niso zamenjali vseh; je to še ista ladja?
+- Hobbes je primer zapletel: iz shranjenih starih desk sestavimo drugo ladjo. Katera je Tezejeva?
+- Odgovor je odvisen od tega, zakaj sprašujemo: material, oblika in neprekinjenost ali namen.
+
+## Preveri se
+
+- V: Kaj je Hobbesov zasuk?
+  O: Stare, zamenjane deske shranjujemo in iz njih po starem načrtu sestavimo ladjo. Imamo dve: eno z neprekinjenim popravljanjem, drugo iz izvirnega materiala.
+- V: Katera tri stališča o istovetnosti omenja zgodba?
+  O: Istovetnost je stvar materiala; istovetnost je stvar oblike in neprekinjenosti; vprašanje morda nima globljega odgovora in pomen izberemo glede na namen.
+- V: Kako se vprašanje dotika nas samih?
+  O: Telo stalno obnavlja celice (različno hitro, večina nevronov ostane vse življenje), snov ni ista kot pred desetletji, pa vendar govorimo o isti osebi.

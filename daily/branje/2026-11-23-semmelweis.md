@@ -109,3 +109,18 @@ Pravilna ideja sama po sebi ni dovolj. Potrebuje razlago, dokaze, ki jih drugi l
 - [Wikipedia: Historical mortality rates of puerperal fever (mesečni podatki)](https://en.wikipedia.org/wiki/Historical_mortality_rates_of_puerperal_fever)
 - [NPR (2015): The doctor who championed hand-washing and briefly saved lives](https://www.npr.org/sections/health-shots/2015/01/12/375663920/the-doctor-who-championed-hand-washing-and-saved-women-s-lives)
 - [NPR (2020): The surprising origin of some timely advice – wash your hands (o zapleteni recepciji)](https://www.npr.org/2020/01/30/801214939/the-surprising-origin-of-some-timely-advice-wash-your-hands)
+
+## Povzetek
+
+- Na Dunaju je v letih 1840–1846 v prvem oddelku (zdravniki, študenti) umrlo skoraj 10 % porodnic, v drugem (babice) manj kot 4 %.
+- Po smrti Kolletschke (1847) je Semmelweis uvedel umivanje rok v kloriranem apnu: smrtnost je padla z 18,3 % aprila na 2,2 % junija.
+- Pravilna ideja ni bila dovolj: razlaga je zdravnike delala krive, trdil je, da ima vročica en sam vzrok, knjigo, polno napadov na kritike, pa je izdal šele 1861.
+
+## Preveri se
+
+- V: V čem sta se razlikovala oddelka dunajske porodnišnice?
+  O: V prvem so delali zdravniki in študenti medicine, v drugem babice; ženske so sprejemali izmenično po dnevih. Smrtnost 1840–46: skoraj 10 % proti manj kot 4 %.
+- V: Kaj je Semmelweisa pripeljalo do ideje?
+  O: Smrt kolega Jakoba Kolletschke marca 1847: študent ga je pri obdukciji urezal, umrl je z znaki, podobnimi porodniški vročici.
+- V: Kako se je spremenila smrtnost po uvedbi umivanja rok sredi maja 1847?
+  O: April 18,3 %, maj 12,2 %, junij 2,2 %; leta 1848 okoli 1,3 %.

@@ -156,7 +156,7 @@ def narration(md):
         if not b:
             continue
         m = re.match(r'^(#{1,3})\s+(.*)$', b)
-        if m and re.match(r'^(Viri|Za ogled|Sources|References|Watch)\b', m.group(2), re.I):
+        if m and re.match(r'^(Viri|Za ogled|Sources|References|Watch|Preveri se)\b', m.group(2), re.I):
             break
         if m:
             b = m.group(2).rstrip('.:') + '.'
@@ -227,6 +227,8 @@ def stories(only=None):
     for it in items:  # newest first
         sid = it['id']
         if only and sid not in only:
+            continue
+        if not only and it.get('type') == 'short':  # shorts are read, not listened to
             continue
         paras = narration(open(os.path.join(BR, sid + '.md'), encoding='utf-8').read())
         h = hashlib.sha1(('\n'.join(paras) + VOICE + STYLE).encode()).hexdigest()[:12]

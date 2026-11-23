@@ -77,3 +77,12 @@ Lep primer je **črnoglavka**, ki jo poznamo tudi iz naših vrtov. Nemški ornit
 - [Xu et al. (2021), Nature: Magnetic sensitivity of cryptochrome 4 from a migratory songbird](https://www.nature.com/articles/s41586-021-03618-9)
 - [Wikipedia: Bird migration](https://en.wikipedia.org/wiki/Bird_migration)
 - [Wikipedia: Magnetoreception](https://en.wikipedia.org/wiki/Magnetoreception)
+
+## Preveri se
+
+- V: Katere tri kompase uporabljajo ptice?
+  O: Sonce (z notranjo uro), zvezde (naučijo se središča vrtenja neba) in magnetno polje (zaznavajo naklon silnic).
+- V: Kako mladiči vedo, kam leteti na prvi selitvi?
+  O: Pri mnogih vrstah sta smer in dolžina prve selitve zapisani v genih; letijo sami.
+- V: Katera rekorda omenja zgodba?
+  O: Progastorepi kljunač: 13.560 km brez postanka; polarna čigra: okoli 70.000 km na leto.

@@ -93,3 +93,18 @@ Ko naslednjič slišiš besedo karantena, se spomni na otoček Mrkan pred Cavtat
 - [Wikipedia: Lazzarettos of Dubrovnik](https://en.wikipedia.org/wiki/Lazzarettos_of_Dubrovnik)
 - [Hrčak: znanstveni članek o odloku iz leta 1377 (PDF)](https://hrcak.srce.hr/file/398280)
 - [NPR (2021): How a medieval city dealing with the Black Death invented quarantine](https://www.npr.org/2021/07/06/1012490871/how-a-medieval-city-dealing-with-the-black-death-invented-quarantine)
+
+## Povzetek
+
+- Dubrovnik je 27. julija 1377 odredil, da morajo prišleki iz krajev s kugo najprej mesec dni preživeti v osami (Mrkan, Cavtat).
+- Doba se je s 30 dni (trentino) podaljšala na 40 (quaranta giorni), od tod beseda karantena.
+- Mesto ni zaprlo trgovine, ampak jo je filtriralo; Benetke so leta 1423 uredile stalni lazaret.
+
+## Preveri se
+
+- V: Kdaj in kje so sprejeli prvi zapisani karantenski odlok?
+  O: Veliki svet Dubrovniške republike, 27. julija 1377.
+- V: Od kod izvira beseda karantena?
+  O: Iz italijanskega quaranta giorni, 40 dni. Prvotna doba je bila 30 dni (trentino), kasneje so jo podaljšali.
+- V: V čem se je dubrovniški ukrep razlikoval od zapiranja mest?
+  O: Pristanišča in trgovine ni zaprl, ampak je prišleke iz okuženih krajev zadržal v osami, preden so smeli v mesto: sito, ne zid.

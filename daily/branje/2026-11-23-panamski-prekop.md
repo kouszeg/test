@@ -84,3 +84,12 @@ Nove komore so za 21 metrov širše in za 5,5 metra globlje, a porabijo manj vod
 - [Smithsonian Libraries: Make the Dirt Fly – engineering](https://www.sil.si.edu/Exhibitions/Make-the-Dirt-Fly/engineeringicon.html)
 - [Panama Canal Authority: inauguration of the Expanded Canal (2016)](https://pancanal.com/en/?p=7076)
 - [Panama Canal Authority: water-saving basins](https://pancanal.com/en/first-panama-canal-water-saving-basin-filled-testing-process-begins/)
+
+## Preveri se
+
+- V: Zakaj je francoski poskus propadel in kakšna je bila ameriška rešitev?
+  O: Francozi so kopali prekop v višini morja; premagala sta jih teren in bolezni. Američani so zatrli komarje (rumena mrzlica) in ladje z zapornicami dvignili na umetno jezero.
+- V: S čim delujejo zapornice?
+  O: Samo s težnostjo: voda teče iz višjega bazena v nižjega in ladja se dviga ali spušča kot v kadi.
+- V: Koliko vode porabi ena plovba in kaj prinesejo nove zapornice iz leta 2016?
+  O: Okoli 200 milijonov litrov sladke vode; nove zapornice z bazeni znova uporabijo 60 % vode.

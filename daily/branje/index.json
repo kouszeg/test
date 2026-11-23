@@ -37,7 +37,7 @@
   "date": "2026-11-23",
   "type": "story",
   "lang": "en",
-  "words": 1236,
+  "words": 1300,
   "min": 8
  },
  {
@@ -47,8 +47,8 @@
   "area": "Psihologija",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1774,
-  "min": 11
+  "words": 1842,
+  "min": 12
  },
  {
   "id": "2026-11-23-spomin",
@@ -57,7 +57,7 @@
   "area": "Psihologija",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1225,
+  "words": 1294,
   "min": 8
  },
  {
@@ -67,7 +67,7 @@
   "area": "Zgodovina",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1759,
+  "words": 1820,
   "min": 11
  },
  {
@@ -77,8 +77,8 @@
   "area": "Zgodovina",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1152,
-  "min": 7
+  "words": 1226,
+  "min": 8
  },
  {
   "id": "2026-11-23-gps",
@@ -87,7 +87,7 @@
   "area": "Fizika",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1553,
+  "words": 1618,
   "min": 10
  },
  {
@@ -97,7 +97,7 @@
   "area": "Fizika",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1096,
+  "words": 1160,
   "min": 7
  },
  {
@@ -107,7 +107,7 @@
   "area": "Osebnostna rast",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1577,
+  "words": 1642,
   "min": 10
  },
  {
@@ -117,7 +117,7 @@
   "area": "Osebnostna rast",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1259,
+  "words": 1313,
   "min": 8
  },
  {
@@ -127,7 +127,7 @@
   "area": "Družba",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1394,
+  "words": 1447,
   "min": 9
  },
  {
@@ -137,7 +137,7 @@
   "area": "Družba",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1119,
+  "words": 1179,
   "min": 7
  },
  {
@@ -147,7 +147,7 @@
   "area": "Filozofija",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1289,
+  "words": 1358,
   "min": 8
  },
  {
@@ -157,8 +157,8 @@
   "area": "Filozofija",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1161,
-  "min": 7
+  "words": 1223,
+  "min": 8
  },
  {
   "id": "2026-11-23-tambora",
@@ -167,7 +167,7 @@
   "area": "Zgodovina",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1421,
+  "words": 1487,
   "min": 9
  },
  {
@@ -177,7 +177,7 @@
   "area": "Zgodovina",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1062,
+  "words": 1115,
   "min": 7
  },
  {
@@ -187,8 +187,8 @@
   "area": "Filozofija",
   "date": "2026-11-23",
   "type": "short",
-  "words": 536,
-  "min": 3
+  "words": 581,
+  "min": 4
  },
  {
   "id": "2026-11-23-goodhart",
@@ -197,7 +197,7 @@
   "area": "Družba",
   "date": "2026-11-23",
   "type": "short",
-  "words": 462,
+  "words": 516,
   "min": 3
  },
  {
@@ -207,7 +207,7 @@
   "area": "Zgodovina",
   "date": "2026-11-23",
   "type": "short",
-  "words": 565,
+  "words": 626,
   "min": 4
  },
  {
@@ -217,7 +217,7 @@
   "area": "Filozofija",
   "date": "2026-11-23",
   "type": "short",
-  "words": 563,
+  "words": 620,
   "min": 4
  },
  {
@@ -227,7 +227,7 @@
   "area": "Dobro počutje",
   "date": "2026-11-23",
   "type": "short",
-  "words": 525,
-  "min": 3
+  "words": 575,
+  "min": 4
  }
 ]
