@@ -29,6 +29,43 @@ def post(url, body):
     return json.load(urllib.request.urlopen(req, timeout=300))
 
 
+PREBUILT = {'Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Leda', 'Orus', 'Aoede', 'Callirrhoe', 'Autonoe', 'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Despina', 'Erinome', 'Algenib', 'Rasalgethi', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux', 'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Vindemiatrix', 'Sadachbia', 'Sadaltager', 'Sulafat'}
+_vcache = {}
+
+
+def voice_id(v):
+    """Prebuilt voice name, or a library voice looked up by display name via GET /v1beta/voices (e.g. 'Arlo')."""
+    if v in PREBUILT or v.startswith(('voice_', 'voicekey_', 'voices/')):
+        return v
+    if v in _vcache:
+        return _vcache[v]
+    tok, seen = '', 0
+    for _ in range(40):
+        u = 'https://generativelanguage.googleapis.com/v1beta/voices?pageSize=200' + ('&pageToken=' + tok if tok else '')
+        try:
+            j = json.load(urllib.request.urlopen(urllib.request.Request(u, headers={'x-goog-api-key': KEY}), timeout=60))
+        except urllib.error.HTTPError as e:
+            print('  voices list failed', e.code, e.read().decode(errors='replace')[:300])
+            break
+        items = next((x for x in j.values() if isinstance(x, list)), [])
+        if not seen and items:
+            print('  voice entry example:', json.dumps(items[0])[:400])
+        seen += len(items)
+        for it in items:
+            names = [str(val) for k, val in it.items() if isinstance(val, str) and k.lower() in ('displayname', 'display_name', 'title', 'label', 'name')]
+            if any(n.lower() == v.lower() or n.lower().split('/')[-1] == v.lower() for n in names):
+                vid = it.get('name') or it.get('id') or it.get('voice')
+                print('  voice', v, '->', vid, json.dumps(it)[:300])
+                _vcache[v] = vid
+                return vid
+        tok = j.get('nextPageToken') or j.get('next_page_token')
+        if not tok:
+            break
+    print('  voice', v, 'not found among', seen, 'library voices; using the name as is')
+    _vcache[v] = v
+    return v
+
+
 def wav_pcm(b):
     """WAV bytes (or raw 24 kHz s16le) -> raw PCM."""
     if b[:4] == b'RIFF':
@@ -47,7 +84,7 @@ def synth_once(model, text):
             'model': model,
             'input': [{'type': 'user_input', 'content': [{'type': 'text', 'text': text, 'annotations': [{'type': 'speech_metadata', 'style': STYLE}]}]}],
             'response_format': {'type': 'audio'},
-            'generation_config': {'speech_config': [{'voice': VOICE}]}})
+            'generation_config': {'speech_config': [{'voice': voice_id(VOICE)}]}})
         data = [c['data'] for s in j.get('steps', []) if s.get('type') == 'model_output' for c in s.get('content', []) if c.get('type') == 'audio' and c.get('data')]
         if data:
             return b''.join(wav_pcm(base64.b64decode(d)) for d in data)
