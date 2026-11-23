@@ -205,7 +205,7 @@ body.reading nav{display:none}body.reading{padding-bottom:24px}
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v4.9</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" id="trB" data-a="trash" aria-label="Koš" style="padding:4px 6px" hidden><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><button class="sm" data-a="goStats" aria-label="Pregled" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg></button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
+<header><h1>Daily <small class="ver">v4.10</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" id="trB" data-a="trash" aria-label="Koš" style="padding:4px 6px" hidden><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><button class="sm" data-a="goStats" aria-label="Pregled" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg></button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>Dnevnik</button>
@@ -319,7 +319,7 @@ document.addEventListener('scroll',e=>{const w=e.target;if(!w.classList||!w.clas
 function closeSheet(){$('#sheet').classList.remove('open');$('#sheetIn').innerHTML=''}
 
 // ---------- views
-const V={tab:'dnevnik',day:today(),last:today(),range:7,doneOpen:false,cat:'g',sH:5,sA:5,room:null,agrp:null,cmo:new Set(),bv:'zg',story:null,rf:'*',lf:'*',lc:'',la:'',rs:'*',fa:true,fc:false,vq:'',vn:40,bq:'',lx:new Set(),fs:+(st.get('daily.fs')||18),rsec:0,lastAct:0,selT:'',ncat:'*',nq:'',ndraft:'',nopen:new Set(),shareId:null,pv:'stat',hq:'',hn:30};
+const V={tab:'dnevnik',day:today(),last:today(),range:7,tdN:30,tdB:2,doneOpen:false,cat:'g',sH:5,sA:5,room:null,agrp:null,cmo:new Set(),bv:'zg',story:null,rf:'*',lf:'*',lc:'',la:'',rs:'*',fa:true,fc:false,vq:'',vn:40,bq:'',lx:new Set(),fs:+(st.get('daily.fs')||18),rsec:0,lastAct:0,selT:'',ncat:'*',nq:'',ndraft:'',nopen:new Set(),shareId:null,pv:'stat',hq:'',hn:30};
 let CH=[],LOCK=false;
 function render(){if(LOCK)return;CH=[];$('#main').innerHTML=({dnevnik:vDnevnik,opravila:vOpravila,nakupi:vNakupi,zaznamki:vZaznamki,branje:vBranje,pregled:vPregled})[V.tab]();tips();if(V.tab==='dnevnik')ccards();{const tb=$('#trB');if(tb)tb.hidden=!trashed().length}
 document.querySelectorAll('.note.clp').forEach(el=>{if(el.scrollHeight>el.clientHeight+4&&el.nextElementSibling)el.nextElementSibling.hidden=false});
@@ -551,7 +551,7 @@ live('smokes').forEach(r=>{const d=new Date(r.t),k=dk(d),c=kOf(r);if(!cnt[c])ret
 live('chores').forEach(r=>{const k=dk(new Date(r.t));chM[k]=(chM[k]||0)+r.m;anyC.add(k);if(k>=from&&k<=td)chBy[r.c]=(chBy[r.c]||0)+r.m});
 const actM={},actBy={},acDay={};live('acts').forEach(r=>{const k=dk(new Date(r.t));actM[k]=(actM[k]||0)+r.m;(acDay[k]=acDay[k]||{})[actTop(r.c)]=(acDay[k][actTop(r.c)]||0)+r.m;anyC.add(k);if(k>=from&&k<=td)actBy[r.c]=(actBy[r.c]||0)+r.m});
 const R=[];for(let i=n-1;i>=0;i--){const k=addD(td,-i),tr=anyC.has(k)||ld.has(k),c={};K.forEach(x=>c[x]=tr?(cnt[x][k]||0):null);
-R.push({k,tr,c,sl:sleepVal(k),ps:psy(k),ph:phy(k),f:['mP','mF','eP','eF'].map(f=>gf(k,f)),ac:tr?(actM[k]||0):null,acd:acDay[k]||{},st:gf(k,'steps'),hw:tr?(chM[k]||0):null,dt:gf(k,'dt'),mode:gf(k,'mode'),vs:gf(k,'vs'),vl:gf(k,'vl'),hg:gf(k,'hg'),fd:Object.fromEntries(FD.map(([x])=>[x,avgOf(feelsOn(k).map(e=>e[x]))])),vir:gf(k,'vir'),wh:['d','i'].includes(gf(k,'dt'))?gf(k,'wh'):null,h:gf(k,'health')||[],inj:gf(k,'inj')||[],ho:gf(k,'hOther')})}
+R.push({k,tr,c,sl:sleepVal(k),ps:psy(k),ph:phy(k),f:['mP','mF','eP','eF'].map(f=>gf(k,f)),ac:tr?(actM[k]||0):null,acd:acDay[k]||{},st:gf(k,'steps'),hw:tr?(chM[k]||0):null,dt:gf(k,'dt'),mode:gf(k,'mode'),vs:gf(k,'vs'),vl:gf(k,'vl'),hg:gf(k,'hg'),fd:Object.fromEntries(FD.map(([x])=>[x,avgOf(feelsOn(k).map(e=>e[x]))])),fe:feelsOn(k),vir:gf(k,'vir'),wh:['d','i'].includes(gf(k,'dt'))?gf(k,'wh'):null,h:gf(k,'health')||[],inj:gf(k,'inj')||[],ho:gf(k,'hOther')})}
 const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null,nn=f=>R.map(f).filter(v=>v!=null),trk=R.filter(r=>r.tr),av=a=>avg(a.filter(v=>v!=null));
 const aSl=avg(nn(r=>r.sl)),aPs=avg(nn(r=>r.ps)),aPh=avg(nn(r=>r.ph)),aHw=avg(nn(r=>r.hw)),aAc=avg(nn(r=>r.ac)),aSt=avg(nn(r=>r.st)),aWh=avg(nn(r=>r.wh)),hasSt=R.some(r=>r.st!=null);
 const xl=R.map((r,i)=>{const back=n-1-i,d=pd(r.k);if(n===7)return DN[d.getDay()];return back%(n===30?7:15)===0?d.getDate()+'.'+(d.getMonth()+1)+'.':''});
@@ -561,10 +561,11 @@ const csc=nice(Math.max(0,...K.flatMap(k=>R.map(r=>r.c[k]||0))),1),L=K.length-1;
 K.forEach((k,ix)=>CH.push({id:'cC'+ix,vals:R.map(r=>r.c[k]),xl:ix===L?xl:[],max:csc.max,step:csc.step,mini:1,h:ix===L?62:46,cls:'s'+KC[k],tip:i=>T(i)+(R[i].tr?k+' '+R[i].c[k]:'ni vnosa')}));
 CH.push({id:'cSl',vals:R.map(r=>r.sl==null?null:r.sl/60),xl,tip:i=>T(i)+(R[i].sl==null?'ni vnosa':fmtMin(R[i].sl))});
 CH.push({id:'cHg',vals:R.map(r=>r.hg),xl:[],max:5,step:5,mini:1,h:46,tip:i=>T(i)+(R[i].hg==null?'ni vnosa':'zdravje '+R[i].hg+'/5')});
-FD.forEach(([k,,,nm],j)=>CH.push({id:'cF'+j,vals:R.map(r=>r.fd[k]),xl:j===FD.length-1?xl:[],max:5,step:5,mini:1,h:j===FD.length-1?62:46,tip:i=>T(i)+(R[i].fd[k]==null?'ni vnosa':nm+' '+f1(R[i].fd[k]))}));
-const BK=[['noč',0,5],['jutro',5,10],['dopoldne',10,13],['popoldne',13,18],['večer',18,24]],fin=live('feel').filter(e=>{const k=dk(new Date(e.t));return k>=from&&k<=td});
-const byT2=BK.map(([n,a,b])=>{const es=fin.filter(e=>{const h=new Date(e.t).getHours();return h>=a&&h<b});return[n,es]}).filter(x=>x[1].length);
-const tod=byT2.length?`<div class="scroll"><table class="tb"><tr><th></th>${byT2.map(([n,es])=>`<th class="num">${n}<br><span class="mut">n=${es.length}</span></th>`).join('')}</tr>${FD.map(([k,,,nm])=>`<tr><td>${nm}</td>${byT2.map(([n,es])=>`<td class="num">${f1(avgOf(es.map(e=>e[k])))}</td>`).join('')}</tr>`).join('')}</table></div>`:'';
+FD.forEach(([k,,,nm],j)=>{const E=R.map(r=>r.fe.filter(e=>e[k]!=null));CH.push({id:'cF'+j,multi:1,vals:E.map(a=>a.map(e=>e[k])),xl:j===FD.length-1?xl:[],max:5,step:5,mini:1,h:j===FD.length-1?62:46,tip:(i,q)=>T(i)+(q==null?'ni vnosa':hm(E[i][q].t)+' · '+nm+' '+E[i][q][k]+(E[i].length>1?' (povpr. dneva '+f1(R[i].fd[k])+')':''))})});
+const tN=V.tdN,tB=V.tdB,tF=tN?addD(td,-(tN-1)):'',fin=live('feel').filter(e=>{const k=dk(new Date(e.t));return k>=tF&&k<=td}),hb=e=>{const d=new Date(e.t);return Math.floor((d.getHours()+d.getMinutes()/60)/tB)},nb=24/tB,used=fin.map(hb),b0=used.length?Math.min(...used):0,b1=used.length?Math.max(...used):-1,BI=[];for(let b=b0;b<=b1;b++)BI.push(b);
+const bl=b=>b*tB+'–'+(b+1)*tB+' h';
+FD.forEach(([k,,,nm],j)=>{const G=BI.map(b=>fin.filter(e=>hb(e)===b&&e[k]!=null).map(e=>e[k]));CH.push({id:'cD'+j,vals:G.map(avgOf),xl:j===FD.length-1?BI.map(b=>BI.length>8&&b%2?'':String(b*tB)):[],max:5,step:5,mini:1,h:j===FD.length-1?62:46,tip:i=>bl(BI[i])+': '+(G[i].length?nm+' '+f1(avgOf(G[i]))+' (n='+G[i].length+')':'ni vnosa')})});
+const tod=`<div class="lbl" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">Čez dan (povprečje vnosov)<span style="flex:1"></span>${sseg('tdN',String(tN),[['7','7 d'],['30','30 d'],['90','90 d'],['0','vse']])}${sseg('tdB',String(tB),[['1','1 h'],['2','2 h'],['3','3 h']])}</div>${BI.length?FD.map(([k,,,nm],j)=>`<div class="mini"><span class="ml" style="flex-basis:84px;font-weight:500">${nm}</span><div class="chart auto" id="cD${j}" role="img" aria-label="${nm} čez dan"></div></div>`).join('')+`<p class="mut sm">Vnosi v obdobju: ${fin.length}. Stolpec = povprečje vnosov v tem urnem oknu; tapni za n.</p>`:'<div class="empty">V tem obdobju ni vnosov počutja.</div>'}`;
 CH.push({id:'cHw',vals:R.map(r=>r.hw),xl,int:1,h:120,tip:i=>T(i)+(R[i].hw==null?'ni vnosa':fmtM(R[i].hw))});
 CH.push({id:'cAc',vals:R.map(r=>r.ac),xl,int:1,h:120,tip:i=>T(i)+(R[i].ac==null?'ni vnosa':fmtM(R[i].ac))});
 CH.push({id:'cSt',vals:R.map(r=>r.st),xl,int:1,h:120,tip:i=>T(i)+(R[i].st==null?'ni vnosa':R[i].st+' korakov')});
@@ -588,8 +589,8 @@ return `<div class="seg rng">${[7,30,90].map(x=>`<button data-a="range" data-n="
 <p class="mut sm" style="margin:-2px 2px 10px">Števci: povprečje na dan. Dni z vnosom: ${trk.length} od ${n}. Povprečja samo čez dni z vnosom. Spanje: ura, sicer čas v postelji. Počutje 1–5.</p>
 <div class="card"><h2>Števci na dan</h2>${K.map((k,ix)=>`<div class="mini"><span class="ml"><i class="sw s${KC[k]}"></i>${k}</span><div class="chart auto" id="cC${ix}" role="img" aria-label="${k} na dan"></div></div>`).join('')}</div>
 ${card('cSl','Spanje (ure)')}
-<div class="card"><h2>Počutje po dimenzijah (povprečje dneva)</h2><div class="mini"><span class="ml" style="flex-basis:84px;font-weight:500">Zdravje</span><div class="chart auto" id="cHg" role="img" aria-label="Zdravje splošno"></div></div>${FD.map(([k,l,r,nm],j)=>`<div class="mini"><span class="ml" style="flex-basis:84px;font-weight:500">${nm}</span><div class="chart auto" id="cF${j}" role="img" aria-label="${nm}"></div></div>`).join('')}<p class="mut sm">Lestvica 1–5: pri napetosti je 5 slabše, pri ostalih boljše.</p>
-${tod?'<div class="lbl">Čez dan (povprečje vnosov)</div>'+tod:''}</div>
+<div class="card"><h2>Počutje po dimenzijah (povprečje dneva)</h2><div class="mini"><span class="ml" style="flex-basis:84px;font-weight:500">Zdravje</span><div class="chart auto" id="cHg" role="img" aria-label="Zdravje splošno"></div></div>${FD.map(([k,l,r,nm],j)=>`<div class="mini"><span class="ml" style="flex-basis:84px;font-weight:500">${nm}</span><div class="chart auto" id="cF${j}" role="img" aria-label="${nm}"></div></div>`).join('')}<p class="mut sm">Lestvica 1–5, 5 = bolje. Več vnosov v dnevu = več ožjih stolpcev (vsak vnos svoj).</p>
+${tod}</div>
 <div class="card"><h2>Aktivnosti (min / dan)</h2><div class="chart auto" id="cAc" role="img" aria-label="Aktivnosti"></div>${brkA}</div>
 ${hasSt?card('cSt','Koraki').replace('class="chart"','class="chart auto"'):''}
 <div class="card"><h2>Hišna opravila (min / dan)</h2><div class="chart auto" id="cHw" role="img" aria-label="Hišna opravila"></div>${brk}</div>
@@ -600,7 +601,8 @@ ${hasSt?card('cSt','Koraki').replace('class="chart"','class="chart auto"'):''}
 
 // ---------- charts (single-series bars: title names it; multi-series lines: legend + direct end labels; hover/tap tooltip)
 function nice(m,int){if(!(m>0))m=1;const raw=m/4,p=10**Math.floor(Math.log10(raw)),f=raw/p;let s=(f<=1?1:f<=2?2:f<=5?5:10)*p;if(int)s=Math.max(1,s);return{max:Math.ceil(m/s-1e-9)*s,step:s}}
-function drawCharts(){CH.forEach(c=>c.type==='line'?drawLines(c):c.type==='heat'?drawHeat(c):drawChart(c))}
+let TH=[];const tipsOff=()=>TH.forEach(h=>h());
+function drawCharts(){TH=[];CH.forEach(c=>c.type==='line'?drawLines(c):c.type==='heat'?drawHeat(c):drawChart(c))}
 // heatmap rows x 24 h; one hue, darker = more (relative within the row)
 function drawHeat(c){const el=document.getElementById(c.id);if(!el)return;
 const W=Math.max(240,el.clientWidth),pl=30,pr=2,pt=2,rh=18,g=3,pb=18,nr=c.rows.length,H=pt+nr*(rh+g)+pb,cw=(W-pl-pr)/24;
@@ -610,20 +612,21 @@ r.vals.forEach((v,h)=>{s+=`<rect class="hc${v?'':' z'}" x="${(pl+h*cw+1).toFixed
 for(let h=0;h<24;h+=3)s+=`<text class="ax" x="${pl+(h+.5)*cw}" y="${H-5}" text-anchor="middle">${h}</text>`;
 s+=`<rect class="hx" x="0" y="0" width="${cw}" height="${rh}" rx="2" visibility="hidden"/>`;
 el.innerHTML=s+'</svg><div class="tip" hidden></div>';const svg=el.firstChild,hx=svg.querySelector('.hx'),tip=el.lastChild;
-const hide=()=>{tip.hidden=true;hx.setAttribute('visibility','hidden')};
+let to;const hide=()=>{clearTimeout(to);tip.hidden=true;hx.setAttribute('visibility','hidden')};TH.push(hide);
 const mv=e=>{const b=svg.getBoundingClientRect(),h=Math.floor((e.clientX-b.left-pl)/cw),ri=Math.floor((e.clientY-b.top-pt)/(rh+g));if(h<0||h>23||ri<0||ri>=nr)return hide();
-const r=c.rows[ri],y=pt+ri*(rh+g);hx.setAttribute('x',pl+h*cw+1);hx.setAttribute('y',y);hx.setAttribute('width',cw-2);hx.setAttribute('visibility','visible');
+TH.forEach(f=>f!==hide&&f());clearTimeout(to);if(e.pointerType!=='mouse')to=setTimeout(hide,3000);const r=c.rows[ri],y=pt+ri*(rh+g);hx.setAttribute('x',pl+h*cw+1);hx.setAttribute('y',y);hx.setAttribute('width',cw-2);hx.setAttribute('visibility','visible');
 tip.hidden=false;tip.textContent=c.tip(r.k,h,r.vals[h]);const tw=tip.offsetWidth;tip.style.left=Math.min(Math.max(0,pl+(h+.5)*cw-tw/2),W-tw)+'px';tip.style.top=(y-28)+'px'};
 svg.addEventListener('pointermove',mv);svg.addEventListener('pointerdown',mv);svg.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hide()})}
 function yAxis(sc,Y,pl,W,pr,mini){let s='';const vs=[];if(mini)vs.push(0,sc.max);else for(let v=0;v<=sc.max+1e-9;v+=sc.step)vs.push(v);for(const v of vs){const y=Y(v);if(v>0)s+=`<line class="gr" x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}"/>`;s+=`<text class="ax" x="${pl-5}" y="${y+3.5}" text-anchor="end">${String(+v.toFixed(1)).replace('.',',')}</text>`}return s}
 function xLabels(xl,X,W,H){let s='';xl.forEach((t,i)=>{if(!t)return;const x=X(i),w=t.length*5.5,a=x-w/2<0?'start':x+w/2>W?'end':'middle';s+=`<text class="ax" x="${a==='start'?0:a==='end'?W:x}" y="${H-5}" text-anchor="${a}">${t}</text>`});return s}
-function hover(el,svg,n,pl,W,pr,idx,X,show,tipF){const tip=el.lastChild;
-const hide=()=>{tip.hidden=true;show(-1)};
-const mv=e=>{const mx=e.clientX-svg.getBoundingClientRect().left,i=idx(mx);if(i<0||i>=n)return hide();show(i);tip.hidden=false;tip.textContent=tipF(i);
+function hover(el,svg,n,pl,W,pr,idx,X,show,tipF){const tip=el.lastChild;let to;
+const hide=()=>{clearTimeout(to);tip.hidden=true;show(-1)};TH.push(hide);
+const mv=e=>{const mx=e.clientX-svg.getBoundingClientRect().left,i=idx(mx);if(i<0||i>=n)return hide();TH.forEach(h=>h!==hide&&h());show(i);tip.hidden=false;tip.textContent=tipF(i);clearTimeout(to);if(e.pointerType!=='mouse')to=setTimeout(hide,3000);
 const tw=tip.offsetWidth;tip.style.left=Math.min(Math.max(0,X(i)-tw/2),W-tw)+'px'};
 svg.addEventListener('pointermove',mv);svg.addEventListener('pointerdown',mv);svg.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hide()})}
 function drawChart(c){const el=document.getElementById(c.id);if(!el)return;
-const W=Math.max(200,el.clientWidth),H=c.h||150,pl=26,pr=2,pt=c.mini?6:10,pb=c.xl.some(Boolean)?20:4,iw=W-pl-pr,ih=H-pt-pb,n=c.vals.length,vs=c.vals.filter(v=>v!=null);
+const W=Math.max(200,el.clientWidth),H=c.h||150,pl=26,pr=2,pt=c.mini?6:10,pb=c.xl.some(Boolean)?20:4,iw=W-pl-pr,ih=H-pt-pb,n=c.vals.length,vs=c.multi?c.vals.flat():c.vals.filter(v=>v!=null);
+if(c.multi)return drawMulti(c,el,W,H,pl,pr,pt,ih,n);
 const sc=c.max?{max:c.max,step:c.step}:nice(Math.max(0,...vs),c.int),bw=iw/n,gap=bw>8?2:bw>3?1:.5,r=Math.min(4,(bw-gap)/2),base=pt+ih,Y=v=>base-v/sc.max*ih,X=i=>pl+(i+.5)*bw;
 let s=`<svg width="${W}" height="${H}" aria-hidden="true">`+yAxis(sc,Y,pl,W,pr,c.mini)+`<rect class="hl" x="0" y="${pt}" width="${bw}" height="${ih}" visibility="hidden"/>`;
 c.vals.forEach((v,i)=>{if(v==null||v<=0)return;const x=pl+i*bw+gap/2,w=bw-gap,h=Math.min(v,sc.max)/sc.max*ih,y=base-h,rr=Math.min(r,h);
@@ -631,6 +634,15 @@ s+=`<path class="b ${c.cls||''}" d="M${x},${base}V${y+rr}Q${x},${y} ${x+rr},${y}
 s+=`<line class="bl" x1="${pl}" x2="${W-pr}" y1="${base}" y2="${base}"/>`+xLabels(c.xl,X,W,H);
 el.innerHTML=s+'</svg><div class="tip" hidden></div>';const svg=el.firstChild,hl=svg.querySelector('.hl');
 hover(el,svg,n,pl,W,pr,mx=>Math.floor((mx-pl)/bw),X,i=>{if(i<0)hl.setAttribute('visibility','hidden');else{hl.setAttribute('x',pl+i*bw);hl.setAttribute('visibility','visible')}},c.tip)}
+// one slot per day, split into one bar per entry (same total width as a single day bar)
+function drawMulti(c,el,W,H,pl,pr,pt,ih,n){const bw=(W-pl-pr)/n,gap=bw>8?2:bw>3?1:.5,base=pt+ih,sc={max:c.max,step:c.step},Y=v=>base-v/sc.max*ih,S=[];
+c.vals.forEach((a,i)=>{const x0=pl+i*bw+gap/2,w0=bw-gap;if(!a||!a.length){S.push({i,q:null,x:pl+i*bw,w:bw});return}const sw=w0/a.length,g2=a.length>1&&sw>3?1:0;a.forEach((v,q)=>S.push({i,q,v,x:x0+q*sw,w:sw-g2,hx:pl+i*bw+q*bw/a.length,hw:bw/a.length}))});
+let s=`<svg width="${W}" height="${H}" aria-hidden="true">`+yAxis(sc,Y,pl,W,pr,c.mini)+`<rect class="hl" x="0" y="${pt}" width="${bw}" height="${ih}" visibility="hidden"/>`;
+S.forEach(o=>{if(o.q==null||!(o.v>0))return;const x=o.x,w=o.w,h=Math.min(o.v,sc.max)/sc.max*ih,y=base-h,rr=Math.min(4,w/2,h);
+s+=`<path class="b ${c.cls||''}" d="M${x},${base}V${y+rr}Q${x},${y} ${x+rr},${y}H${x+w-rr}Q${x+w},${y} ${x+w},${y+rr}V${base}Z"/>`});
+s+=`<line class="bl" x1="${pl}" x2="${W-pr}" y1="${base}" y2="${base}"/>`+xLabels(c.xl,i=>pl+(i+.5)*bw,W,H);
+el.innerHTML=s+'</svg><div class="tip" hidden></div>';const svg=el.firstChild,hl=svg.querySelector('.hl');
+hover(el,svg,S.length,pl,W,pr,mx=>{if(mx<pl)return -1;for(let k=0;k<S.length;k++){const o=S[k],a=o.hx??o.x,b=a+(o.hw??o.w);if(mx>=a&&mx<b)return k}return -1},k=>{const o=S[k];return(o.hx??o.x)+(o.hw??o.w)/2},k=>{if(k<0)hl.setAttribute('visibility','hidden');else{const o=S[k];hl.setAttribute('x',o.hx??o.x);hl.setAttribute('width',o.hw??o.w);hl.setAttribute('visibility','visible')}},k=>c.tip(S[k].i,S[k].q))}
 function drawLines(c){const el=document.getElementById(c.id);if(!el)return;
 const W=Math.max(240,el.clientWidth),H=160,pl=26,pr=26,pt=10,pb=20,iw=W-pl-pr,ih=H-pt-pb,n=c.xl.length,base=pt+ih,
 sc=c.max?{max:c.max,step:c.step}:nice(Math.max(0,...c.series.flatMap(s=>s.vals).filter(v=>v!=null)),c.int),st=n>1?iw/(n-1):0,X=i=>pl+(n>1?i*st:iw/2),Y=v=>base-Math.min(v,sc.max)/sc.max*ih;
@@ -804,7 +816,7 @@ sug:b=>{addShop([b.dataset.t],V.cat);render()},
 clearShop:()=>{live('shop').filter(r=>r.done&&catOf(r)===V.cat).forEach(r=>trash('shop',r));render()},
 shareShop:()=>share('Nakupi – '+CATN[V.cat]+':\n'+openShop(V.cat).map(r=>'• '+r.text).join('\n')),
 shareTodos:()=>{const td=today();share('Opravila:\n'+live('todos').filter(t=>!t.done).sort(byDue).map(t=>'• '+t.text+(t.due?' ('+dueLbl(t.due,td)+')':'')).join('\n'))},
-range:b=>{V.range=+b.dataset.n;render()},
+range:b=>{V.range=+b.dataset.n;render()},tdN:b=>{V.tdN=+b.dataset.k;render()},tdB:b=>{V.tdB=+b.dataset.k;render()},
 settings:()=>openSheet(settingsHTML()),
 syncNow:()=>{sync().then(()=>toast(SY.state==='ok'?'Sinhronizirano':'Napaka: '+SY.msg))},
 gSave:()=>{const tok=$('#gT').value.trim()||G.token;G={owner:$('#gO').value.trim(),repo:$('#gR').value.trim(),path:'data.json',token:tok};st.set(GKEY,JSON.stringify(G));
@@ -861,6 +873,7 @@ addEventListener('pagehide',flush);
 addEventListener('storage',e=>{if(e.key!==KEY)return;try{const d=JSON.parse(e.newValue);S=d?merge(S,d):empty();const a=document.activeElement;if(!a||!/^(INPUT|TEXTAREA)$/.test(a.tagName))render()}catch(x){}});
 addEventListener('scroll',()=>{if(!isReading())return;V.lastAct=now();clearTimeout(V.spT);V.spT=setTimeout(()=>saveProg(false),1500)},{passive:true});
 addEventListener('touchstart',()=>{V.lastAct=now()},{passive:true});
+addEventListener('pointerdown',e=>{if(!e.target.closest('.chart'))tipsOff()},true);addEventListener('scroll',()=>{if(TH.length)tipsOff()},{passive:true});
 let sw0=null;document.addEventListener('touchstart',e=>{const c=e.target.closest&&e.target.closest('.feelc');sw0=c&&!/^(INPUT|TEXTAREA)$/.test(e.target.tagName)?[e.touches[0].clientX,e.touches[0].clientY]:null},{passive:true});
 document.addEventListener('touchend',e=>{if(!sw0)return;const dx=e.changedTouches[0].clientX-sw0[0],dy=e.changedTouches[0].clientY-sw0[1];sw0=null;if(Math.abs(dx)>60&&Math.abs(dy)<40)A.fnav({dataset:{v:dx<0?1:-1}})},{passive:true});
 setInterval(()=>{if(isReading()&&!document.hidden&&now()-V.lastAct<120000)V.rsec+=15},15000);
@@ -887,7 +900,7 @@ live('acts').filter(r=>r.c==='Branje').forEach(r=>{r.c='Branje/študij';put('act
 if(c&&Array.isArray(c.v)&&c.v.length){const rooms=c.v.map(l=>l.split(':')[0].trim());const add=DEFL.chores.filter(l=>['Klet','Podstreha','Avto','Popravila'].includes(l.split(':')[0])&&!rooms.includes(l.split(':')[0]));if(add.length)put('cfg',{id:'chores',v:[...c.v,...add]})}
 if(a&&Array.isArray(a.v)&&a.v.length&&!a.v.includes('Kitara'))put('cfg',{id:'acts',v:[...a.v,'Kitara']});if((c&&c.v)||(a&&a.v))put('cfg',{id:'mig19',v:1})})();
 setInterval(()=>{if(!LOCK)updRun()},15000);
-const VER='4.9';
+const VER='4.10';
 function checkUpd(){if(LOCK||location.protocol!=='https:')return;fetch('version.txt?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{t=t.trim();const b=$('#upd');if(b&&t&&t!==VER){b.hidden=false;b.textContent='↻ v'+t}}).catch(()=>{})}
 setInterval(checkUpd,1800000);addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpd()});
 let shared=false;
