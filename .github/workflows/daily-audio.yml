@@ -1,0 +1,39 @@
+name: daily-audio
+# Narrates Branje stories with Gemini TTS (free tier, secret GEMINI_KEY) -> daily/branje/audio/*.mp3, then redeploys Pages.
+# Free quota is ~10 requests/day per TTS model; unfinished stories continue on the next (daily) run.
+on:
+  workflow_dispatch:
+    inputs:
+      mode: {description: 'stories | samples', default: 'stories'}
+      voices: {description: 'voices for samples (comma separated)', default: 'Charon,Algieba,Schedar,Sadaltager'}
+  push:
+    branches: [main]
+    paths: ['daily/branje/*.md']
+  schedule:
+    - cron: '41 9 * * *'   # daily, after the quota reset (midnight Pacific)
+permissions:
+  contents: write
+  actions: write
+concurrency: {group: daily-audio, cancel-in-progress: false}
+jobs:
+  audio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get -qq install -y ffmpeg >/dev/null
+      - name: Narrate
+        env:
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+          MODE: ${{ github.event.inputs.mode }}
+          VOICES: ${{ github.event.inputs.voices }}
+        run: |
+          if [ "$MODE" = "samples" ]; then python3 daily/tools/audio.py samples "$VOICES"; else python3 daily/tools/audio.py; fi
+      - name: Commit and redeploy
+        env: {GH_TOKEN: '${{ github.token }}'}
+        run: |
+          git config user.name "daily-bot"; git config user.email "daily-bot@users.noreply.github.com"
+          git add -A daily/branje/audio daily/tts-test 2>/dev/null || true
+          if git diff --cached --quiet; then echo "nothing new"; exit 0; fi
+          git commit -q -m "audio: narration" && git pull --rebase -q && git push -q
+          gh workflow run pages.yml
