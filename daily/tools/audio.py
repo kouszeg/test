@@ -134,7 +134,7 @@ def synth(text):
     raise Quota('all TTS models used up')
 
 
-OPUS = ['-c:a', 'libopus', '-b:a', '24k', '-application', 'voip']   # speech: ~0.18 MB per minute
+OPUS = ['-c:a', 'libopus', '-b:a', '16k', '-application', 'voip']   # speech: ~0.12 MB per minute (16k = no audible loss vs 24k on headphones)
 
 
 def to_audio(pcm, path):
