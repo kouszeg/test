@@ -179,6 +179,7 @@ body.reading nav{display:none}body.reading{padding-bottom:24px}
 .stars{display:inline-flex}.stars button{background:none!important;border:0;padding:2px 3px;font-size:22px;line-height:1;color:var(--line);min-height:0}.stars button.on{color:#e0a100}.stars.sm button{font-size:16px;padding:2px 2px}.rrate{display:flex;align-items:center;gap:8px;margin:6px 0 8px}.rrate>span{font-size:14px;color:var(--ink2)}
 .rd .tts-on{background:color-mix(in srgb,var(--acc) 13%,transparent);border-radius:6px;box-shadow:0 0 0 5px color-mix(in srgb,var(--acc) 13%,transparent)}.rbar button.on{color:var(--acc)}
 .card.todo{box-shadow:inset 0 0 0 1.5px rgba(214,64,64,.45)}
+.lrt{color:#e0a100;font-size:13px;letter-spacing:1px;margin-right:6px}.lrt i{font-style:normal;color:var(--line)}
 .sseg{display:flex;background:var(--fill);border-radius:10px;padding:2px;flex:0 0 auto}.sseg button{background:none!important;border:0;padding:6px 9px;font-size:13px;border-radius:8px;color:var(--ink2);white-space:nowrap}.sseg button.sel{background:var(--card)!important;color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .ftg{display:block;background:none!important;border:0;padding:4px 2px;text-align:left;cursor:pointer}.ftg b{color:var(--acc);font-weight:600}.lbl2{font-size:12px;color:var(--ink2);margin:2px 2px 4px}
 .ttl{background:none!important;border:0;padding:0;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px}.ttl::after{content:'▾';font-size:10px;opacity:.55}
@@ -209,7 +210,7 @@ body.reading nav{display:none}body.reading{padding-bottom:24px}
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v4.20</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" id="trB" data-a="trash" aria-label="Koš" style="padding:4px 6px" hidden><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><button class="sm" data-a="goStats" aria-label="Pregled" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg></button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
+<header><h1>Daily <small class="ver">v4.21</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" id="trB" data-a="trash" aria-label="Koš" style="padding:4px 6px" hidden><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><button class="sm" data-a="goStats" aria-label="Pregled" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg></button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>Dnevnik</button>
@@ -309,7 +310,7 @@ function addShop(ts,cat){const have=new Set(openShop(cat).map(r=>norm(r.text)));
 function suggestions(cat){const open=new Set(openShop(cat).map(r=>norm(r.text))),m={};Object.values(S.shop).forEach(r=>{const k=norm(r.text);if(!k||open.has(k)||catOf(r)!==cat)return;(m[k]=m[k]||{n:0,t:r.text,u:0}).n++;if(r.u>m[k].u){m[k].u=r.u;m[k].t=r.text}});return Object.values(m).filter(x=>x.n>=2).sort((a,b)=>b.n-a.n||b.u-a.u).slice(0,10).map(x=>x.t)}
 function pearson(p){const n=p.length;if(n<2)return null;let sx=0,sy=0;p.forEach(([x,y])=>{sx+=x;sy+=y});const mx=sx/n,my=sy/n;let a=0,bx=0,by=0;p.forEach(([x,y])=>{a+=(x-mx)*(y-my);bx+=(x-mx)**2;by+=(y-my)**2});return bx&&by?a/Math.sqrt(bx*by):null}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2200)}
-function openSheet(h){$('#sheetIn').innerHTML=h;$('#sheet').classList.add('open')}
+function openSheet(h){$('#sheetIn').innerHTML=h;if(!$('#sheet').classList.contains('open')&&!NAV.sh){NAV.sh=1;history.pushState(Object.assign({},history.state,{sheet:1}),'')}$('#sheet').classList.add('open')}
 const tfield=(f,v,lab)=>`<button class="tinp" data-a="tpick" data-f="${f}" aria-label="${esc(lab)}">${v||'–:–'}</button>`;
 let TP=null;
 function timeSheet(o){TP=o;openSheet(`<h3>${esc(o.title)}</h3><div class="whl">${wheel('whH',o.hn,o.h,i=>o.dur?i:pad(i))}<span class="whs">${o.dur?'h':':'}</span>${wheel('whM',60,o.m,i=>pad(i))}${o.dur?'<span class="whs">min</span>':''}</div><input id="tTyp" inputmode="decimal" autocomplete="off" placeholder="ali vtipkaj, npr. ${o.dur?'7:10':'07:30'}"><div class="acts"><button class="pri" data-a="tpSave">Shrani</button>${o.now?'<button data-a="tpNow">Zdaj</button>':''}${o.has?'<button data-a="tpClr">Počisti</button>':''}<button data-a="closeSheet">Prekliči</button></div>`);$('#whH').scrollTop=o.h*WI;$('#whM').scrollTop=o.m*WI}
@@ -320,7 +321,12 @@ function swPickOld(){const v=gf(V.day,'sw'),h=v!=null?Math.floor(v/60):7,m=v!=nu
 openSheet(`<h3>Spanje po uri</h3><div class="whl">${wheel('whH',17,h,i=>i)}<span class="whs">h</span>${wheel('whM',60,m,i=>pad(i))}<span class="whs">min</span></div><div class="acts"><button class="pri" data-a="swSave">Shrani</button>${v!=null?'<button data-a="swClr">Počisti</button>':''}<button data-a="closeSheet">Prekliči</button></div>`);
 $('#whH').scrollTop=h*WI;$('#whM').scrollTop=m*WI}
 document.addEventListener('scroll',e=>{const w=e.target;if(!w.classList||!w.classList.contains('wh'))return;const i=whIdx(w);w.querySelectorAll('.wi').forEach((x,j)=>x.classList.toggle('on',j===i))},true);
-function closeSheet(){$('#sheet').classList.remove('open');$('#sheetIn').innerHTML=''}
+function closeSheet(){$('#sheet').classList.remove('open');$('#sheetIn').innerHTML='';if(NAV.sh){NAV.sh=0;NAV.ign++;history.back()}}
+// Android back button: every view change is a history entry; back closes the sheet / story / returns to the previous tab
+const NAV={sh:0,ign:0},snap=()=>({tab:V.tab,bv:V.bv,story:V.story,pv:V.pv});
+function go(fn){try{history.replaceState(Object.assign({},history.state,{y:Math.round(scrollY)}),'')}catch(e){}const b=JSON.stringify(snap());fn();if(JSON.stringify(snap())!==b)history.pushState(Object.assign(snap(),{d:((history.state||{}).d||0)+1}),'')}
+function navRestore(s){if(isReading()&&s.story!==V.story){flushRead();ttsStop();const hb=$('#hlBtn');if(hb)hb.hidden=true}V.tab=s.tab;V.bv=s.bv;V.story=s.story;V.pv=s.pv;V.ry=null;if(V.story){V.restore=true;V.rsec=0;V.lastAct=now()}render();if(!V.story)scrollTo(0,s.y||0)}
+addEventListener('popstate',e=>{if(NAV.ign){NAV.ign--;return}if(NAV.sh){NAV.sh=0;$('#sheet').classList.remove('open');$('#sheetIn').innerHTML='';return}const s=e.state;if(s&&s.tab)navRestore(s)});
 
 // ---------- views
 const V={tab:'dnevnik',day:today(),last:today(),range:7,rF:null,rT:null,tdB:2,doneOpen:false,cat:'g',sH:5,sA:5,room:null,agrp:null,cmo:new Set(),bv:'zg',story:null,rf:'*',lf:'*',lc:'',la:'',rs:'*',fa:true,fc:false,vq:'',vn:40,bq:'',lx:new Set(),fs:+(st.get('daily.fs')||18),rsec:0,lastAct:0,selT:'',ncat:'*',nq:'',ndraft:'',nopen:new Set(),shareId:null,pv:'stat',hq:'',hn:30};
@@ -330,6 +336,7 @@ const UIK=['tab','bv','story','pv','range','rF','rT','tdB','cat','rf','lf','lc',
 function saveUI(){if(LOCK||V.ry!=null)return;const o={d:today(),y:Math.round(scrollY)};UIK.forEach(k=>o[k]=V[k]);st.set('daily.ui',JSON.stringify(o))}
 function loadUI(){try{const o=JSON.parse(st.get('daily.ui')||'null');if(!o)return;UIK.forEach(k=>{if(o[k]!==undefined)V[k]=o[k]});if(o.d!==today()){V.day=today()}V.ry=o.y||0;V.ryT=Date.now();V.restore=false}catch(e){}}
 loadUI();
+try{const t=V.tab,st0=V.story;history.replaceState({tab:'dnevnik',bv:V.bv,story:null,pv:V.pv,d:0},'');if(t!=='dnevnik')history.pushState({tab:t,bv:V.bv,story:null,pv:V.pv,d:1},'');if(st0)history.pushState({tab:t,bv:V.bv,story:st0,pv:V.pv,d:2},'')}catch(e){}
 function render(){if(LOCK)return;CH=[];$('#main').innerHTML=({dnevnik:vDnevnik,opravila:vOpravila,nakupi:vNakupi,zaznamki:vZaznamki,branje:vBranje,pregled:vPregled})[V.tab]();tips();if(V.tab==='dnevnik')ccards();{const tb=$('#trB');if(tb)tb.hidden=!trashed().length}
 document.querySelectorAll('.note.clp').forEach(el=>{if(el.scrollHeight>el.clientHeight+4&&el.nextElementSibling)el.nextElementSibling.hidden=false});
 document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===V.tab));document.body.classList.toggle('reading',isReading());
@@ -449,7 +456,7 @@ const areaOf=x=>x.area==='Zgodovina znanosti'?'Zgodovina':/^Politika/.test(x.are
 function vReadList(short){if(!ST.idx){loadIndex();return ST.err?'<div class="empty">Seznama ni mogoče naložiti (ni povezave?).</div>':'<div class="empty">Nalagam …</div>'}
 const q=fold(V.bq).trim(),pool=ST.idx.filter(x=>(x.type==='short')===!!short),areas=AREAS.filter(a=>pool.some(x=>areaOf(x)===a)).concat([...new Set(pool.map(areaOf))].filter(a=>!AREAS.includes(a))),f=areas.includes(V.rf)?V.rf:'*',nw=V.rs==='new',list=pool.filter(x=>(f==='*'||areaOf(x)===f)&&(!nw||!(rdOf(x.id)&&rdOf(x.id).done))&&(!q||fold(x.title+' '+(x.sub||'')+' '+areaOf(x)+' '+(ST.body[x.id]||'').replace(/```svg[\s\S]*?```/g,'')).includes(q)));
 return `<div class="srow"><input id="bQ" class="srch" placeholder="🔍 Išči" value="${esc(V.bq)}">${sseg('rs',nw?'new':'*',[['*','Vse'],['new','Novo','Neprebrano']])}</div><div class="chips" style="margin-bottom:8px">${areas.map(a=>`<button class="tg s2b ${f===a?'sel':''}" data-a="rf" data-k="${esc(a)}">${esc(a)}</button>`).join('')}</div>
-${grpBy(list,areaOf,AREAS,(a,n)=>`<div class="grh"><b>${esc(a)}</b><span class="mut">${n}</span></div>`,f==='*',x=>{const r=rdOf(x.id),rm=rdMin(r,x.id),stt=r&&r.rt?'★ '+r.rt+(rm?' · '+rm:''):r&&r.done?'✓ prebrano'+(rm?' · '+rm:''):r&&r.p>0.02?Math.round(r.p*100)+' %'+(rm?' · '+rm:''):'novo',d=pd(x.date);return `<div class="card story" data-a="openStory" data-s="${esc(x.id)}"><div class="nh"><span class="mut" style="font-size:12px">${x.min} min · ${d.getDate()}. ${d.getMonth()+1}.</span><span style="flex:1"></span><span class="sst ${r&&r.done?'done':''}">${stt}</span></div><b class="stt">${esc(x.title)}</b>${x.sub?`<div class="mut" style="font-size:13px;margin-top:2px">${esc(x.sub)}</div>`:''}</div>`})||`<div class="empty">${q?'Ni zadetkov.':'Ni zgodb.'}</div>`}${rateBtn()}`}
+${grpBy(list,areaOf,AREAS,(a,n)=>`<div class="grh"><b>${esc(a)}</b><span class="mut">${n}</span></div>`,f==='*',x=>{const r=rdOf(x.id),rm=rdMin(r,x.id),stt=r&&r.done?'✓ prebrano'+(rm?' · '+rm:''):r&&r.p>0.02?Math.round(r.p*100)+' %'+(rm?' · '+rm:''):'novo',d=pd(x.date);return `<div class="card story" data-a="openStory" data-s="${esc(x.id)}"><div class="nh"><span class="mut" style="font-size:12px">${x.min} min · ${d.getDate()}. ${d.getMonth()+1}.</span><span style="flex:1"></span>${r&&r.rt?`<span class="lrt" aria-label="Moja ocena ${r.rt}/5">${'★'.repeat(r.rt)}<i>${'★'.repeat(5-r.rt)}</i></span>`:''}<span class="sst ${r&&r.done?'done':''}">${stt}</span></div><b class="stt">${esc(x.title)}</b>${x.sub?`<div class="mut" style="font-size:13px;margin-top:2px">${esc(x.sub)}</div>`:''}</div>`})||`<div class="empty">${q?'Ni zadetkov.':'Ni zgodb.'}</div>`}${rateBtn()}`}
 const rated=()=>Object.values(S.reads).filter(r=>r&&!r.del&&r.rt),rateBtn=()=>rated().length?`<button class="sm" data-a="copyRates" style="width:100%;margin:6px 0 10px">📋 Kopiraj ocene (${rated().length}) za Claude</button>`:'';
 function rateTxt(){const F=LK.feed||{channels:[],videos:[]},VV={};F.videos.forEach(x=>VV[x.v]=x);live('vids').forEach(x=>{if(!VV[x.v])VV[x.v]={t:x.t}});const a=rated(),st=a.filter(r=>!r.id.startsWith('yt:')),yt=a.filter(r=>r.id.startsWith('yt:')),o=['Moje ocene (1–5), '+today()];
 if(st.length){o.push('','Zgodbe in shorts:');st.forEach(r=>{const x=(ST.idx||[]).find(y=>y.id===r.id)||{};o.push('- '+r.rt+' · '+(x.title||r.id)+' ['+r.id+'; '+(x.area||'')+'; '+(x.min||'?')+' min'+(x.type==='short'?'; short':'')+']'+(r.cm?' – '+r.cm:''))})}
@@ -826,7 +833,7 @@ ncopy:(b,id)=>copyText(S.notes[id].text),
 nshare:(b,id)=>share(S.notes[id].text),
 nedit:(b,id)=>{const n=S.notes[id];openSheet(`<h3>Uredi zaznamek</h3><textarea id="eN" rows="10">${esc(n.text)}</textarea>${catPicker(ncat(n))}<div class="acts"><button class="pri" data-a="nsave" data-id="${id}">Shrani</button><button class="danger" data-a="del" data-c="notes" data-id="${id}">Izbriši</button><button data-a="closeSheet">Prekliči</button></div>`)},
 nsave:(b,id)=>{const n=S.notes[id],t=$('#eN').value.trim();if(t)n.text=t;else{n.del=1;n.dt=now()}n.cat=chosenCat();put('notes',n);closeSheet();render()},
-bv:b=>{V.bv=b.dataset.v;render();scrollTo(0,0)},
+bv:b=>{go(()=>{V.bv=b.dataset.v});render();scrollTo(0,0)},
 lf:b=>{V.lf=b.dataset.k;render()},lc:b=>{V.lc=V.lc===b.dataset.k?'':b.dataset.k;V.vn=40;render()},la:b=>{V.la=V.la===b.dataset.k?'':b.dataset.k;V.vn=40;render()},vmore:()=>{V.vn+=40;render()},md:b=>{V.md=b.dataset.k;V.vn=40;render()},lx:b=>{const k=b.dataset.k;V.lx.has(k)?V.lx.delete(k):V.lx.add(k);render()},
 ytSeen:b=>{const id='yt:'+b.dataset.v,r=S.reads[id]||{id};r.done=!r.done;r.t=now();put('reads',r);render()},
 swPick:()=>{const v=gf(V.day,'sw');timeSheet({title:'Spanje po uri',dur:true,hn:17,h:v!=null?Math.floor(v/60):7,m:v!=null?v%60:0,has:v!=null,save:(h,m)=>sf(V.day,'sw',h*60+m),clear:()=>sf(V.day,'sw',null)})},
@@ -844,18 +851,18 @@ ccol:b=>{const k=b.dataset.k;CO.has(k)?CO.delete(k):CO.add(k);saveCO();render()}
 goStats:()=>{if(isReading())flushRead();V.tab='pregled';render();scrollTo(0,0)},
 inb2vid:(b,id)=>{const r=S.inbox[id],v=ytId(r.text);if(!v)return;const t=r.text.split('\n').map(x=>x.trim()).find(x=>x&&!/https?:\/\//.test(x))||'YouTube video';put('vids',{id:uid(),v,t,c:now()});r.del=1;put('inbox',r);closeSheet();toast('Shranjeno v Lekcije');render()},
 rf:b=>{V.rf=V.rf===b.dataset.k?'*':b.dataset.k;render()},rs:b=>{V.rs=b.dataset.k;render()},ftog:b=>{V[b.dataset.k]=!V[b.dataset.k];render()},
-openStory:b=>{V.ry=null;const x=ST.idx&&ST.idx.find(y=>y.id===b.dataset.s);V.tab='branje';V.bv=x&&x.type==='short'?'short':'zg';V.story=b.dataset.s;V.restore=true;V.rsec=0;V.lastAct=now();scrollTo(0,0);render()},
+openStory:b=>{V.ry=null;const x=ST.idx&&ST.idx.find(y=>y.id===b.dataset.s);go(()=>{V.tab='branje';V.bv=x&&x.type==='short'?'short':'zg';V.story=b.dataset.s;V.restore=true;V.rsec=0;V.lastAct=now()});scrollTo(0,0);render()},
 tts:()=>{TS.on?ttsStop():ttsStart();render()},ttsVs:()=>{if(speechSynthesis.getVoices().length)voiceSheet();else{speechSynthesis.addEventListener('voiceschanged',voiceSheet,{once:true});setTimeout(voiceSheet,700)}},
 ttsV:b=>{const lg=ttsLang(),v=ttsVoices(lg)[+b.dataset.i];if(!v)return;st.set('daily.ttsv.'+lg,v.voiceURI);const on=TS.on;speechSynthesis.cancel();if(on){setTimeout(ttsSpeak,60)}else{const u=new SpeechSynthesisUtterance(lg==='en'?'Hello, this is how this voice sounds.':'Pozdravljeni, tako zveni ta glas.');try{u.voice=v}catch(x){}u.lang=v.lang;u.rate=TS.rate;speechSynthesis.speak(u)}voiceSheet()},
 ttsR:()=>{const L=[1,1.15,1.3,1.5,0.9],k=L.indexOf(TS.rate);TS.rate=L[(k+1)%L.length];st.set('daily.ttsr',TS.rate);if(TS.on){speechSynthesis.cancel();setTimeout(ttsSpeak,60)}render()},
-closeStory:()=>{V.ry=null;ttsStop();flushRead();V.story=null;$('#hlBtn').hidden=true;render();scrollTo(0,0)},
+closeStory:()=>{V.ry=null;const hs=history.state;if(hs&&hs.story===V.story&&hs.d>0){history.back();return}ttsStop();flushRead();V.story=null;$('#hlBtn').hidden=true;render();scrollTo(0,0)},
 rate:b=>{const id=b.dataset.id,v=+b.dataset.v,r=rdOf(id)||{id};r.rt=r.rt===v?null:v;if(r.rt)r.done=true;r.t=now();put('reads',r);render()},copyRates:()=>copyText(rateTxt()),
 markUnread:()=>{const r=rdOf(V.story);if(r){r.done=false;r.t=now();put('reads',r)}render()},
 markRead:()=>{const r=rdOf(V.story)||{id:V.story};r.done=true;r.p=1;r.t=now();put('reads',r);render()},
 fs:b=>{V.fs=Math.min(26,Math.max(14,V.fs+ +b.dataset.v));st.set('daily.fs',String(V.fs));const a=$('.rd');if(a)a.style.fontSize=V.fs+'px'},
 hl:()=>{const t=V.selT;if(!t)return;const x=ST.idx&&ST.idx.find(y=>y.id===V.story);ensureCat('Branje');
 put('notes',{id:uid(),text:'> '+t.replace(/\n+/g,'\n> ')+'\n\n— '+(x?x.title:''),cat:'Branje',src:V.story,c:now()});try{getSelection().removeAllRanges()}catch(e){}V.selT='';$('#hlBtn').hidden=true;toast('Izpisek shranjen v zaznamke')},
-pv:b=>{V.pv=b.dataset.v;render()},
+pv:b=>{go(()=>{V.pv=b.dataset.v});render()},
 hmore:()=>{V.hn+=30;render()},
 hgo:b=>{V.tab='dnevnik';V.day=b.dataset.d;render();scrollTo(0,0)},
 expAllMd:()=>exportFile('daily-vse-'+today()+'.md',mdAll()+'\n','text/markdown'),
@@ -902,7 +909,7 @@ document.addEventListener('click',e=>{if(tipAt&&now()-tipAt<900){e.preventDefaul
 document.addEventListener('click',e=>{const t=e.target;if(t.closest('a[href]'))return;
 if(t.id==='sheet')return closeSheet();
 if(TS.on&&!t.closest('[data-a]')){const E=ttsEls(),k=E.findIndex(el=>el.contains(t));if(k>=0){TS.i=k;speechSynthesis.cancel();setTimeout(ttsSpeak,60);return}}
-const nb=t.closest('nav button[data-tab]');if(nb){V.ry=null;if(isReading())flushRead();V.tab=nb.dataset.tab;render();scrollTo(0,0);return}
+const nb=t.closest('nav button[data-tab]');if(nb){V.ry=null;if(nb.dataset.tab===V.tab&&!V.story){scrollTo(0,0);return}go(()=>{if(isReading()){flushRead();ttsStop()}V.tab=nb.dataset.tab;V.story=null;render()});scrollTo(0,0);return}
 if(t.tagName==='INPUT'&&/^(time|date)$/.test(t.type)&&t.showPicker){try{t.showPicker()}catch(x){}}
 if(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))return;
 const b=t.closest('[data-a]');if(!b)return;
@@ -964,7 +971,7 @@ live('acts').filter(r=>r.c==='Branje').forEach(r=>{r.c='Branje/študij';put('act
 if(c&&Array.isArray(c.v)&&c.v.length){const rooms=c.v.map(l=>l.split(':')[0].trim());const add=DEFL.chores.filter(l=>['Klet','Podstreha','Avto','Popravila'].includes(l.split(':')[0])&&!rooms.includes(l.split(':')[0]));if(add.length)put('cfg',{id:'chores',v:[...c.v,...add]})}
 if(a&&Array.isArray(a.v)&&a.v.length&&!a.v.includes('Kitara'))put('cfg',{id:'acts',v:[...a.v,'Kitara']});if((c&&c.v)||(a&&a.v))put('cfg',{id:'mig19',v:1})})();
 setInterval(()=>{if(!LOCK)updRun()},15000);
-const VER='4.20';
+const VER='4.21';
 function checkUpd(){if(LOCK||location.protocol!=='https:')return;fetch('version.txt?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{t=t.trim();const b=$('#upd');if(b&&t&&t!==VER){b.hidden=false;b.textContent='↻ v'+t}}).catch(()=>{})}
 setInterval(checkUpd,1800000);addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpd()});
 let shared=false;
