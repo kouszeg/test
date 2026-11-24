@@ -1,5 +1,206 @@
 [
  {
+  "id": "2026-11-24-tonnetz",
+  "title": "Euler, glasba in mreža tonov",
+  "sub": "Kako je največji matematik 18. stoletja narisal zemljevid harmonije in zakaj ga glasbeni teoretiki uporabljajo še danes",
+  "area": "Fizika",
+  "date": "2026-11-24",
+  "type": "story",
+  "words": 1651,
+  "min": 10
+ },
+ {
+  "id": "2026-11-24-ingver",
+  "title": "Ingver",
+  "sub": "Korenina, ki ni korenina, rastlina, ki je ni v divjini, in kaj o njenem učinku v resnici vemo",
+  "area": "Dobro počutje",
+  "date": "2026-11-24",
+  "type": "story",
+  "words": 955,
+  "min": 6
+ },
+ {
+  "id": "2026-11-24-wu-wei",
+  "title": "Štiri unče proti tisoč funtom",
+  "sub": "Tai chi, potiskanje rok in taoistična ideja delovanja brez sile",
+  "area": "Filozofija",
+  "date": "2026-11-24",
+  "type": "short",
+  "words": 469,
+  "min": 3
+ },
+ {
+  "id": "2026-11-24-dunning-kruger",
+  "title": "Ali so nevedni res najbolj samozavestni?",
+  "sub": "Dunning-Krugerjev učinek, slavni graf in statistika, ki ga postavlja pod vprašaj",
+  "area": "Psihologija",
+  "date": "2026-11-24",
+  "type": "short",
+  "words": 506,
+  "min": 3
+ },
+ {
+  "id": "2026-11-24-ekspresivno-pisanje",
+  "title": "Petnajst minut pisanja",
+  "sub": "Pennebakerjev poskus z ekspresivnim pisanjem in koliko v resnici pomaga",
+  "area": "Osebnostna rast",
+  "date": "2026-11-24",
+  "type": "short",
+  "words": 473,
+  "min": 3
+ },
+ {
+  "id": "2026-11-24-hladna-prha",
+  "title": "Trideset sekund mraza",
+  "sub": "Kaj je pokazala največja raziskava o hladnem tuširanju",
+  "area": "Dobro počutje",
+  "date": "2026-11-24",
+  "type": "short",
+  "words": 437,
+  "min": 3
+ },
+ {
+  "id": "2026-11-24-dunbar",
+  "title": "Ali imaš lahko več kot 150 prijateljev?",
+  "sub": "Dunbarjevo število, od kod izvira in zakaj je trhlejše, kot se zdi",
+  "area": "Družba",
+  "date": "2026-11-24",
+  "type": "short",
+  "words": 462,
+  "min": 3
+ },
+ {
+  "id": "2026-11-24-otzi",
+  "title": "Ötzi, mož iz ledu",
+  "sub": "Najstarejši umor v Evropi, ki ga lahko preiščemo kot kriminalisti",
+  "area": "Zgodovina",
+  "date": "2026-11-24",
+  "type": "short",
+  "words": 486,
+  "min": 3
+ },
+ {
+  "id": "2026-11-24-modro-nebo",
+  "title": "Zakaj je nebo modro in ne vijolično",
+  "sub": "Rayleighovo sipanje, rdeči zahodi in vprašanje, ki ga večina razlag preskoči",
+  "area": "Fizika",
+  "date": "2026-11-24",
+  "type": "short",
+  "words": 494,
+  "min": 3
+ },
+ {
+  "id": "2026-11-24-pocasniki",
+  "title": "Najbolj trdoživa žival na svetu",
+  "sub": "Počasniki, ki preživijo izsušitev, mraz in celo vesolje",
+  "area": "Biologija",
+  "date": "2026-11-24",
+  "type": "short",
+  "words": 456,
+  "min": 3
+ },
+ {
+  "id": "2026-11-24-grom",
+  "title": "Tri sekunde na kilometer",
+  "sub": "Kaj je strela, zakaj grmi in kako izmeriš, kako daleč je nevihta",
+  "area": "Narava",
+  "date": "2026-11-24",
+  "type": "short",
+  "words": 463,
+  "min": 3
+ },
+ {
+  "id": "2026-11-24-braess",
+  "title": "Nova cesta, več zastojev",
+  "sub": "Braessov paradoks in zakaj lahko odstranitev ceste promet pospeši",
+  "area": "Tehnika",
+  "date": "2026-11-24",
+  "type": "short",
+  "words": 546,
+  "min": 3
+ },
+ {
+  "id": "2026-11-23-10000-ur",
+  "title": "Deset tisoč ur",
+  "sub": "Kaj so violinisti iz Berlina v resnici pokazali o vadbi in zakaj ura ni enaka uri",
+  "area": "Osebnostna rast",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1313,
+  "min": 8
+ },
+ {
+  "id": "2026-11-23-broad-street",
+  "title": "The Pump on Broad Street",
+  "sub": "How John Snow traced cholera to a single well",
+  "area": "Zgodovina",
+  "date": "2026-11-23",
+  "type": "story",
+  "lang": "en",
+  "words": 1300,
+  "min": 8
+ },
+ {
+  "id": "2026-11-23-foucault",
+  "title": "Vabljeni, da vidite, kako se Zemlja vrti",
+  "sub": "Foucaultovo nihalo v Panteonu leta 1851 in fizika, ki jo vidiš s prostim očesom",
+  "area": "Fizika",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1160,
+  "min": 7
+ },
+ {
+  "id": "2026-11-23-goodhart",
+  "title": "Ko merilo postane cilj",
+  "sub": "Goodhartov zakon in podgane brez repov",
+  "area": "Družba",
+  "date": "2026-11-23",
+  "type": "short",
+  "words": 516,
+  "min": 3
+ },
+ {
+  "id": "2026-11-23-gps",
+  "title": "Zakaj tvoj telefon potrebuje Einsteina",
+  "sub": "GPS, atomske ure in relativnost v vsakdanji navigaciji",
+  "area": "Fizika",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1618,
+  "min": 10
+ },
+ {
+  "id": "2026-11-23-harrison",
+  "title": "Ura, ki je rešila morje",
+  "sub": "John Harrison, zemljepisna dolžina in zakaj je bil čas ključ do položaja",
+  "area": "Zgodovina",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1820,
+  "min": 11
+ },
+ {
+  "id": "2026-11-23-indukcija",
+  "title": "Piščanec, ki je zaupal kmetu",
+  "sub": "Humov problem indukcije in zakaj ne moremo dokazati, da bo jutri vzšlo sonce",
+  "area": "Filozofija",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1223,
+  "min": 8
+ },
+ {
+  "id": "2026-11-23-karantena",
+  "title": "Trideset dni na otoku",
+  "sub": "Kako je Dubrovnik leta 1377 izumil karanteno, da bi preživel kugo in ohranil trgovino",
+  "area": "Zgodovina",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1115,
+  "min": 7
+ },
+ {
   "id": "2026-11-23-kitajska",
   "title": "Tri tisočletja Kitajske",
   "sub": "Od orakeljskih kosti do tai chija – hiter pregled zgodovine, filozofije in kulture",
@@ -8,6 +209,36 @@
   "type": "story",
   "words": 1716,
   "min": 11
+ },
+ {
+  "id": "2026-11-23-koledar",
+  "title": "Deset dni, ki jih ni bilo",
+  "sub": "Kako je Evropa leta 1582 preskočila deset dni in zakaj je leto 2000 bilo prestopno, 1900 pa ne",
+  "area": "Zgodovina",
+  "date": "2026-11-23",
+  "type": "short",
+  "words": 626,
+  "min": 4
+ },
+ {
+  "id": "2026-11-23-navade",
+  "title": "Enaindvajset dni, ki jih ni bilo",
+  "sub": "Koliko časa v resnici traja nova navada in zakaj pomaga preprost načrt »če – potem«",
+  "area": "Osebnostna rast",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1642,
+  "min": 10
+ },
+ {
+  "id": "2026-11-23-ostrom",
+  "title": "Tragedija, ki se ni zgodila",
+  "sub": "Elinor Ostrom, švicarske krave in zakaj skupno ni nujno obsojeno na propad",
+  "area": "Družba",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1447,
+  "min": 9
  },
  {
   "id": "2026-11-23-panamski-prekop",
@@ -30,17 +261,6 @@
   "min": 6
  },
  {
-  "id": "2026-11-23-broad-street",
-  "title": "The Pump on Broad Street",
-  "sub": "How John Snow traced cholera to a single well",
-  "area": "Zgodovina",
-  "date": "2026-11-23",
-  "type": "story",
-  "lang": "en",
-  "words": 1300,
-  "min": 8
- },
- {
   "id": "2026-11-23-samonadzor",
   "title": "Zakaj vemo, kaj bi morali storiti, pa tega ne storimo?",
   "sub": "Psihologija samonadzora, odlašanja in spreminjanja vedenja",
@@ -49,26 +269,6 @@
   "type": "story",
   "words": 1842,
   "min": 12
- },
- {
-  "id": "2026-11-23-spomin",
-  "title": "Spomin ni posnetek",
-  "sub": "Elizabeth Loftus, razbito steklo, ki ga ni bilo, in zakaj so priče tako prepričljive in tako zmotljive",
-  "area": "Psihologija",
-  "date": "2026-11-23",
-  "type": "story",
-  "words": 1294,
-  "min": 8
- },
- {
-  "id": "2026-11-23-harrison",
-  "title": "Ura, ki je rešila morje",
-  "sub": "John Harrison, zemljepisna dolžina in zakaj je bil čas ključ do položaja",
-  "area": "Zgodovina",
-  "date": "2026-11-23",
-  "type": "story",
-  "words": 1820,
-  "min": 11
  },
  {
   "id": "2026-11-23-semmelweis",
@@ -81,84 +281,24 @@
   "min": 8
  },
  {
-  "id": "2026-11-23-gps",
-  "title": "Zakaj tvoj telefon potrebuje Einsteina",
-  "sub": "GPS, atomske ure in relativnost v vsakdanji navigaciji",
-  "area": "Fizika",
+  "id": "2026-11-23-spomin",
+  "title": "Spomin ni posnetek",
+  "sub": "Elizabeth Loftus, razbito steklo, ki ga ni bilo, in zakaj so priče tako prepričljive in tako zmotljive",
+  "area": "Psihologija",
   "date": "2026-11-23",
   "type": "story",
-  "words": 1618,
-  "min": 10
- },
- {
-  "id": "2026-11-23-foucault",
-  "title": "Vabljeni, da vidite, kako se Zemlja vrti",
-  "sub": "Foucaultovo nihalo v Panteonu leta 1851 in fizika, ki jo vidiš s prostim očesom",
-  "area": "Fizika",
-  "date": "2026-11-23",
-  "type": "story",
-  "words": 1160,
-  "min": 7
- },
- {
-  "id": "2026-11-23-navade",
-  "title": "Enaindvajset dni, ki jih ni bilo",
-  "sub": "Koliko časa v resnici traja nova navada in zakaj pomaga preprost načrt »če – potem«",
-  "area": "Osebnostna rast",
-  "date": "2026-11-23",
-  "type": "story",
-  "words": 1642,
-  "min": 10
- },
- {
-  "id": "2026-11-23-10000-ur",
-  "title": "Deset tisoč ur",
-  "sub": "Kaj so violinisti iz Berlina v resnici pokazali o vadbi in zakaj ura ni enaka uri",
-  "area": "Osebnostna rast",
-  "date": "2026-11-23",
-  "type": "story",
-  "words": 1313,
+  "words": 1294,
   "min": 8
  },
  {
-  "id": "2026-11-23-ostrom",
-  "title": "Tragedija, ki se ni zgodila",
-  "sub": "Elinor Ostrom, švicarske krave in zakaj skupno ni nujno obsojeno na propad",
-  "area": "Družba",
-  "date": "2026-11-23",
-  "type": "story",
-  "words": 1447,
-  "min": 9
- },
- {
-  "id": "2026-11-23-tulipani",
-  "title": "Mehurček, ki ga skoraj ni bilo",
-  "sub": "Nizozemska tulipanomanija leta 1637 in kako je moralna pridiga postala ekonomski učbenik",
-  "area": "Družba",
-  "date": "2026-11-23",
-  "type": "story",
-  "words": 1179,
-  "min": 7
- },
- {
-  "id": "2026-11-23-tramvaj",
-  "title": "Kretnica in mostovž",
-  "sub": "Problem tramvaja, ali zakaj nam ni vseeno, kako umre en človek",
+  "id": "2026-11-23-tai-chi",
+  "title": "Mehko premaga trdo",
+  "sub": "Tai chi, taoizem in kaj o počasnem gibanju v resnici vemo",
   "area": "Filozofija",
   "date": "2026-11-23",
-  "type": "story",
-  "words": 1358,
-  "min": 8
- },
- {
-  "id": "2026-11-23-indukcija",
-  "title": "Piščanec, ki je zaupal kmetu",
-  "sub": "Humov problem indukcije in zakaj ne moremo dokazati, da bo jutri vzšlo sonce",
-  "area": "Filozofija",
-  "date": "2026-11-23",
-  "type": "story",
-  "words": 1223,
-  "min": 8
+  "type": "short",
+  "words": 620,
+  "min": 4
  },
  {
   "id": "2026-11-23-tambora",
@@ -171,16 +311,6 @@
   "min": 9
  },
  {
-  "id": "2026-11-23-karantena",
-  "title": "Trideset dni na otoku",
-  "sub": "Kako je Dubrovnik leta 1377 izumil karanteno, da bi preživel kugo in ohranil trgovino",
-  "area": "Zgodovina",
-  "date": "2026-11-23",
-  "type": "story",
-  "words": 1115,
-  "min": 7
- },
- {
   "id": "2026-11-23-tezejeva-ladja",
   "title": "Tezejeva ladja",
   "sub": "Če zamenjaš vse dele, ali je to še ista stvar?",
@@ -191,34 +321,24 @@
   "min": 4
  },
  {
-  "id": "2026-11-23-goodhart",
-  "title": "Ko merilo postane cilj",
-  "sub": "Goodhartov zakon in podgane brez repov",
-  "area": "Družba",
-  "date": "2026-11-23",
-  "type": "short",
-  "words": 516,
-  "min": 3
- },
- {
-  "id": "2026-11-23-koledar",
-  "title": "Deset dni, ki jih ni bilo",
-  "sub": "Kako je Evropa leta 1582 preskočila deset dni in zakaj je leto 2000 bilo prestopno, 1900 pa ne",
-  "area": "Zgodovina",
-  "date": "2026-11-23",
-  "type": "short",
-  "words": 626,
-  "min": 4
- },
- {
-  "id": "2026-11-23-tai-chi",
-  "title": "Mehko premaga trdo",
-  "sub": "Tai chi, taoizem in kaj o počasnem gibanju v resnici vemo",
+  "id": "2026-11-23-tramvaj",
+  "title": "Kretnica in mostovž",
+  "sub": "Problem tramvaja, ali zakaj nam ni vseeno, kako umre en človek",
   "area": "Filozofija",
   "date": "2026-11-23",
-  "type": "short",
-  "words": 620,
-  "min": 4
+  "type": "story",
+  "words": 1358,
+  "min": 8
+ },
+ {
+  "id": "2026-11-23-tulipani",
+  "title": "Mehurček, ki ga skoraj ni bilo",
+  "sub": "Nizozemska tulipanomanija leta 1637 in kako je moralna pridiga postala ekonomski učbenik",
+  "area": "Družba",
+  "date": "2026-11-23",
+  "type": "story",
+  "words": 1179,
+  "min": 7
  },
  {
   "id": "2026-11-23-vzdih",
