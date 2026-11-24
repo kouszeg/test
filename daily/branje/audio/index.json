@@ -63,5 +63,69 @@
   "m": [
    "gemini-3.8-flash-lite-tts"
   ]
+ },
+ "2026-11-23-broad-street": {
+  "h": "492bdee20e1d",
+  "d": 509,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ]
+ },
+ "2026-11-23-samonadzor": {
+  "h": "833c9f040ba2",
+  "d": 1080,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ]
+ },
+ "2026-11-23-harrison": {
+  "h": "287758c57a5b",
+  "d": 911,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ]
+ },
+ "2026-11-23-semmelweis": {
+  "h": "5846c136c417",
+  "d": 578,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ]
+ },
+ "2026-11-23-gps": {
+  "h": "5f9d94109a88",
+  "d": 779,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-lite-tts",
+   "gemini-3.8-flash-tts"
+  ]
+ },
+ "2026-11-23-foucault": {
+  "h": "5817e1b1bea9",
+  "d": 507,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-lite-tts"
+  ]
+ },
+ "2026-11-23-navade": {
+  "h": "5f6456dc923e",
+  "d": 697,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-lite-tts"
+  ]
  }
 }
