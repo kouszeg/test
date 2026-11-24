@@ -1,7 +1,7 @@
 ---
 title: Zakaj je nebo modro in ne vijolično
 subtitle: Rayleighovo sipanje, rdeči zahodi in vprašanje, ki ga večina razlag preskoči
-area: Fizika
+area: FizMat
 type: short
 date: 2026-11-24
 ---
