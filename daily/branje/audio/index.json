@@ -127,5 +127,23 @@
   "m": [
    "gemini-3.8-flash-lite-tts"
   ]
+ },
+ "2026-11-24-tonnetz": {
+  "h": "9f04c2813c44",
+  "d": 843,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ]
+ },
+ "2026-11-24-ingver": {
+  "h": "ac773549921e",
+  "d": 436,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-lite-tts"
+  ]
  }
 }
