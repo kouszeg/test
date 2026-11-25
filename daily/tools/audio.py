@@ -137,6 +137,9 @@ def synth(text):
 OPUS = ['-c:a', 'libopus', '-b:a', '16k', '-application', 'voip']   # speech: ~0.12 MB per minute (16k = no audible loss vs 24k on headphones)
 
 
+EQ = 'highpass=f=100,equalizer=f=200:t=q:w=1:g=-8,equalizer=f=3000:t=q:w=1.5:g=2'   # less bass, a bit more clarity (chosen by ear)
+
+
 def to_audio(pcm, path):
     subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 's16le', '-ar', '24000', '-ac', '1', '-i', '-', *OPUS, path], input=pcm, check=True)
 
@@ -260,14 +263,14 @@ def stories(only=None):
                     f.write(f"file '{os.path.abspath(sil)}'\n")
                 f.write(f"file '{os.path.abspath(os.path.join(PD, f'part_{sid}.{h}.{n}.ogg'))}'\n")
         out = os.path.join(AD, sid + '.ogg')
-        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', lst, *OPUS, out], check=True)
+        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', lst, '-af', EQ, *OPUS, out], check=True)
         for f in os.listdir(PD):
             if f.startswith(f'part_{sid}.') or f in ('list.txt', 'sil.ogg'):
                 if f.startswith('part_'):
                     rel['delete'].append(f)
                 os.remove(os.path.join(PD, f))
         rel['upload'] = [x for x in rel['upload'] if os.path.exists(x)] + [out]
-        idx[sid] = {'h': h, 'd': mp3_len(out), 'f': 'ogg', 'v': VOICE, 'm': sorted(set(models))}
+        idx[sid] = {'h': h, 'd': mp3_len(out), 'f': 'ogg', 'v': VOICE, 'm': sorted(set(models)), 'eq': 1}
         json.dump(idx, open(ip, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
         done += 1
         print(f'  -> {out} {idx[sid]["d"]} s')
@@ -283,7 +286,29 @@ def stories(only=None):
     print('stories narrated this run:', done, '| models used up:', sorted(dead))
 
 
+def eqfix():
+    """Apply EQ to already published files (downloaded by the workflow into audio/rel/) that don't have it yet."""
+    ip = os.path.join(AD, 'index.json')
+    idx = json.load(open(ip, encoding='utf-8'))
+    src = os.path.join(AD, 'rel')
+    up = []
+    for sid, a in idx.items():
+        f = os.path.join(src, sid + '.ogg')
+        if a.get('eq') or not os.path.exists(f):
+            continue
+        out = os.path.join(AD, sid + '.ogg')
+        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', f, '-af', EQ, *OPUS, out], check=True)
+        a['eq'] = 1
+        up.append(out)
+        print('eq', sid)
+    json.dump(idx, open(ip, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    json.dump({'upload': up, 'delete': []}, open(os.path.join(AD, '_release.json'), 'w'), indent=1)
+
+
 if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == 'eq':
+        eqfix()
+        sys.exit()
     if not KEY:
         sys.exit('GEMINI_KEY missing')
     if len(sys.argv) > 1 and sys.argv[1] == 'samples':
