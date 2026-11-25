@@ -10,12 +10,12 @@
   "eq": 1
  },
  "2026-11-23-tambora": {
-  "h": "ac2cb1ed53d0",
-  "d": 624,
+  "h": "2573901769e6",
+  "d": 696,
   "f": "ogg",
   "v": "Algieba",
   "m": [
-   "gemini-3.8-flash-lite-tts"
+   "gemini-3.8-flash-tts"
   ],
   "eq": 1
  },
@@ -169,6 +169,57 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-tts"
+  ],
+  "eq": 1
+ },
+ "2026-11-23-indukcija": {
+  "h": "38cee6969365",
+  "d": 558,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ],
+  "eq": 1
+ },
+ "2026-11-23-karantena": {
+  "h": "befd434d065a",
+  "d": 518,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ],
+  "eq": 1
+ },
+ "2026-11-23-ostrom": {
+  "h": "a2879c7e1aa0",
+  "d": 721,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ],
+  "eq": 1
+ },
+ "2026-11-23-tramvaj": {
+  "h": "bd92ffe35951",
+  "d": 593,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-lite-tts",
+   "gemini-3.8-flash-tts"
+  ],
+  "eq": 1
+ },
+ "2026-11-23-tulipani": {
+  "h": "d5e81dcd9077",
+  "d": 499,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-lite-tts"
   ],
   "eq": 1
  }
