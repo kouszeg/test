@@ -311,7 +311,7 @@
         <li><kbd>C</kbd> obreži na A–B, <kbd>F</kbd> najdi zanko</li>
         <li><kbd>N</kbd> / Normaliziraj: dvigne ali zniža posnetek, da je vrh na nivoju »Normaliziraj na … dBFS« (privzeto −1). Val v urejevalniku je vedno prikazan raztegnjen na višino, zvok pa se spremeni šele s tem ukazom; zapiše ga Shrani (za MP3 kot ime.wav, nato po želji M).</li>
         <li><kbd>S</kbd> / zvezdica: priljubljen posnetek. Priljubljeni iz vseh map so v seznamu Priljubljeni nad posnetki: klik ga odpre (brskalnik ostane, kjer je), gumb z mapo premakne brskalnik v njegovo mapo, v svoji mapi pa so na vrhu. Zapomni se v bass-recorder-settings.txt.</li>
-        <li><kbd>M</kbd> / gumb MP3: shrani odprt posnetek (tako kot je v urejevalniku, brez EQ predvajanja) kot ime.mp3 v isto mapo. Bitna hitrost: mp3kbps v bass-recorder-settings.txt (96–320, privzeto 192). Aplikacija bere WAV, MP3, M4A, FLAC, OGG; urejeni posnetki se vedno shranijo kot WAV.</li>
+        <li><kbd>M</kbd> / gumb MP3: shrani odprt posnetek (tako kot je v urejevalniku, brez EQ predvajanja) kot ime.mp3 v isto mapo. Bitna hitrost: mp3kbps v bass-recorder-settings.txt (96–320, privzeto 192). Aplikacija bere WAV, MP3, M4A, MP4/MOV (zvok iz videa), FLAC, OGG, WEBM; urejeni posnetki se vedno shranijo kot WAV.</li>
         <li><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> kopiraj / izreži / prilepi. Prilepi vstavi na kurzor ali zamenja A–B; deluje med posnetki. Nov prazen posnetek: gumb ob seznamu, vanj prilepiš in Shrani.</li>
         <li><kbd>Ctrl</kbd>+<kbd>S</kbd> shrani spremembe odprtega posnetka</li>
         <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo zadnjega rezanja ali obrezovanja</li>
@@ -340,7 +340,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.46';   // bump on every release; shown bottom right
+const VERSION = '1.47';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -710,7 +710,7 @@ async function loadFolder(){
   const found = [], dirs = [], path = curPath.join('/');
   for await (const h of curDir.values()) {
     if (h.kind === 'directory') { if (!h.name.startsWith('.')) dirs.push(h.name); continue; }   // hide .settings and other dot folders
-    if (!/\.(wav|mp3|m4a|flac|ogg)$/i.test(h.name)) continue;
+    if (!/\.(wav|mp3|m4a|mp4|m4v|mov|aac|flac|ogg|opus|webm)$/i.test(h.name)) continue;   // video files: only the audio track is used
     const k = (path ? path + '/' : '') + h.name, same = t => t && t.inFolder && (t.path || '') === path && t.name === h.name;
     const old = same(ed && ed.t) ? ed.t : takes.find(same) || FT.get(k);
     const f = await h.getFile();
@@ -791,7 +791,7 @@ async function renameTake(t, newName){
   if (!newName || newName === t.name) return;
   const ext = (t.name.match(/\.[^.]+$/) || ['.wav'])[0];
   // keep the real extension: renaming .wav to .mp3 does not convert, and Chrome refuses extension changes
-  newName = newName.replace(/\.(wav|mp3|m4a|aac|flac|ogg|oga|opus|webm|aif|aiff)$/i, '') + ext;
+  newName = newName.replace(/\.(wav|mp3|m4a|mp4|m4v|mov|aac|flac|ogg|oga|opus|webm|aif|aiff)$/i, '') + ext;
   if (takes.some(x => x !== t && x.name === newName)) { alert('Datoteka ' + newName + ' že obstaja.'); return; }
   if (t.inFolder) {
     if (!(await folderReady(true))) { alert('Mapa ni odprta.'); return; }
