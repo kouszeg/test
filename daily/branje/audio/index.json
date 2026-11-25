@@ -6,7 +6,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-tambora": {
   "h": "ac2cb1ed53d0",
@@ -15,7 +16,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-lite-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-vzdih": {
   "h": "9a448656195a",
@@ -24,7 +26,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-lite-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-spomin": {
   "h": "3117dca667b2",
@@ -34,7 +37,8 @@
   "m": [
    "gemini-3.8-flash-lite-tts",
    "gemini-3.8-flash-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-kitajska": {
   "h": "5982206dea30",
@@ -44,7 +48,8 @@
   "m": [
    "gemini-3.8-flash-lite-tts",
    "gemini-3.8-flash-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-panamski-prekop": {
   "h": "47dd71ce8712",
@@ -53,7 +58,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-ptice-selivke": {
   "h": "247004810dd6",
@@ -62,7 +68,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-lite-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-broad-street": {
   "h": "492bdee20e1d",
@@ -71,7 +78,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-samonadzor": {
   "h": "833c9f040ba2",
@@ -80,7 +88,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-harrison": {
   "h": "287758c57a5b",
@@ -89,7 +98,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-semmelweis": {
   "h": "5846c136c417",
@@ -98,7 +108,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-gps": {
   "h": "5f9d94109a88",
@@ -108,7 +119,8 @@
   "m": [
    "gemini-3.8-flash-lite-tts",
    "gemini-3.8-flash-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-foucault": {
   "h": "5817e1b1bea9",
@@ -117,7 +129,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-lite-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-navade": {
   "h": "5f6456dc923e",
@@ -126,7 +139,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-lite-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-24-tonnetz": {
   "h": "9f04c2813c44",
@@ -135,7 +149,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-24-ingver": {
   "h": "ac773549921e",
@@ -144,7 +159,8 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-lite-tts"
-  ]
+  ],
+  "eq": 1
  },
  "2026-11-23-10000-ur": {
   "h": "67548c79c5bf",
@@ -153,6 +169,7 @@
   "v": "Algieba",
   "m": [
    "gemini-3.8-flash-tts"
-  ]
+  ],
+  "eq": 1
  }
 }
