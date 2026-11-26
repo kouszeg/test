@@ -7,7 +7,7 @@ for f in sorted(glob.glob(os.path.join(D,'*.md'))):
     fm={k.strip():v.strip() for k,v in fm.items()}; body=s[m.end():]
     text=re.sub(r'\n## Preveri se\b[\s\S]*','',body); text=re.sub(r'```svg[\s\S]*?```','',text); text=re.sub(r'\[([^\]]*)\]\([^)]*\)',r'\1',text)
     words=len(re.findall(r'\w+',text)); sid=os.path.basename(f)[:-3]
-    items.append({'id':sid,'title':fm['title'],'sub':fm.get('subtitle',''),'area':fm['area'],'date':fm['date'],'type':fm.get('type','story'),**({'lang':fm['lang']} if fm.get('lang') else {}),'words':words,'min':max(1,round(words/160))})
+    items.append({'id':sid,'title':fm['title'],'sub':fm.get('subtitle',''),'area':fm['area'],'date':fm['date'],'type':fm.get('type','story'),**({'lang':fm['lang']} if fm.get('lang') else {}),**({'series':fm['series'],'part':int(fm.get('part',1))} if fm.get('series') else {}),'words':words,'min':max(1,round(words/160))})
 order=sys.argv[1:]  # optional explicit order of ids within the same date
 items.sort(key=lambda x:(x['date'],-order.index(x['id']) if x['id'] in order else 0),reverse=True)
 json.dump(items,open(os.path.join(D,'index.json'),'w',encoding='utf-8'),ensure_ascii=False,indent=1)

@@ -1,32 +1,82 @@
 [
  {
-  "id": "2026-11-24-tonnetz",
-  "title": "Euler, glasba in mreža tonov",
-  "sub": "Kako je največji matematik 18. stoletja narisal zemljevid harmonije in zakaj ga glasbeni teoretiki uporabljajo še danes",
-  "area": "FizMat",
-  "date": "2026-11-24",
+  "id": "2026-11-26-kitajska-1-prvi-cesar",
+  "title": "Prvi cesar",
+  "sub": "Kako je kralj majhne zahodne države v desetih letih ustvaril Kitajsko in zakaj je njegova dinastija trajala samo petnajst let",
+  "area": "Zgodovina",
+  "date": "2026-11-26",
   "type": "story",
-  "words": 1651,
-  "min": 10
+  "series": "Kitajska",
+  "part": 1,
+  "words": 1184,
+  "min": 7
  },
  {
-  "id": "2026-11-24-ingver",
-  "title": "Ingver",
-  "sub": "Korenina, ki ni korenina, rastlina, ki je ni v divjini, in kaj o njenem učinku v resnici vemo",
-  "area": "Dobro počutje",
-  "date": "2026-11-24",
+  "id": "2026-11-26-kitajska-2-filozofi",
+  "title": "Spor o tem, kako vladati",
+  "sub": "Konfucij, Mencij, Xunzi, Laozi in Han Fei – pet odgovorov na isto vprašanje, ki so oblikovali Kitajsko",
+  "area": "Zgodovina",
+  "date": "2026-11-26",
   "type": "story",
-  "words": 955,
+  "series": "Kitajska",
+  "part": 2,
+  "words": 1083,
+  "min": 7
+ },
+ {
+  "id": "2026-11-26-kitajska-3-izpiti",
+  "title": "Izpit, ki je trajal trinajst stoletij",
+  "sub": "Kitajski državni izpiti – od celic za kandidate do upora, ki ga je začel človek, ki je padel",
+  "area": "Zgodovina",
+  "date": "2026-11-26",
+  "type": "story",
+  "series": "Kitajska",
+  "part": 3,
+  "words": 938,
   "min": 6
  },
  {
-  "id": "2026-11-24-wu-wei",
-  "title": "Štiri unče proti tisoč funtom",
-  "sub": "Tai chi, potiskanje rok in taoistična ideja delovanja brez sile",
-  "area": "Filozofija",
+  "id": "2026-11-26-kitajska-4-izumi",
+  "title": "Papir, tisk, kompas, smodnik",
+  "sub": "Štirje veliki kitajski izumi in vprašanje, zakaj se industrijska revolucija ni začela na Kitajskem",
+  "area": "Zgodovina",
+  "date": "2026-11-26",
+  "type": "story",
+  "series": "Kitajska",
+  "part": 4,
+  "words": 905,
+  "min": 6
+ },
+ {
+  "id": "2026-11-26-kitajska-5-dvajseto-stoletje",
+  "title": "Stoletje ponižanja in vzpona",
+  "sub": "Od opijskih vojn do druge največje gospodarske sile – Kitajska v zadnjih dvesto letih",
+  "area": "Zgodovina",
+  "date": "2026-11-26",
+  "type": "story",
+  "series": "Kitajska",
+  "part": 5,
+  "words": 1029,
+  "min": 6
+ },
+ {
+  "id": "2026-11-24-braess",
+  "title": "Nova cesta, več zastojev",
+  "sub": "Braessov paradoks in zakaj lahko odstranitev ceste promet pospeši",
+  "area": "Tehnika",
   "date": "2026-11-24",
   "type": "short",
-  "words": 469,
+  "words": 546,
+  "min": 3
+ },
+ {
+  "id": "2026-11-24-dunbar",
+  "title": "Ali imaš lahko več kot 150 prijateljev?",
+  "sub": "Dunbarjevo število, od kod izvira in zakaj je trhlejše, kot se zdi",
+  "area": "Družba",
+  "date": "2026-11-24",
+  "type": "short",
+  "words": 462,
   "min": 3
  },
  {
@@ -50,6 +100,16 @@
   "min": 3
  },
  {
+  "id": "2026-11-24-grom",
+  "title": "Tri sekunde na kilometer",
+  "sub": "Kaj je strela, zakaj grmi in kako izmeriš, kako daleč je nevihta",
+  "area": "Narava",
+  "date": "2026-11-24",
+  "type": "short",
+  "words": 463,
+  "min": 3
+ },
+ {
   "id": "2026-11-24-hladna-prha",
   "title": "Trideset sekund mraza",
   "sub": "Kaj je pokazala največja raziskava o hladnem tuširanju",
@@ -60,13 +120,23 @@
   "min": 3
  },
  {
-  "id": "2026-11-24-dunbar",
-  "title": "Ali imaš lahko več kot 150 prijateljev?",
-  "sub": "Dunbarjevo število, od kod izvira in zakaj je trhlejše, kot se zdi",
-  "area": "Družba",
+  "id": "2026-11-24-ingver",
+  "title": "Ingver",
+  "sub": "Korenina, ki ni korenina, rastlina, ki je ni v divjini, in kaj o njenem učinku v resnici vemo",
+  "area": "Dobro počutje",
+  "date": "2026-11-24",
+  "type": "story",
+  "words": 955,
+  "min": 6
+ },
+ {
+  "id": "2026-11-24-modro-nebo",
+  "title": "Zakaj je nebo modro in ne vijolično",
+  "sub": "Rayleighovo sipanje, rdeči zahodi in vprašanje, ki ga večina razlag preskoči",
+  "area": "FizMat",
   "date": "2026-11-24",
   "type": "short",
-  "words": 462,
+  "words": 494,
   "min": 3
  },
  {
@@ -80,16 +150,6 @@
   "min": 3
  },
  {
-  "id": "2026-11-24-modro-nebo",
-  "title": "Zakaj je nebo modro in ne vijolično",
-  "sub": "Rayleighovo sipanje, rdeči zahodi in vprašanje, ki ga večina razlag preskoči",
-  "area": "FizMat",
-  "date": "2026-11-24",
-  "type": "short",
-  "words": 494,
-  "min": 3
- },
- {
   "id": "2026-11-24-pocasniki",
   "title": "Najbolj trdoživa žival na svetu",
   "sub": "Počasniki, ki preživijo izsušitev, mraz in celo vesolje",
@@ -100,23 +160,23 @@
   "min": 3
  },
  {
-  "id": "2026-11-24-grom",
-  "title": "Tri sekunde na kilometer",
-  "sub": "Kaj je strela, zakaj grmi in kako izmeriš, kako daleč je nevihta",
-  "area": "Narava",
+  "id": "2026-11-24-tonnetz",
+  "title": "Euler, glasba in mreža tonov",
+  "sub": "Kako je največji matematik 18. stoletja narisal zemljevid harmonije in zakaj ga glasbeni teoretiki uporabljajo še danes",
+  "area": "FizMat",
   "date": "2026-11-24",
-  "type": "short",
-  "words": 463,
-  "min": 3
+  "type": "story",
+  "words": 1651,
+  "min": 10
  },
  {
-  "id": "2026-11-24-braess",
-  "title": "Nova cesta, več zastojev",
-  "sub": "Braessov paradoks in zakaj lahko odstranitev ceste promet pospeši",
-  "area": "Tehnika",
+  "id": "2026-11-24-wu-wei",
+  "title": "Štiri unče proti tisoč funtom",
+  "sub": "Tai chi, potiskanje rok in taoistična ideja delovanja brez sile",
+  "area": "Filozofija",
   "date": "2026-11-24",
   "type": "short",
-  "words": 546,
+  "words": 469,
   "min": 3
  },
  {
