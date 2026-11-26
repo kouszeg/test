@@ -222,5 +222,55 @@
    "gemini-3.8-flash-lite-tts"
   ],
   "eq": 1
+ },
+ "2026-11-26-kitajska-1-prvi-cesar": {
+  "h": "0ecc4df29114",
+  "d": 601,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ],
+  "eq": 1
+ },
+ "2026-11-26-kitajska-2-filozofi": {
+  "h": "fd111dd021a0",
+  "d": 551,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ],
+  "eq": 1
+ },
+ "2026-11-26-kitajska-3-izpiti": {
+  "h": "eb203b669dd5",
+  "d": 481,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ],
+  "eq": 1
+ },
+ "2026-11-26-kitajska-4-izumi": {
+  "h": "940f677c7513",
+  "d": 466,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ],
+  "eq": 1
+ },
+ "2026-11-26-kitajska-5-dvajseto-stoletje": {
+  "h": "6fa8e4d4442c",
+  "d": 541,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-lite-tts"
+  ],
+  "eq": 1
  }
 }
