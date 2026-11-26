@@ -216,7 +216,7 @@ body.reading nav{display:none}body.reading{padding-bottom:24px}
 </style>
 </head>
 <body>
-<header><h1>Daily <small class="ver">v4.60</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" id="trB" data-a="trash" aria-label="Koš" style="padding:4px 6px" hidden><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><button class="sm" data-a="goStats" aria-label="Pregled" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg></button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
+<header><h1>Daily <small class="ver">v4.61</small></h1><span><button id="upd" class="sm runh" data-a="reload" hidden>↻ nova verzija</button><button id="runH" class="sm runh" data-a="gotoRun" hidden></button><button id="sy" class="sy" data-a="syncNow" hidden aria-label="Sinhroniziraj">⟳</button><button class="sm" id="trB" data-a="trash" aria-label="Koš" style="padding:4px 6px" hidden><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><button class="sm" data-a="goStats" aria-label="Pregled" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg></button><button class="sm" data-a="settings" aria-label="Nastavitve" style="padding:4px 6px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
 <main id="main"></main>
 <nav>
 <button data-tab="dnevnik"><span class="i"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>Dnevnik</button>
@@ -403,10 +403,10 @@ return `<div class="card"><h2>Prehrana<span class="csum">${[...MEALS.filter(([k]
 ${Array.from({length:nsN(d)},(_,i)=>mrow('ns'+(i+1),'NES'+(i+1),'NES '+(i+1),i+1)).join('')}<div class="colall" style="margin:6px 0 0"><button class="sm" data-a="mealCp" aria-label="Kopiraj vse obroke dneva">📋 Kopiraj</button><button class="sm" data-a="nsNew" aria-label="Nov NES z uro zdaj">+ NES</button></div></div>`}
 function choreCard(recs){const{G,add}=choreGroups(),tot={};recs.forEach(r=>tot[r.c]=(tot[r.c]||0)+r.m);
 const known=new Set(Object.values(G).flat().map(x=>x.c));Object.keys(tot).forEach(c=>{if(tot[c]&&!known.has(c)){const j=c.indexOf(' · ');j<0?add('Ostalo',c,c):add(c.slice(0,j),c.slice(j+3),c)}});
-const rs=Object.keys(G),room=rs.includes(V.room)?V.room:rs[0],rt=r=>G[r].reduce((s,x)=>s+(tot[x.c]||0),0),sum=recs.reduce((s,r)=>s+r.m,0),step=V.sH;
+const rs=Object.keys(G),room=rs.includes(V.room)?V.room:null,rt=r=>G[r].reduce((s,x)=>s+(tot[x.c]||0),0),sum=recs.reduce((s,r)=>s+r.m,0),step=V.sH;
 return `<div class="card ${V.room&&rs.includes(V.room)?'cf':''}"><h2>Hišna opravila<span class="csum">${(()=>{const m={};recs.forEach(r=>m[roomOf(r.c)]=(m[roomOf(r.c)]||0)+r.m);return Object.entries(m).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>k+' '+fmtM(v)).join(' · ')})()}</span><span class="hh"><span class="mut nt">${sum?fmtM(sum):''}</span>${cmBtn('chore')}<button class="sm stp" data-a="stepH" aria-label="Korak v minutah (tapni za menjavo)">±${step}</button><button class="sm" data-a="editList" data-l="chores" aria-label="Uredi seznam">✎</button></span></h2>
 <div class="chips">${rs.map(r=>{const t=rt(r);return `<button class="tg s2b ${r===room?'sel':''} ${r===room&&V.room?'open':''} ${t?'has':''}" data-a="room" data-r="${esc(r)}">${esc(r)}${t?` <span class="mut">${fmtM(t)}</span>`:''}</button>`}).join('')}</div>
-<div class="cgrid sub">${(G[room]||[]).map(x=>`<button class="chb ${tot[x.c]?'sel':''}" data-a="chore" data-ch="${esc(x.c)}">${esc(x.l)}<span>${tot[x.c]?fmtM(tot[x.c]):''}</span></button>`).join('')}</div>${cmCat('cmh_',room,'chore')}</div>`}
+${room?`<div class="cgrid sub">${(G[room]||[]).map(x=>`<button class="chb ${tot[x.c]?'sel':''}" data-a="chore" data-ch="${esc(x.c)}">${esc(x.l)}<span>${tot[x.c]?fmtM(tot[x.c]):''}</span></button>`).join('')}</div>${cmCat('cmh_',room,'chore')}`:''}</div>`}
 function healthOpts(h){const fixed=['OK','Poškodba','Drugo'],o=[['ok','OK'],...getList('health').filter(l=>!fixed.includes(l)).map(l=>[HKEY[l]||l,l]),['inj','Poškodba'],['drugo','Drugo']];
 h.forEach(k=>{if(!o.some(x=>x[0]===k))o.splice(o.length-2,0,[k,HLAB[k]||k])});return o}
 function actEntries(){const E=[];getList('acts').forEach(line=>{const i=line.indexOf(':');if(i<0)E.push({l:line.trim(),c:line.trim()});else{const g=line.slice(0,i).trim();E.push({g,items:line.slice(i+1).split(',').map(x=>x.trim()).filter(Boolean).map(it=>({l:it,c:g+' · '+it}))})}});return E}
@@ -877,7 +877,7 @@ wh:b=>{const v=gf(V.day,'wh');sf(V.day,'wh',v==null?8:Math.min(16,Math.max(0,v+ 
 stepH:()=>{V.sH=V.sH===5?30:5;render()},
 stepA:()=>{V.sA=V.sA===5?30:5;render()},
 chore:(b,id,e)=>addMin('chores',b.dataset.ch,V.sH*(leftHalf(b,e)?-1:1)),
-room:b=>{V.room=b.dataset.r;render()},
+room:b=>{V.room=V.room===b.dataset.r?'':b.dataset.r;render()},
 cmt:b=>{const k=b.dataset.k;if(V.cmo.has(k)&&!gf(V.day,'cm_'+k))V.cmo.delete(k);else V.cmo.add(k);render();const i=$(`[data-f=cm_${k}]`);if(i)i.focus()},
 agrp:b=>{V.agrp=V.agrp===b.dataset.g?null:b.dataset.g;render()},
 act:(b,id,e)=>addMin('acts',b.dataset.ch,V.sA*(leftHalf(b,e)?-1:1)),
@@ -1096,7 +1096,7 @@ live('acts').filter(r=>r.c==='Branje').forEach(r=>{r.c='Branje/študij';put('act
 if(c&&Array.isArray(c.v)&&c.v.length){const rooms=c.v.map(l=>l.split(':')[0].trim());const add=DEFL.chores.filter(l=>['Klet','Podstreha','Avto','Popravila'].includes(l.split(':')[0])&&!rooms.includes(l.split(':')[0]));if(add.length)put('cfg',{id:'chores',v:[...c.v,...add]})}
 if(a&&Array.isArray(a.v)&&a.v.length&&!a.v.includes('Kitara'))put('cfg',{id:'acts',v:[...a.v,'Kitara']});if((c&&c.v)||(a&&a.v))put('cfg',{id:'mig19',v:1})})();
 setInterval(()=>{if(!LOCK)updRun()},15000);
-const VER='4.60';
+const VER='4.61';
 function checkUpd(){if(LOCK||location.protocol!=='https:')return;fetch('version.txt?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{t=t.trim();const b=$('#upd');if(b&&t&&t!==VER){b.hidden=false;b.textContent='↻ v'+t}}).catch(()=>{})}
 setInterval(checkUpd,1800000);addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpd()});
 {const a=$('#apA');if(a&&a.remote&&a.remote.watchAvailability)a.remote.watchAvailability(v=>{const b=$('#apC');if(b)b.hidden=!v}).catch(()=>{const b=$('#apC');if(b)b.hidden=false})}
