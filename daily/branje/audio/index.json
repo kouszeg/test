@@ -272,5 +272,15 @@
    "gemini-3.8-flash-lite-tts"
   ],
   "eq": 1
+ },
+ "2026-11-27-meditacija": {
+  "h": "67cc9392beac",
+  "d": 662,
+  "f": "ogg",
+  "v": "Algieba",
+  "m": [
+   "gemini-3.8-flash-tts"
+  ],
+  "eq": 1
  }
 }
