@@ -85,6 +85,7 @@
   .opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
   .opts input[type=number]{width:62px;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:4px 6px}
   input[type=checkbox]{accent-color:var(--led-green);width:16px;height:16px}
+  #sysaudio.on{border-color:var(--led-red);color:#ff8a8c}
   .inistat{color:var(--led-amber);font-size:13px}
 
   /* A–B editor */
@@ -192,6 +193,7 @@
       <select id="dev" aria-label="Vhod" title="Vhod"><option value="">Vhod ni izbran</option></select>
       <select id="out" aria-label="Izhod (metronom, predvajanje)" title="Izhod: metronom in predvajanje"><option value="">Privzeti izhod</option></select>
       <button id="enable" class="ghost">Poveži vhod</button>
+      <button id="sysaudio" class="ghost" title="Snemaj zvok, ki ga predvajajo aplikacije (Chrome: deli cel zaslon + Share system audio)">Zvok sistema</button>
     </div>
   </header>
 
@@ -307,6 +309,7 @@
         <li><kbd>↑</kbd> / <kbd>↓</kbd> premik po seznamu (mape in posnetki). Posnetek se odpre (če igra, igra naprej na novem), mapo odpreš s <kbd>Space</kbd> ali <kbd>Enter</kbd></li>
         <li><kbd>←</kbd> / <kbd>→</kbd> skok nazaj / naprej po valu: 1 doba (z mrežo) ali 1 s; s <kbd>Shift</kbd> 1 takt ali 5 s</li>
         <li><kbd>E</kbd> preimenuj odprt posnetek</li>
+        <li>Zvok sistema: snemaš to, kar predvajajo aplikacije (YouTube, predvajalnik …). Chrome odpre okno za deljenje: izberi Cel zaslon in označi Deli tudi sistemski zvok, slika se ne snema. Ponoven klik vrne vhod ME-90B. Metronom se pri tem posname zraven, zato ga izklopi.</li>
         <li><kbd>A</kbd> / <kbd>B</kbd> postavi marker A / B na mesto, ki ga slišiš (med predvajanjem) ali na kurzor. Ko postaviš B med predvajanjem v zanki, zanka takoj teče med A in B.</li>
         <li><kbd>C</kbd> obreži na A–B, <kbd>F</kbd> najdi zanko</li>
         <li><kbd>N</kbd> / Normaliziraj: dvigne ali zniža posnetek, da je vrh na nivoju »Normaliziraj na … dBFS« (privzeto −1). Val v urejevalniku je vedno prikazan raztegnjen na višino, zvok pa se spremeni šele s tem ukazom; zapiše ga Shrani (za MP3 kot ime.wav, nato po želji M).</li>
@@ -340,7 +343,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.47';   // bump on every release; shown bottom right
+const VERSION = '1.48';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -466,15 +469,20 @@ async function ensureCtx(rate){
   await applySink();
   if (wasMet) metStart();
 }
-async function openInput(){
-  if (stream) stream.getTracks().forEach(t => t.stop());
-  const id = $('dev').value;
-  stream = await navigator.mediaDevices.getUserMedia({ audio: {
-    deviceId: id ? { exact: id } : undefined,
-    echoCancellation: false, noiseSuppression: false, autoGainControl: false, latency: 0, channelCount: { ideal: 2 } } });
+let sysMode = false;   // true: recording what the apps play (screen-share audio) instead of the input device
+async function openInput(given){
+  if (stream) { const old = stream; stream = null; old.getTracks().forEach(t => t.stop()); }
+  if (given) stream = given;
+  else {
+    const id = $('dev').value;
+    stream = await navigator.mediaDevices.getUserMedia({ audio: {
+      deviceId: id ? { exact: id } : undefined,
+      echoCancellation: false, noiseSuppression: false, autoGainControl: false, latency: 0, channelCount: { ideal: 2 } } });
+  }
+  sysMode = !!given; $('sysaudio').classList.toggle('on', sysMode); $('sysaudio').textContent = sysMode ? '● Zvok sistema' : 'Zvok sistema';
   const tr = stream.getAudioTracks()[0], st = tr.getSettings();
-  chCount = Math.min(2, st.channelCount || 1); inputLatency = st.latency || 0;
-  if (tr.label) { S.dev = tr.label; saveSettings(); }
+  chCount = Math.min(2, st.channelCount || 1); inputLatency = sysMode ? 0 : (st.latency || 0);
+  if (tr.label && !sysMode) { S.dev = tr.label; saveSettings(); }
   await ensureCtx(st.sampleRate);   // context runs at the device's own rate: no resampling, no drift
   await ctx.resume();
   if (src) src.disconnect();
@@ -505,6 +513,20 @@ $('enable').onclick = async () => {
   catch (err) { alert('Vhoda ni mogoče odpreti: ' + (err.message || err.name) + '\nPreveri, ali je ME-90B priključen prek USB.'); }
 };
 $('dev').onchange = async () => { try { await openInput(); } catch (err) { alert(err.message); } };
+// System audio: Chrome's screen share with "Share system audio" gives what the apps play (Windows: whole screen only).
+$('sysaudio').onclick = async () => {
+  if (sysMode) { try { await openInput(); } catch { stream = null; sysMode = false; $('rec').disabled = true; $('sysaudio').classList.remove('on'); $('sysaudio').textContent = 'Zvok sistema'; } return; }
+  let ds;
+  try {
+    ds = await navigator.mediaDevices.getDisplayMedia({ video: true, systemAudio: 'include', selfBrowserSurface: 'exclude',
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, suppressLocalAudioPlayback: false } });
+  } catch (err) { if (err.name !== 'NotAllowedError') alert('Zvoka sistema ni mogoče zajeti: ' + err.message); return; }
+  ds.getVideoTracks().forEach(t => t.stop());   // only the audio is needed
+  const at = ds.getAudioTracks()[0];
+  if (!at) { alert('Ni zvoka. V Chromovem oknu izberi »Cel zaslon« (Entire screen) in označi »Deli tudi sistemski zvok« (Share system audio).'); return; }
+  at.addEventListener('ended', () => { if (sysMode && stream === ds) $('sysaudio').click(); });   // sharing stopped from Chrome's bar
+  try { await openInput(ds); } catch (err) { alert(err.message); }
+};
 
 // ================= metronome (look-ahead scheduler on the capture context, same clock as the recording)
 const met = { on: false, temp: false, t0: 0, k: 0, timer: null, stopAt: Infinity };
