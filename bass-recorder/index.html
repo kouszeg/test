@@ -343,7 +343,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.50';   // bump on every release; shown bottom right
+const VERSION = '1.51';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -522,7 +522,11 @@ $('sysaudio').onclick = async ev => {
       const lb = (await navigator.mediaDevices.enumerateDevices()).find(d => d.kind === 'audioinput' && LOOPBACK.test(d.label));
       if (lb) {
         const st = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: lb.deviceId }, echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: { ideal: 2 } } });
-        await openInput(st); $('sysaudio').title = 'Snemam z: ' + lb.label + ' (ponoven klik = nazaj na ME-90B, Shift+klik = deljenje zaslona)'; return;
+        await openInput(st); $('sysaudio').title = 'Snemam z: ' + lb.label + ' (ponoven klik = nazaj na ME-90B, Shift+klik = deljenje zaslona)';
+        peakHold = 0;
+        setTimeout(() => { if (sysMode && stream === st && peakHold < 1e-5)   // digital silence: apps play to another device
+          alert(`»${lb.label}« je tih (−∞ dB).\nTa vhod sliši samo, kar predvaja ista zvočna kartica. Aplikacije verjetno predvajajo na ME-90B.\n\nRešitev: med snemanjem v Windows preklopi izhod na SoundBlaster, ali pa Shift+klik na Zvok sistema za deljenje zaslona.\n(Če ravno nič ne igra, prezri.)`); }, 2500);
+        return;
       }
     } catch (err) { console.warn('loopback input failed, falling back to screen share', err); }
   }
