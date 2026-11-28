@@ -343,7 +343,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const VERSION = '1.48';   // bump on every release; shown bottom right
+const VERSION = '1.49';   // bump on every release; shown bottom right
 $('ver').textContent = 'v' + VERSION;
 let ctx, stream, src, proc, mon, chCount = 1, takes = [], player = null;
 let lastBuf = null, peakHold = 0, decodeCtx = null;
@@ -518,7 +518,7 @@ $('sysaudio').onclick = async () => {
   if (sysMode) { try { await openInput(); } catch { stream = null; sysMode = false; $('rec').disabled = true; $('sysaudio').classList.remove('on'); $('sysaudio').textContent = 'Zvok sistema'; } return; }
   let ds;
   try {
-    ds = await navigator.mediaDevices.getDisplayMedia({ video: true, systemAudio: 'include', selfBrowserSurface: 'exclude',
+    ds = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { max: 1 }, width: { max: 320 }, height: { max: 240 } }, systemAudio: 'include',   // video is thrown away: ask for the cheapest possible selfBrowserSurface: 'exclude',
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, suppressLocalAudioPlayback: false } });
   } catch (err) { if (err.name !== 'NotAllowedError') alert('Zvoka sistema ni mogoče zajeti: ' + err.message); return; }
   ds.getVideoTracks().forEach(t => t.stop());   // only the audio is needed
